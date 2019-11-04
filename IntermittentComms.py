@@ -35,9 +35,8 @@ def find_nearest_below(my_array, target):
 
 class Robot:
     objs = []  # Registrar
-    discretization = (600, 600)
 
-    def __init__(self, ID, teams, schedule):
+    def __init__(self, ID, teams, schedule, discretization):
         self.ID = ID
         self.teams = teams
         self.schedule = schedule
@@ -45,6 +44,7 @@ class Robot:
         self.sensor_data = {}  # Store data as (start_time, end_time): data
         self.eigen_data = {}
         Robot.objs.append(self)
+        Robot.discretization = discretization
 
     def add_new_data(self, new_data, curr_locations, time, data_type):
         t_start, t_end = time
@@ -85,18 +85,26 @@ class Robot:
 
     @classmethod
     def estimate_lossy_matrix(cls, data_matrix, eigenvalues, eigenvectors):
-        ''' Estimates missing values of matrix using POD eigenvalues and vectors '''
+        """Estimates missing values of matrix using POD eigenvalues and vectors"""
         estimate_matrix = np.zeros_like(data_matrix)
         return estimate_matrix
 
+
+
 class Schedule:
+    """scheduler class to create teams and schedules"""
+    # Input arguments:
+    # num_robots = how many robots
+    # num_teams = how many teams
+    # rob_in_teams = which robots are in which teams, comes from initial graph design; robot i belongs to team j in matrix
+    
     def __init__(self, num_robots, num_teams, rob_in_teams):
         self.num_robots = num_robots
         self.num_teams = num_teams
         self.rob_in_teams = rob_in_teams
 
     def create_teams(self):
-        """Create random teams based on number of robots and number of teams"""
+        """Create teams based on number of robots and number of teams"""
         T = [[] for x in range(self.num_teams)]
 
         for i in range(0, self.num_teams):
