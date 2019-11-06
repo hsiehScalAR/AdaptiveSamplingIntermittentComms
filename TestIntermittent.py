@@ -7,7 +7,7 @@ Created on Mon Nov  4 10:48:29 2019
 """
 
 import numpy as np
-from IntermittentComms import Schedule, Robot, sampleVrand, measurement
+from IntermittentComms import Schedule, Robot, sampleVrand, measurement, findNearestNode
 from Visualization import plotMatrix
 
 def main():
@@ -20,38 +20,39 @@ def main():
         numTeams = 8
         numRobots = 8
         robTeams = np.array([[1, 1, 0, 0, 0, 0, 0, 0], 
-                                 [0, 1, 1, 0, 0, 0, 0, 0], 
-                                 [0, 0, 1, 1, 0, 0, 0, 0], 
-                                 [0, 0, 0, 1, 1, 0, 0, 0], 
-                                 [0, 0, 0, 0, 1, 1, 0, 0], 
-                                 [0, 0, 0, 0, 0, 1, 1, 0],
-                                 [0, 0, 0, 0, 0, 0, 1, 1], 
-                                 [1, 0, 0, 0, 0, 0, 0, 1],])
+                             [0, 1, 1, 0, 0, 0, 0, 0], 
+                             [0, 0, 1, 1, 0, 0, 0, 0], 
+                             [0, 0, 0, 1, 1, 0, 0, 0], 
+                             [0, 0, 0, 0, 1, 1, 0, 0], 
+                             [0, 0, 0, 0, 0, 1, 1, 0],
+                             [0, 0, 0, 0, 0, 0, 1, 1], 
+                             [1, 0, 0, 0, 0, 0, 0, 1],])
     
     elif CASE == 2:
         numTeams = 5
         numRobots = 8
         robTeams = np.array([[1, 1, 0, 0, 0], 
-                                 [1, 0, 0, 1, 0], 
-                                 [1, 0, 0, 0, 1], 
-                                 [0, 1, 1, 0, 0], 
-                                 [0, 1, 0, 0, 1], 
-                                 [0, 0, 1, 1, 0],
-                                 [0, 0, 1, 0, 1], 
-                                 [0, 0, 0, 1, 1],])
+                             [1, 0, 0, 1, 0], 
+                             [1, 0, 0, 0, 1], 
+                             [0, 1, 1, 0, 0], 
+                             [0, 1, 0, 0, 1], 
+                             [0, 0, 1, 1, 0],
+                             [0, 0, 1, 0, 1], 
+                             [0, 0, 0, 1, 1],])
     elif CASE == 3:
-        numTeams = 3
-        numRobots = 3
-        robTeams = np.array([[1, 1, 0],
-                                 [0, 1, 1],
-                                 [1, 0, 1],])
+        numTeams = 4
+        numRobots = 4
+        robTeams = np.array([[1, 0, 0, 1],
+                             [1, 1, 0, 0],
+                             [0, 1, 1, 0],
+                             [0, 0, 1, 1],])
     
     else:
         exit()
 
     """Variables"""
     locations = randomStartingPositions(numRobots) #locations or robots
-    currentTime = 0 
+
 
 
     """--------------------------------------------------------------------------"""    
@@ -63,17 +64,25 @@ def main():
     robots = testRobot(numRobots, teams, schedule)
     
     #sample test
-    rangeSamples = DISCRETIZATION #only for uniform
-    vrand = sampleTest(rangeSamples,distribution='uniform')
+#    rangeSamples = DISCRETIZATION #only for uniform
+#    vrand = sampleTest(rangeSamples,distribution='uniform')
     
-    rangeSamples = [[300,300],[10,10]] #only gaussian
-    vrand = sampleTest(rangeSamples,distribution='gaussian')
+#    rangeSamples = [[300,300],[10,10]] #only gaussian
+#    vrand = sampleTest(rangeSamples,distribution='gaussian')
+    createInitialPaths(schedule, teams, commPeriod, locations, robots, numRobots)
     
-    dataSensorMeasurements, totalMap = update(currentTime, robots, numRobots, locations)
+#    dataSensorMeasurements, totalMap = update(currentTime, robots, numRobots, locations)
 
+def createInitialPaths(schedule, teams, commPeriod, locations, robots, numRobots):
+    #add node v0 to list of nodes for each robot
+    for r in range(0,numRobots):
+        robots[r].nodes.append(locations[r])
     
+    paths = []
+    return paths
+
 def randomStartingPositions(numRobots):
-    """Ensures that the starting position are not the same within communication radius"""
+    """Ensures that the starting position are exclusive within communication radius"""
     # Input arguments:
     # numRobots = how many robots
     
@@ -81,11 +90,20 @@ def randomStartingPositions(numRobots):
     pos = np.random.randint(0, COMMRANGE, size=2)
     locations[0] = pos
     
-    for i in range(0,numRobots-1):
-        lastPos = pos
-        while np.array_equal(pos,lastPos):
+    for i in range(1,numRobots):
+        equal = True
+        while equal:
             pos = np.random.randint(0, COMMRANGE, size=2)
+            equal = False
+            for l in range(0, i):
+                if np.array_equal(pos,locations[l]):
+                    equal = True
+                    break
         locations[i] = pos
+        
+    if DEBUG:
+        print('Locations')
+        print(locations)
         
     return locations.astype(int)
 
@@ -101,17 +119,18 @@ def sampleTest(rangeSamples, distribution='uniform'):
     return vrand    
 
 
-def update(currentTime, robots, numRobots, locations):    
+def update(currentTime, robots, numRobots, locations):
+    """Update procedure of intermittent communication"""
+    # Input arguments:
+    # currentTime = current Time of the execution
+    # robots = instances of the robots that are to be moved
+    # numRobots = how many robots    
+    # locations = starting locations of the robots
     
+    currentTime = 0 
     
+    # TODO needs massive rework, was wrong approch, need to take robots from teams which have a schedule on k, build their graph, take teams with k+1 and build there graph
     while currentTime < TOTALTIME:
-        # Collect and send sensing data
-        for r in range(0, numRobots):
-            dataValues, singleMeasurement = measurement(numRobots, SENSORPERIOD)  # Measurements for all robots during one sensor period
-            robots[r].addNewData(dataValues, locations, currentTime, currentTime + SENSORPERIOD, 'sensor')  # Set data matrices
-            robots[r].createMap(singleMeasurement, locations[r])  # Create Map
-
-        currentTime += SENSORPERIOD
         
         #sample new nodes and create path: Algorithm 1 from paper
         distribution = 'uniform'
@@ -126,6 +145,15 @@ def update(currentTime, robots, numRobots, locations):
                  
             vrand = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
         
+        nearestNodeIdx = findNearestNode(locations, vrand)
+
+        # Collect and send sensing data
+        for r in range(0, numRobots):
+            dataValues, singleMeasurement = measurement(numRobots, SENSORPERIOD)  # Measurements for all robots during one sensor period
+            robots[r].addNewData(dataValues, locations, currentTime, currentTime + SENSORPERIOD, 'sensor')  # Set data matrices
+            robots[r].createMap(singleMeasurement, locations[r])  # Create Map
+
+        currentTime += SENSORPERIOD
         
 
     dataSensorMeasurements = Robot.constructDataMatrix()  # Aggregated matrix of estimated values from robots

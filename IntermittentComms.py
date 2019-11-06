@@ -8,6 +8,12 @@ Created on Mon Nov  4 10:48:29 2019
 
 import numpy as np
 from operator import itemgetter
+import networkx as nx
+
+def steer():
+    possible = True
+    
+    return possible
 
 def measurement(numRobots, sensorPeriod): 
     #TODO check how we measure stuff, if single value since each robot measure one place or measurement over time for all robots
@@ -89,6 +95,7 @@ class Robot:
         self.ID = ID
         self.teams = teams
         self.schedule = schedule
+        self.nodes = []
         self.activeLocations = {}  # Store active location as indexed by (timeStart, timeEnd): locations
         self.sensorData = {}  # Store data as (timeStart, timeEnd): data
         self.eigenData = {}
