@@ -10,10 +10,27 @@ import numpy as np
 from operator import itemgetter
 import networkx as nx
 
-def steer():
-    possible = True
+def steer(vrand, vnearest,uMax, epsilon):
+    """Steer towards vrand but only as much as allowed by the dynamics"""
+    # Input Arguments
+    # vrand = goal point
+    # vrand = nearest node to goal point
+    # uMax = maximal velocity in pixel/second
     
-    return possible
+    nearestNode = list(vnearest.values())
+    nearestNode = np.asarray(nearestNode[0])
+    
+    dist = vrand - nearestNode # TODO need to make sure to keep direction correct so that we can also have a negative velocity
+    print(nearestNode)
+    print(vrand)
+    normDist = np.sqrt(np.sum((nearestNode - vrand)**2))
+    print(normDist)
+    s = min(epsilon,normDist)
+    travelTime = s/uMax
+    
+    deltaTcost = travelTime #-(time at node nearest - min of all times of robots in Team i at nearest #TODO missing time cost for delay reduction
+    vnew = nearestNode + uMax*deltaTcost*dist/normDist 
+    return vnew
 
 def measurement(numRobots, sensorPeriod): 
     #TODO check how we measure stuff, if single value since each robot measure one place or measurement over time for all robots
@@ -26,14 +43,18 @@ def measurement(numRobots, sensorPeriod):
     singleMeasurement = np.random.uniform(0,1)
     return allMeasurementsOverTime, singleMeasurement
 
-def findNearestNode(nodes, vrand):
+def findNearestNode(graph, vrand):
     """Return nearest node index"""
     # Input Arguments
-    # nodes = current nodes
+    # graph = current graph
     # vrand = new random node
     
+    dictNodes = nx.get_node_attributes(graph,'pos')
+    nodes = list(dictNodes.values())
     nodes = np.asarray(nodes)
+
     normDist = np.sum((nodes - vrand)**2, axis=1)
+
     return np.argmin(normDist)
 
 def sampleVrand(discretization, rangeSamples, distribution = 'uniform'):
@@ -95,13 +116,23 @@ class Robot:
         self.ID = ID
         self.teams = teams
         self.schedule = schedule
-        self.nodes = []
         self.activeLocations = {}  # Store active location as indexed by (timeStart, timeEnd): locations
         self.sensorData = {}  # Store data as (timeStart, timeEnd): data
         self.eigenData = {}
         self.mapping = np.zeros([600,600])
         Robot.objs.append(self)
         Robot.discretization = discretization
+
+        
+        # Graph variables
+        self.graph = nx.Graph()
+        self.nodeCounter = 0
+        
+    def addNode(self, position, v1=0):
+        self.graph.add_node(self.nodeCounter, pos = position)
+        if self.nodeCounter != 0:
+            self.graph.add_edge(v1,self.nodeCounter)
+        self.nodeCounter += 1
 
     def createMap(self,newData,currentLocations):
         """creates a measurement map in the grid space without time reference"""
@@ -246,4 +277,7 @@ class Schedule:
                         col += 1
 
         schedule = schedule[:, ~np.all(schedule == 0, axis=0)]  # Remove columns full of zeros
+        
+        #Make the indexes go from 0 to numTeams-1 instead of 1 to numTeams
+        schedule = schedule -1
         return schedule
