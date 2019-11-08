@@ -17,6 +17,6 @@ def plotMatrix(data):
     
 def plotMeetingGraphs(graph1, graph2):
     plt.figure()
-    nx.draw(graph1, pos=nx.get_node_attributes(graph1, 'pos'), node_color='r',node_size=50,edge_color='r')
-    nx.draw(graph2, pos=nx.get_node_attributes(graph2, 'pos'), node_color='b',node_size=50,edge_color='b')
+    nx.draw(graph1, pos=nx.get_node_attributes(graph1, 'pos'), node_color='r',node_size=200,edge_color='r',with_labels = True,font_color='w')
+    nx.draw(graph2, pos=nx.get_node_attributes(graph2, 'pos'), node_color='b',node_size=200,edge_color='b',with_labels = True,font_color='w')
     plt.show()

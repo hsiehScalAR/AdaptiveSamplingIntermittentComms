@@ -10,27 +10,58 @@ import numpy as np
 from operator import itemgetter
 import networkx as nx
 
-def steer(vrand, vnearest,uMax, epsilon):
+def steer(robots, team, teams, uMax, epsilon):
     """Steer towards vrand but only as much as allowed by the dynamics"""
     # Input Arguments
-    # vrand = goal point
-    # vrand = nearest node to goal point
+    # robots = robot classes
+    # team = current path planning for idx team
+    # teams = contains all teams
     # uMax = maximal velocity in pixel/second
+    # epsilon = maximum allowed distance traveled
     
-    nearestNode = list(vnearest.values())
-    nearestNode = np.asarray(nearestNode[0])
+    #find minTimes for nearest nodes of all robots
+    minTimes = []
+    for r in teams[np.int(team)][0]:
+        nearestNodeIdx = robots[np.int(r-1)].nearestNodeIdx
+        graphDict = robots[np.int(r-1)].graph.nodes[nearestNodeIdx]
+        
+        vnearest = list(graphDict.values())
+        nearestTime = np.asarray(vnearest[1])
+        
+        minTimes.append(nearestTime)
     
-    dist = vrand - nearestNode # TODO need to make sure to keep direction correct so that we can also have a negative velocity
-    print(nearestNode)
-    print(vrand)
-    normDist = np.sqrt(np.sum((nearestNode - vrand)**2))
-    print(normDist)
-    s = min(epsilon,normDist)
-    travelTime = s/uMax
+    #steer towards vrand
+    for r in teams[np.int(team)][0]:    
+        nearestNodeIdx = robots[np.int(r-1)].nearestNodeIdx
+        graphDict = robots[np.int(r-1)].graph.nodes[nearestNodeIdx]
+        
+        vnearest = list(graphDict.values())
+        
+        vrand = robots[np.int(r-1)].vrand
+        nearestTime = np.asarray(vnearest[1])
+        nearestNode = np.asarray(vnearest[0])
     
-    deltaTcost = travelTime #-(time at node nearest - min of all times of robots in Team i at nearest #TODO missing time cost for delay reduction
-    vnew = nearestNode + uMax*deltaTcost*dist/normDist 
-    return vnew
+    
+        dist = vrand - nearestNode 
+        normDist = np.sqrt(np.sum((nearestNode - vrand)**2))
+
+        s = min(epsilon,normDist)
+        travelTime = s/uMax
+    
+        deltaTcost = travelTime -(nearestTime - min(minTimes))
+        if deltaTcost > 0:
+            vnew = nearestNode + uMax*deltaTcost*dist/normDist
+            distVnew = np.sqrt(np.sum((nearestNode - vnew)**2))
+            travelTimeVnew = distVnew/uMax
+        else:
+            vnew = nearestNode
+            travelTimeVnew = 0
+        
+        totalTimeVnew = travelTimeVnew + nearestTime
+        
+        robots[np.int(r-1)].vnew = vnew
+        robots[np.int(r-1)].totalTime = totalTimeVnew
+    
 
 def measurement(numRobots, sensorPeriod): 
     #TODO check how we measure stuff, if single value since each robot measure one place or measurement over time for all robots
@@ -50,12 +81,13 @@ def findNearestNode(graph, vrand):
     # vrand = new random node
     
     dictNodes = nx.get_node_attributes(graph,'pos')
+
     nodes = list(dictNodes.values())
     nodes = np.asarray(nodes)
 
     normDist = np.sum((nodes - vrand)**2, axis=1)
-
-    return np.argmin(normDist)
+    
+    return list(dictNodes.keys())[np.argmin(normDist)]
 
 def sampleVrand(discretization, rangeSamples, distribution = 'uniform'):
     """Sample a new random position"""
@@ -126,12 +158,23 @@ class Robot:
         
         # Graph variables
         self.graph = nx.Graph()
+        self.totalGraph = nx.Graph()
         self.nodeCounter = 0
-        
-    def addNode(self, position, v1=0):
-        self.graph.add_node(self.nodeCounter, pos = position)
+        self.nearestNodeIdx = 0
+        self.vrand = np.array([0, 0])
+        self.vnew = np.array([0, 0])
+        self.totalTime = 0
+    
+    def composeGraphs(self):
+        self.totalGraph = nx.compose(self.totalGraph,self.graph)
+    
+    def initializeGraph(self):
+        self.graph = nx.Graph()
+    
+    def addNode(self):
+        self.graph.add_node(self.nodeCounter, pos = self.vnew, t = self.totalTime)
         if self.nodeCounter != 0:
-            self.graph.add_edge(v1,self.nodeCounter)
+            self.graph.add_edge(self.nearestNodeIdx,self.nodeCounter)
         self.nodeCounter += 1
 
     def createMap(self,newData,currentLocations):
