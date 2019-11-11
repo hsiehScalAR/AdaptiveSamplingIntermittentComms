@@ -10,8 +10,39 @@ import numpy as np
 from operator import itemgetter
 import networkx as nx
 
-def extend():
-    empty = []
+def cost(nearTime, nearPos, newPos, uMax):
+    
+    normDist = np.sqrt(np.sum((nearPos - newPos)**2))
+    nearEdgeCost = normDist/uMax
+    nearTotalCost = nearTime + nearEdgeCost
+    
+    return nearTotalCost, nearEdgeCost 
+
+def extendGraph(robot, setVnear, uMax):
+    vnew = robot.vnew
+    vmin = robot.graph.nodes[robot.nearestNodeIdx]['pos']
+    vminCost = robot.totalTime
+    
+    print('extend')
+    print(vminCost)
+    
+    nearTotalCost = 0
+    nearEdgeCost = robot.vnewCost
+    
+    for n in range(0,len(setVnear)):
+        time = robot.graph.nodes[setVnear[n]]['t']
+        pos = robot.graph.nodes[setVnear[n]]['pos']
+        nearTotalCost, nearEdgeCost = cost(time,pos,vnew,uMax) 
+
+        if nearTotalCost < vminCost:
+            vmin = pos
+            robot.nearestNodeIdx = setVnear[n]
+            vminCost = nearTotalCost            
+    
+    print(vminCost) 
+    
+    robot.vnewCost = nearEdgeCost
+    robot.totalTime = vminCost
 
 def buildSetVnear(robot, epsilon, gammaRRT):
     """Examine all nodes and build set with nodes close to vnew with a radius of communication range"""
@@ -26,19 +57,19 @@ def buildSetVnear(robot, epsilon, gammaRRT):
     cardinality = robot.graph.number_of_nodes()
     dimension = 2 # TODO: Find nicer way to say 2 here
     
-    radius = min(gammaRRT*(pow(np.log10(cardinality)/cardinality,1/dimension)), epsilon)
-    
+    radius = min(gammaRRT*(pow(np.log(cardinality)/cardinality,1/dimension)), epsilon)
+
     dictNodes = nx.get_node_attributes(robot.graph,'pos')
 
     nodes = list(dictNodes.values())
     nodes = np.asarray(nodes)
 
-    normDist = np.sum((nodes - vnew)**2, axis=1)
+    normDist = np.sqrt(np.sum((nodes - vnew)**2, axis=1))
 
     for n in range(0,len(nodes)):
         if normDist[n] < radius:
             setVnear.append(list(dictNodes.keys())[n])
-
+    
     return setVnear
     
 def steer(robots, team, teams, uMax, epsilon):
@@ -85,17 +116,16 @@ def steer(robots, team, teams, uMax, epsilon):
             vnew = nearestNode + uMax*deltaTcost*dist/normDist
             distVnew = np.sqrt(np.sum((nearestNode - vnew)**2))
             travelTimeVnew = distVnew/uMax
-            totalTimeVnew = travelTimeVnew + nearestTime
+            
         else: # TODO: check again if this is correct
 #            print('Time delay too big')
 #            print(deltaTcost)
             vnew = nearestNode
-            travelTimeVnew = 0
-            totalTimeVnew = nearestTime
+            travelTimeVnew = 0        
         
-        
-        
+        totalTimeVnew = travelTimeVnew + nearestTime
         robots[np.int(r-1)].vnew = vnew
+        robots[np.int(r-1)].vnewCost = travelTimeVnew
         robots[np.int(r-1)].totalTime = totalTimeVnew
     
 
@@ -200,6 +230,7 @@ class Robot:
         self.nearestNodeIdx = 0
         self.vrand = np.array([0, 0])
         self.vnew = np.array([0, 0])
+        self.vnewCost = 0
         self.totalTime = 0
     
     def composeGraphs(self):
@@ -211,7 +242,7 @@ class Robot:
     def addNode(self):
         self.graph.add_node(self.nodeCounter, pos = self.vnew, t = self.totalTime)
         if self.nodeCounter != 0:
-            self.graph.add_edge(self.nearestNodeIdx,self.nodeCounter)
+            self.graph.add_edge(self.nearestNodeIdx,self.nodeCounter, weight = self.vnewCost)
         self.nodeCounter += 1
 
     def createMap(self,newData,currentLocations):

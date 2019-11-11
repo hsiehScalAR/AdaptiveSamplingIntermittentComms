@@ -7,7 +7,7 @@ Created on Mon Nov  4 10:48:29 2019
 """
 
 import numpy as np
-from IntermittentComms import Schedule, Robot, sampleVrand, measurement, findNearestNode, steer, buildSetVnear
+from IntermittentComms import Schedule, Robot, sampleVrand, measurement, findNearestNode, steer, buildSetVnear, extendGraph
 from Visualization import plotMatrix, plotMeetingGraphs
 
 def main():
@@ -134,7 +134,11 @@ def createInitialPaths(schedule, teams, robots, numRobots, period):
             steer(robots, team, teams, UMAX, EPSILON)
             
             for r in teams[np.int(team)][0]:
+                # get all nodes close to new node
                 setVnear = buildSetVnear(robots[np.int(r-1)], EPSILON, GAMMARRT)
+                
+                extendGraph(robots[np.int(r-1)], setVnear, UMAX)
+                
                 robots[np.int(r-1)].addNode()
             
         teamsDone[np.int(team)] = True     
