@@ -10,6 +10,37 @@ import numpy as np
 from operator import itemgetter
 import networkx as nx
 
+def extend():
+    empty = []
+
+def buildSetVnear(robot, epsilon, gammaRRT):
+    """Examine all nodes and build set with nodes close to vnew with a radius of communication range"""
+    # Input Arguments
+    # robot = current robot with its graph
+    # epsilon = maximum allowed distance traveled
+    # gammaRRT = parameter for radius of near nodes in RRT star
+    
+    setVnear = []
+    
+    vnew = robot.vnew
+    cardinality = robot.graph.number_of_nodes()
+    dimension = 2 # TODO: Find nicer way to say 2 here
+    
+    radius = min(gammaRRT*(pow(np.log10(cardinality)/cardinality,1/dimension)), epsilon)
+    
+    dictNodes = nx.get_node_attributes(robot.graph,'pos')
+
+    nodes = list(dictNodes.values())
+    nodes = np.asarray(nodes)
+
+    normDist = np.sum((nodes - vnew)**2, axis=1)
+
+    for n in range(0,len(nodes)):
+        if normDist[n] < radius:
+            setVnear.append(list(dictNodes.keys())[n])
+
+    return setVnear
+    
 def steer(robots, team, teams, uMax, epsilon):
     """Steer towards vrand but only as much as allowed by the dynamics"""
     # Input Arguments
@@ -47,17 +78,22 @@ def steer(robots, team, teams, uMax, epsilon):
 
         s = min(epsilon,normDist)
         travelTime = s/uMax
-    
-        deltaTcost = travelTime -(nearestTime - min(minTimes))
+
+        deltaTcost = travelTime - (nearestTime - min(minTimes))
+        
         if deltaTcost > 0:
             vnew = nearestNode + uMax*deltaTcost*dist/normDist
             distVnew = np.sqrt(np.sum((nearestNode - vnew)**2))
             travelTimeVnew = distVnew/uMax
-        else:
+            totalTimeVnew = travelTimeVnew + nearestTime
+        else: # TODO: check again if this is correct
+#            print('Time delay too big')
+#            print(deltaTcost)
             vnew = nearestNode
             travelTimeVnew = 0
+            totalTimeVnew = nearestTime
         
-        totalTimeVnew = travelTimeVnew + nearestTime
+        
         
         robots[np.int(r-1)].vnew = vnew
         robots[np.int(r-1)].totalTime = totalTimeVnew
@@ -103,6 +139,7 @@ def sampleVrand(discretization, rangeSamples, distribution = 'uniform'):
         
         if distribution == 'gaussian':
             vrand = np.random.normal(rangeSamples[0],rangeSamples[1])
+
         if 0 <= vrand[0] <= discretization[0] and 0 <= vrand[1] <= discretization[1]:
             inBoundary = True
   

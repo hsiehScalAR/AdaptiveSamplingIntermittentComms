@@ -7,7 +7,7 @@ Created on Mon Nov  4 10:48:29 2019
 """
 
 import numpy as np
-from IntermittentComms import Schedule, Robot, sampleVrand, measurement, findNearestNode, steer
+from IntermittentComms import Schedule, Robot, sampleVrand, measurement, findNearestNode, steer, buildSetVnear
 from Visualization import plotMatrix, plotMeetingGraphs
 
 def main():
@@ -85,25 +85,26 @@ def main():
 #    plotMeetingGraphs(robots[1].totalGraph,robots[2].totalGraph)
 #    plotMeetingGraphs(robots[2].totalGraph,robots[3].totalGraph)
     plotMeetingGraphs(robots[0].totalGraph,robots[3].totalGraph)
+    
+    
 
 #    dataSensorMeasurements, totalMap = update(currentTime, robots, numRobots, locations)
 
 def createInitialPaths(schedule, teams, robots, numRobots, period):
     
-    #add node v0 to list of nodes for each robot   
-    
+    #add node v0 to list of nodes for each robot       
     for r in range(0,numRobots):
         robots[r].nearestNodeIdx = robots[r].nodeCounter
+        
+        #make last node equal to the first of new period
+        if robots[r].nodeCounter > 0:
+            robots[r].nodeCounter -= 1
+        
         robots[r].initializeGraph()
         robots[r].addNode()
         
-#    print(robots[0].graph.nodes.data())
-#    print(robots[r].nearestNodeIdx)
     teamsDone = np.zeros(len(teams))
 
-        
-    
-    
     #find out which team has a meeting event at period k=0
     for team in schedule[:, period]:
         if teamsDone[np.int(team)] or team < 0:
@@ -113,12 +114,10 @@ def createInitialPaths(schedule, teams, robots, numRobots, period):
         distribution = 'uniform'
         rangeSamples = DISCRETIZATION
         
-#        print('Doing Team ' + str(team))
-        
         for sample in range(0,TOTALSAMPLES):
             if sample == RANDOMSAMPLESMAX:
                 mean = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
-                stdDev = np.diag(4*COMMRANGE*COMMRANGE*np.identity(2)) #TODO find a more elegant version to put dimension 2 there
+                stdDev = np.diag(4*COMMRANGE*COMMRANGE*np.identity(2)) #TODO find a more elegant version to put dimension 2 there, something comming from the 2D or *D inputs
                 distribution = 'gaussian'
                 rangeSamples = [mean,stdDev]
             
@@ -135,22 +134,19 @@ def createInitialPaths(schedule, teams, robots, numRobots, period):
             steer(robots, team, teams, UMAX, EPSILON)
             
             for r in teams[np.int(team)][0]:
+                setVnear = buildSetVnear(robots[np.int(r-1)], EPSILON, GAMMARRT)
                 robots[np.int(r-1)].addNode()
             
         teamsDone[np.int(team)] = True     
         
     paths = []
-    print('Doing Period ' + str(period))
     
-#    if DEBUG:
-#        print('Graph robot 0')        
-#        print(robots[0].graph.nodes.data())
-#        
-#        print('Graph robot 1')        
-#        print(robots[1].graph.nodes.data())
+    if DEBUG:
+        print('Graph robot 0')        
+        print(robots[0].graph.nodes.data())
         
-#        plotMeetingGraphs(robots[0].totalGraph,robots[1].totalGraph)
-#        plotMeetingGraphs(robots[0].totalGraph,robots[3].totalGraph)
+        print('Graph robot 1')        
+        print(robots[1].graph.nodes.data())
     
     return paths
 
@@ -166,7 +162,7 @@ def randomStartingPositions(numRobots):
     for i in range(1,numRobots):
         equal = True
         while equal:
-            pos = np.random.randint(0, COMMRANGE, size=2)
+            pos = np.random.randint(0, numRobots, size=2)
             equal = False
             for l in range(0, i):
                 if np.array_equal(pos,locations[l]):
@@ -215,6 +211,8 @@ def update(currentTime, robots, numRobots, locations):
                 stdDev = np.diag(4*COMMRANGE*COMMRANGE*np.identity(2)) #TODO find a more elegant version to put dimension 2 there
                 distribution = 'gaussian'
                 rangeSamples = [mean,stdDev]
+                print('mean and stddev')
+                print(rangeSamples)
                  
             vrand = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
         
@@ -291,9 +289,10 @@ def testScheduler(numRobots, numTeams, robTeams):
     
     #initializer
     scheduleClass = Schedule(numRobots, numTeams, robTeams)
+    
     #Assigns robot numbers to teams
     T = scheduleClass.createTeams()
-#    teams = np.asarray(T).reshape((4, 2))-1
+
     #creates schedule
     S = scheduleClass.createSchedule()
     #communication period is equall to number of robots
@@ -302,7 +301,6 @@ def testScheduler(numRobots, numTeams, robTeams):
     #Print test information
     if DEBUG:
         print('Teams')
-#        print(teams)
         print(*T)
         
         print('Schedule')
@@ -311,7 +309,6 @@ def testScheduler(numRobots, numTeams, robTeams):
         print('Period')
         print(communicationPeriod)
     
-#    return S, teams, communicationPeriod
     return S, T, communicationPeriod
 
 
@@ -320,21 +317,23 @@ if __name__ == "__main__":
     """Entry in Test Program"""
     
     """Setup"""
-#    np.random.seed(19)
+    np.random.seed(1994)
     
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 2 robots 2 teams)
-    DEBUG = True #debug to true shows prints
-    COMMRANGE = 3 #communication range for robots
+    DEBUG = False #debug to true shows prints
+    COMMRANGE = 3 # TODO: communication range for robots
     
     DISCRETIZATION = np.array([600, 600]) #grid space
-    RANDOMSAMPLESMAX = 5 #how many random samples before trying to converge for communication
-    TOTALSAMPLES = 10 #how many samples in total
+    RANDOMSAMPLESMAX = 10 #how many random samples before trying to converge for communication
+    TOTALSAMPLES = 20 #how many samples in total
 
     SENSORPERIOD = 20 #time between sensor measurement or between updates of data
     EIGENVECPERIOD = 40 #time between POD calculations
     
     TOTALTIME = 1000 #total execution time of program
     
-    UMAX = 50 #Max velocity, 30 pixel/second
-    EPSILON = 100 #Maximum step size of robots
+    UMAX = 10 # TODO: Max velocity, 30 pixel/second
+    EPSILON = 50 # TODO: Maximum step size of robots
+    GAMMARRT = 100 # TODO: constant for rrt* algorithm, can it be calculated?
+    
     main()
