@@ -17,7 +17,7 @@ def rewireGraph(robot, setVnear, uMax):
     """Check if there is a node in setVnear which has a smaller cost as child from vnew than previous"""
     # Input arguments
     # robot = which robot graph that we are analyzing
-    # setVnear = set of close nodes for which we check the cost to connect to vnew
+    # setVnear = set of close nodes for which we check the cost to  be a child of vnew
     # uMax = maximum velocity of robot for cost computation
     
     timeVnew = robot.totalTime
@@ -33,9 +33,6 @@ def rewireGraph(robot, setVnear, uMax):
 
         if nearTotalCost < vnearTime:
             edge = robot.graph.edges(setVnear[n])
-            print(robot.ID)
-            print(edge)
-            print(robot.vnewIdx)
             robot.graph.remove_edge(list(edge)[0][0],list(edge)[0][1])
             robot.graph.add_edge(robot.vnewIdx,setVnear[n], weight = nearEdgeCost)
             robot.graph.nodes[setVnear[n]]['t'] = nearTotalCost
@@ -101,7 +98,7 @@ def buildSetVnear(robot, epsilon, gammaRRT):
     dimension = 2 # TODO: Find nicer way to say 2 here
     
     radius = min(gammaRRT*(pow(np.log(cardinality)/cardinality,1/dimension)), epsilon)
-
+    
     dictNodes = nx.get_node_attributes(robot.graph,'pos')
 
     nodes = list(dictNodes.values())
@@ -167,7 +164,7 @@ def steer(robots, team, teams, uMax, epsilon):
             travelTimeVnew = 0        
         
         totalTimeVnew = travelTimeVnew + nearestTime
-        robots[np.int(r-1)].vnew = vnew
+        robots[np.int(r-1)].vnew = np.around(vnew)
         robots[np.int(r-1)].vnewCost = travelTimeVnew
         robots[np.int(r-1)].totalTime = totalTimeVnew
     

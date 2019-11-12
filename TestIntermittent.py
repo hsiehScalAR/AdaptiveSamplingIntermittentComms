@@ -81,12 +81,23 @@ def main():
         for r in range(0,numRobots):
             robots[r].composeGraphs()
     
-#    plotMeetingGraphs(robots[0].totalGraph,robots[1].totalGraph)
-#    plotMeetingGraphs(robots[1].totalGraph,robots[2].totalGraph)
-#    plotMeetingGraphs(robots[2].totalGraph,robots[3].totalGraph)
+    plotMeetingGraphs(robots[0].totalGraph,robots[1].totalGraph)
+    plotMeetingGraphs(robots[1].totalGraph,robots[2].totalGraph)
+    plotMeetingGraphs(robots[2].totalGraph,robots[3].totalGraph)
     plotMeetingGraphs(robots[0].totalGraph,robots[3].totalGraph)
     
+    print('Graph robot 0')        
+    print(robots[0].totalGraph.nodes.data())
     
+    print('Graph robot 1')        
+    print(robots[1].totalGraph.nodes.data())
+
+    print('Graph robot 2')        
+    print(robots[2].totalGraph.nodes.data())
+    
+    print('Graph robot 3')        
+    print(robots[3].totalGraph.nodes.data())
+        
 
 #    dataSensorMeasurements, totalMap = update(currentTime, robots, numRobots, locations)
 
@@ -324,10 +335,10 @@ if __name__ == "__main__":
     """Entry in Test Program"""
     
     """Setup"""
-    np.random.seed(8)
+    np.random.seed(1994)
     
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 2 robots 2 teams)
-    DEBUG = True #debug to true shows prints
+    DEBUG = False #debug to true shows prints
     COMMRANGE = 3 # TODO: communication range for robots
     
     DISCRETIZATION = np.array([600, 600]) #grid space
