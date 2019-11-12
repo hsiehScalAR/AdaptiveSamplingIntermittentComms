@@ -10,7 +10,26 @@ import numpy as np
 from operator import itemgetter
 import networkx as nx
 
+def rewire(robot, setVnear, uMax):
+    # TODO: Check if vnew is in goal set
+
+    """Check if there is a node in setVnear which has a smaller cost as parent to vnew than the nearest node"""
+    # Input arguments
+    # robot = which robot graph that we are analyzing
+    # setVnear = set of close nodes for which we check the cost to connect to vnew
+    # uMax = maximum velocity of robot for cost computation
+    
+    empty = []
+
 def cost(nearTime, nearPos, newPos, uMax):
+    # TODO: add information gain cost
+
+    """Calculate cost between two nodes"""
+    # Input arguments
+    # nearTime = time at current near node
+    # nearPos = position at current near node
+    # newPos = position of vnew for which we search a less costly parent node
+    # uMax = maximum velocity of robot for cost computation
     
     normDist = np.sqrt(np.sum((nearPos - newPos)**2))
     nearEdgeCost = normDist/uMax
@@ -19,12 +38,16 @@ def cost(nearTime, nearPos, newPos, uMax):
     return nearTotalCost, nearEdgeCost 
 
 def extendGraph(robot, setVnear, uMax):
-    vnew = robot.vnew
-    vmin = robot.graph.nodes[robot.nearestNodeIdx]['pos']
-    vminCost = robot.totalTime
+    # TODO: Check if vnew is in goal set
+
+    """Check if there is a node in setVnear which has a smaller cost as parent to vnew than the nearest node"""
+    # Input arguments
+    # robot = which robot graph that we are analyzing
+    # setVnear = set of close nodes for which we check the cost to connect to vnew
+    # uMax = maximum velocity of robot for cost computation
     
-    print('extend')
-    print(vminCost)
+    vnew = robot.vnew
+    vminCost = robot.totalTime
     
     nearTotalCost = 0
     nearEdgeCost = robot.vnewCost
@@ -35,14 +58,14 @@ def extendGraph(robot, setVnear, uMax):
         nearTotalCost, nearEdgeCost = cost(time,pos,vnew,uMax) 
 
         if nearTotalCost < vminCost:
-            vmin = pos
             robot.nearestNodeIdx = setVnear[n]
             vminCost = nearTotalCost            
     
-    print(vminCost) 
     
     robot.vnewCost = nearEdgeCost
     robot.totalTime = vminCost
+
+    # TODO: Check if vnew is in goal set
 
 def buildSetVnear(robot, epsilon, gammaRRT):
     """Examine all nodes and build set with nodes close to vnew with a radius of communication range"""
@@ -240,6 +263,8 @@ class Robot:
         self.graph = nx.Graph()
     
     def addNode(self):
+        """Add new node with pos and total time attributes and edge with edge travel time cost to graph based on self variables"""
+        
         self.graph.add_node(self.nodeCounter, pos = self.vnew, t = self.totalTime)
         if self.nodeCounter != 0:
             self.graph.add_edge(self.nearestNodeIdx,self.nodeCounter, weight = self.vnewCost)
