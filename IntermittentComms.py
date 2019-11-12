@@ -10,16 +10,36 @@ import numpy as np
 from operator import itemgetter
 import networkx as nx
 
-def rewire(robot, setVnear, uMax):
+def rewireGraph(robot, setVnear, uMax):
     # TODO: Check if vnew is in goal set
+    # TODO: Find out what this min t = max t means
 
-    """Check if there is a node in setVnear which has a smaller cost as parent to vnew than the nearest node"""
+    """Check if there is a node in setVnear which has a smaller cost as child from vnew than previous"""
     # Input arguments
     # robot = which robot graph that we are analyzing
     # setVnear = set of close nodes for which we check the cost to connect to vnew
     # uMax = maximum velocity of robot for cost computation
     
-    empty = []
+    timeVnew = robot.totalTime
+    posVnew = robot.vnew
+        
+    nearTotalCost = 0
+    nearEdgeCost = 0
+    
+    for n in range(0,len(setVnear)):
+        vnearTime = robot.graph.nodes[setVnear[n]]['t']
+        vnearPos = robot.graph.nodes[setVnear[n]]['pos']
+        nearTotalCost, nearEdgeCost = cost(timeVnew,posVnew,vnearPos,uMax) 
+
+        if nearTotalCost < vnearTime:
+            edge = robot.graph.edges(setVnear[n])
+            print(robot.ID)
+            print(edge)
+            print(robot.vnewIdx)
+            robot.graph.remove_edge(list(edge)[0][0],list(edge)[0][1])
+            robot.graph.add_edge(robot.vnewIdx,setVnear[n], weight = nearEdgeCost)
+            robot.graph.nodes[setVnear[n]]['t'] = nearTotalCost
+
 
 def cost(nearTime, nearPos, newPos, uMax):
     # TODO: add information gain cost
@@ -253,6 +273,7 @@ class Robot:
         self.nearestNodeIdx = 0
         self.vrand = np.array([0, 0])
         self.vnew = np.array([0, 0])
+        self.vnewIdx = 0
         self.vnewCost = 0
         self.totalTime = 0
     
@@ -262,11 +283,12 @@ class Robot:
     def initializeGraph(self):
         self.graph = nx.Graph()
     
-    def addNode(self):
+    def addNode(self, firstTime = False):
         """Add new node with pos and total time attributes and edge with edge travel time cost to graph based on self variables"""
         
         self.graph.add_node(self.nodeCounter, pos = self.vnew, t = self.totalTime)
-        if self.nodeCounter != 0:
+        self.vnewIdx = self.nodeCounter
+        if self.nodeCounter != 0 and firstTime == False:
             self.graph.add_edge(self.nearestNodeIdx,self.nodeCounter, weight = self.vnewCost)
         self.nodeCounter += 1
 

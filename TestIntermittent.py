@@ -7,7 +7,7 @@ Created on Mon Nov  4 10:48:29 2019
 """
 
 import numpy as np
-from IntermittentComms import Schedule, Robot, sampleVrand, measurement, findNearestNode, steer, buildSetVnear, extendGraph
+from IntermittentComms import Schedule, Robot, sampleVrand, measurement, findNearestNode, steer, buildSetVnear, extendGraph, rewireGraph
 from Visualization import plotMatrix, plotMeetingGraphs
 
 def main():
@@ -81,7 +81,7 @@ def main():
         for r in range(0,numRobots):
             robots[r].composeGraphs()
     
-    plotMeetingGraphs(robots[0].totalGraph,robots[1].totalGraph)
+#    plotMeetingGraphs(robots[0].totalGraph,robots[1].totalGraph)
 #    plotMeetingGraphs(robots[1].totalGraph,robots[2].totalGraph)
 #    plotMeetingGraphs(robots[2].totalGraph,robots[3].totalGraph)
     plotMeetingGraphs(robots[0].totalGraph,robots[3].totalGraph)
@@ -101,12 +101,13 @@ def createInitialPaths(schedule, teams, robots, numRobots, period):
             robots[r].nodeCounter -= 1
         
         robots[r].initializeGraph()
-        robots[r].addNode()
+        robots[r].addNode(firstTime = True)
         
     teamsDone = np.zeros(len(teams))
 
     #find out which team has a meeting event at period k=0
     for team in schedule[:, period]:
+        
         if teamsDone[np.int(team)] or team < 0:
             continue
         
@@ -140,6 +141,8 @@ def createInitialPaths(schedule, teams, robots, numRobots, period):
                 extendGraph(robots[np.int(r-1)], setVnear, UMAX)
                 
                 robots[np.int(r-1)].addNode()
+                
+                rewireGraph(robots[np.int(r-1)], setVnear, UMAX)
             
         teamsDone[np.int(team)] = True     
         
@@ -321,10 +324,10 @@ if __name__ == "__main__":
     """Entry in Test Program"""
     
     """Setup"""
-    np.random.seed(1994)
+    np.random.seed(8)
     
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 2 robots 2 teams)
-    DEBUG = False #debug to true shows prints
+    DEBUG = True #debug to true shows prints
     COMMRANGE = 3 # TODO: communication range for robots
     
     DISCRETIZATION = np.array([600, 600]) #grid space
