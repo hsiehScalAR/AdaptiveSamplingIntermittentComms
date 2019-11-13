@@ -81,23 +81,29 @@ def main():
         for r in range(0,numRobots):
             robots[r].composeGraphs()
     
-    plotMeetingGraphs(robots[0].totalGraph,robots[1].totalGraph)
-    plotMeetingGraphs(robots[1].totalGraph,robots[2].totalGraph)
-    plotMeetingGraphs(robots[2].totalGraph,robots[3].totalGraph)
-    plotMeetingGraphs(robots[0].totalGraph,robots[3].totalGraph)
+    plotMeetingGraphs(robots, [0, 1])
+    plotMeetingGraphs(robots, [1, 2])
+    plotMeetingGraphs(robots, [2, 3])
+    plotMeetingGraphs(robots, [3, 0])
     
-    print('Graph robot 0')        
-    print(robots[0].totalGraph.nodes.data())
     
-    print('Graph robot 1')        
-    print(robots[1].totalGraph.nodes.data())
-
-    print('Graph robot 2')        
-    print(robots[2].totalGraph.nodes.data())
+#    print('Graph robot 0')        
+#    print(robots[0].totalGraph.nodes.data())
+#    
+#    print('Graph robot 1')        
+#    print(robots[1].totalGraph.nodes.data())
+#
+#    print('Graph robot 2')        
+#    print(robots[2].totalGraph.nodes.data())
+#    
+#    print('Graph robot 3')        
+#    print(robots[3].totalGraph.nodes.data())
     
-    print('Graph robot 3')        
-    print(robots[3].totalGraph.nodes.data())
-        
+    print('Times at node 20 and 40')
+    print('robot 0: 20: t = ', robots[0].totalGraph.nodes[20]['t'], '    40: t = ', robots[0].totalGraph.nodes[40]['t'])
+    print('robot 1: 20: t = ', robots[1].totalGraph.nodes[20]['t'], '    40: t = ', robots[1].totalGraph.nodes[40]['t'])
+    print('robot 2: 20: t = ', robots[2].totalGraph.nodes[20]['t'], '    40: t = ', robots[2].totalGraph.nodes[40]['t'])
+    print('robot 3: 20: t = ', robots[3].totalGraph.nodes[20]['t'], '    40: t = ', robots[3].totalGraph.nodes[40]['t'])
 
 #    dataSensorMeasurements, totalMap = update(currentTime, robots, numRobots, locations)
 
@@ -160,12 +166,12 @@ def createInitialPaths(schedule, teams, robots, numRobots, period):
         
     paths = []
     
-    if DEBUG:
-        print('Graph robot 0')        
-        print(robots[0].graph.nodes.data())
-        
-        print('Graph robot 1')        
-        print(robots[1].graph.nodes.data())
+#    if DEBUG:
+#        print('Graph robot 0')        
+#        print(robots[0].graph.nodes.data())
+#        
+#        print('Graph robot 1')        
+#        print(robots[1].graph.nodes.data())
     
     return paths
 
@@ -339,7 +345,7 @@ if __name__ == "__main__":
     np.random.seed(1994)
     
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 2 robots 2 teams)
-    DEBUG = False #debug to true shows prints
+    DEBUG = True #debug to true shows prints
     COMMRANGE = 3 # TODO: communication range for robots
     
     DISCRETIZATION = np.array([600, 600]) #grid space
