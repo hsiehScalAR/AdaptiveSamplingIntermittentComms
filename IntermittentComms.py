@@ -208,8 +208,8 @@ def sampleVrand(discretization, rangeSamples, distribution = 'uniform'):
             vrand = np.random.uniform([0,0],rangeSamples)
         
         if distribution == 'gaussian':
-            vrand = np.random.normal(rangeSamples[0],rangeSamples[1])
-
+#            vrand = np.random.normal(rangeSamples[0],rangeSamples[1])
+            vrand = np.random.multivariate_normal(rangeSamples[0],rangeSamples[1])
         if 0 <= vrand[0] <= discretization[0] and 0 <= vrand[1] <= discretization[1]:
             inBoundary = True
   

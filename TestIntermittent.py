@@ -129,7 +129,8 @@ def createInitialPaths(schedule, teams, robots, numRobots, period):
         for sample in range(0,TOTALSAMPLES):
             if sample == RANDOMSAMPLESMAX:
                 mean = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
-                stdDev = np.diag(4*COMMRANGE*COMMRANGE*np.identity(2)) #TODO find a more elegant version to put dimension 2 there, something comming from the 2D or *D inputs
+#                stdDev = np.diag(4*COMMRANGE*COMMRANGE*np.identity(2)) #TODO find a more elegant version to put dimension 2 there, something comming from the 2D or *D inputs
+                stdDev = 4*COMMRANGE*COMMRANGE*np.identity(2) #TODO find a more elegant version to put dimension 2 there, something comming from the 2D or *D inputs
                 distribution = 'gaussian'
                 rangeSamples = [mean,stdDev]
             
