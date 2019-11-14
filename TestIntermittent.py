@@ -8,7 +8,7 @@ Created on Mon Nov  4 10:48:29 2019
 
 import numpy as np
 from IntermittentComms import Schedule, Robot, sampleVrand, measurement, findNearestNode, steer, buildSetVnear, extendGraph, rewireGraph
-from Visualization import plotMatrix, plotMeetingGraphs
+from Visualization import plotMatrix, plotMeetingGraphs, clearPlots
 
 def main():
     """main test loop"""
@@ -63,13 +63,6 @@ def main():
     #robot test
     robots = testRobot(numRobots, teams, schedule)
     
-    #sample test
-#    rangeSamples = DISCRETIZATION #only for uniform
-#    vrand = sampleTest(rangeSamples,distribution='uniform')
-    
-#    rangeSamples = [[300,300],[10,10]] #only gaussian
-#    vrand = sampleTest(rangeSamples,distribution='gaussian')
-    
     # create the initial plans for all periods
     initialTime = 0
     for r in range(0,numRobots):
@@ -81,29 +74,17 @@ def main():
         for r in range(0,numRobots):
             robots[r].composeGraphs()
     
-    plotMeetingGraphs(robots, [0, 1])
-    plotMeetingGraphs(robots, [1, 2])
-    plotMeetingGraphs(robots, [2, 3])
-    plotMeetingGraphs(robots, [3, 0])
-    
-    
-#    print('Graph robot 0')        
-#    print(robots[0].totalGraph.nodes.data())
-#    
-#    print('Graph robot 1')        
-#    print(robots[1].totalGraph.nodes.data())
-#
-#    print('Graph robot 2')        
-#    print(robots[2].totalGraph.nodes.data())
-#    
-#    print('Graph robot 3')        
-#    print(robots[3].totalGraph.nodes.data())
-    
-    print('Times at node 20 and 40')
-    print('robot 0: 20: t = ', robots[0].totalGraph.nodes[20]['t'], '    40: t = ', robots[0].totalGraph.nodes[40]['t'])
-    print('robot 1: 20: t = ', robots[1].totalGraph.nodes[20]['t'], '    40: t = ', robots[1].totalGraph.nodes[40]['t'])
-    print('robot 2: 20: t = ', robots[2].totalGraph.nodes[20]['t'], '    40: t = ', robots[2].totalGraph.nodes[40]['t'])
-    print('robot 3: 20: t = ', robots[3].totalGraph.nodes[20]['t'], '    40: t = ', robots[3].totalGraph.nodes[40]['t'])
+    if DEBUG:
+        plotMeetingGraphs(robots, [0, 1])
+        plotMeetingGraphs(robots, [1, 2])
+        plotMeetingGraphs(robots, [2, 3])
+        plotMeetingGraphs(robots, [3, 0])
+        
+        print('Times at node 20 and 40')
+        print('robot 0: %d: t = ' %TOTALSAMPLES, robots[0].totalGraph.nodes[TOTALSAMPLES]['t'], '    %d: t = ' %(TOTALSAMPLES*2), robots[0].totalGraph.nodes[TOTALSAMPLES*2]['t'])
+        print('robot 1: %d: t = ' %TOTALSAMPLES, robots[1].totalGraph.nodes[TOTALSAMPLES]['t'], '    %d: t = ' %(TOTALSAMPLES*2), robots[1].totalGraph.nodes[TOTALSAMPLES*2]['t'])
+        print('robot 2: %d: t = ' %TOTALSAMPLES, robots[2].totalGraph.nodes[TOTALSAMPLES]['t'], '    %d: t = ' %(TOTALSAMPLES*2), robots[2].totalGraph.nodes[TOTALSAMPLES*2]['t'])
+        print('robot 3: %d: t = ' %TOTALSAMPLES, robots[3].totalGraph.nodes[TOTALSAMPLES]['t'], '    %d: t = ' %(TOTALSAMPLES*2), robots[3].totalGraph.nodes[TOTALSAMPLES*2]['t'])
 
 #    dataSensorMeasurements, totalMap = update(currentTime, robots, numRobots, locations)
 
@@ -163,17 +144,7 @@ def createInitialPaths(schedule, teams, robots, numRobots, period):
                 rewireGraph(robots[np.int(r-1)], setVnear, UMAX)
             
         teamsDone[np.int(team)] = True     
-        
-    paths = []
     
-#    if DEBUG:
-#        print('Graph robot 0')        
-#        print(robots[0].graph.nodes.data())
-#        
-#        print('Graph robot 1')        
-#        print(robots[1].graph.nodes.data())
-    
-    return paths
 
 def randomStartingPositions(numRobots):
     """Ensures that the starting position are exclusive within communication radius"""
@@ -342,23 +313,25 @@ if __name__ == "__main__":
     """Entry in Test Program"""
     
     """Setup"""
-    np.random.seed(1994)
+    np.random.seed(19)
+    
+    clearPlots()
     
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 2 robots 2 teams)
     DEBUG = True #debug to true shows prints
     COMMRANGE = 3 # TODO: communication range for robots
     
     DISCRETIZATION = np.array([600, 600]) #grid space
-    RANDOMSAMPLESMAX = 10 #how many random samples before trying to converge for communication
-    TOTALSAMPLES = 20 #how many samples in total
+    RANDOMSAMPLESMAX = 35 #how many random samples before trying to converge for communication
+    TOTALSAMPLES = 70 #how many samples in total
 
     SENSORPERIOD = 20 #time between sensor measurement or between updates of data
     EIGENVECPERIOD = 40 #time between POD calculations
     
     TOTALTIME = 1000 #total execution time of program
     
-    UMAX = 10 # TODO: Max velocity, 30 pixel/second
-    EPSILON = 50 # TODO: Maximum step size of robots
+    UMAX = 25 # TODO: Max velocity, 30 pixel/second
+    EPSILON = 50. # TODO: Maximum step size of robots
     GAMMARRT = 100 # TODO: constant for rrt* algorithm, can it be calculated?
     
     main()

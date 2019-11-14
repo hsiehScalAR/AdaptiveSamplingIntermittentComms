@@ -9,6 +9,9 @@ Created on Tue Nov  5 13:45:18 2019
 import matplotlib.pyplot as plt
 import networkx as nx
 
+def clearPlots():
+    plt.close('all')
+    
 def plotMatrix(data):
     plt.figure()
     plt.imshow(data);

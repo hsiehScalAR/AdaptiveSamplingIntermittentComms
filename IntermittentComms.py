@@ -10,6 +10,34 @@ import numpy as np
 from operator import itemgetter
 import networkx as nx
 
+def updateSuccessorNodes(robot, startNode, uMax):
+    """Update successor node weight and times as the rewiring changed the graph structure"""
+    # Input arguments
+    # robot = which robot graph that we are analyzing
+    # startNode = which node got changed
+    # uMax = maximum velocity of robot for cost computation
+    
+    allSuccessors = nx.dfs_successors(robot.graph,startNode)
+    print('updateSuccesorNodes')
+    
+    for key, value in allSuccessors.items():
+        for v in value:
+            
+            startTime = robot.graph.nodes[key]['t']
+            startPos = robot.graph.nodes[key]['pos']
+            succPos = robot.graph.nodes[v]['pos']
+            succTotalCost, succEdgeCost = cost(startTime,startPos,succPos,uMax)
+            
+            robot.graph[key][v]['weight'] = succEdgeCost
+            robot.graph.nodes[v]['t'] = succTotalCost
+            
+            print(key, '->', v)
+            print(robot.graph.nodes[v]['t'])
+            print(succTotalCost)
+            print(succEdgeCost)
+            print(robot.graph[key][v])
+            print(robot.graph.nodes[v])        
+
 def rewireGraph(robot, setVnear, uMax):
     # TODO: Check if vnew is in goal set
     # TODO: Find out what this min t = max t means
@@ -32,12 +60,16 @@ def rewireGraph(robot, setVnear, uMax):
         nearTotalCost, nearEdgeCost = cost(timeVnew,posVnew,vnearPos,uMax) 
 
         if nearTotalCost < vnearTime:
-            edge = robot.graph.edges(setVnear[n])
-            robot.graph.remove_edge(list(edge)[0][0],list(edge)[0][1])
+            predecessor = list(robot.graph.pred[setVnear[n]])[-1]
+            print(robot.ID)
+            print(predecessor,setVnear[n])
+            print(robot.vnewIdx,setVnear[n])
+            robot.graph.remove_edge(predecessor,setVnear[n])
             robot.graph.add_edge(robot.vnewIdx,setVnear[n], weight = nearEdgeCost)
             robot.graph.nodes[setVnear[n]]['t'] = nearTotalCost
-
-
+            
+            updateSuccessorNodes(robot, setVnear[n], uMax)
+            
 def cost(nearTime, nearPos, newPos, uMax):
     # TODO: add information gain cost
 
@@ -76,8 +108,7 @@ def extendGraph(robot, setVnear, uMax):
 
         if nearTotalCost < vminCost:
             robot.nearestNodeIdx = setVnear[n]
-            vminCost = nearTotalCost            
-    
+            vminCost = nearTotalCost     
     
     robot.vnewCost = nearEdgeCost
     robot.totalTime = vminCost
@@ -153,9 +184,11 @@ def steer(robots, team, teams, uMax, epsilon):
         deltaTcost = travelTime - (nearestTime - min(minTimes))
         
         if deltaTcost > 0:
-            vnew = nearestNode + uMax*deltaTcost*dist/normDist
+            
+            vnew = np.around(nearestNode + uMax*deltaTcost*dist/normDist)
             distVnew = np.sqrt(np.sum((nearestNode - vnew)**2))
             travelTimeVnew = distVnew/uMax
+
             
         else: # TODO: check again if this is correct
 #            print('Time delay too big')
@@ -213,31 +246,7 @@ def sampleVrand(discretization, rangeSamples, distribution = 'uniform'):
         if 0 <= vrand[0] <= discretization[0] and 0 <= vrand[1] <= discretization[1]:
             inBoundary = True
   
-    return vrand
-
-#TODO double check to make sure this works
-def findNearestAbove(myArray, target):
-    diff = myArray - target
-    mask = np.ma.lessEqual(diff, 0)
-    # We need to mask the negative differences and zero
-    # since we are looking for values above
-    if np.all(mask):
-        return None # returns None if target is greater than any value
-    maskedDiff = np.ma.maskedArray(diff, mask)
-    return maskedDiff.argmin()
-
-
-# TODO: double-check to make sure this works
-def findNearestBelow(myArray, target):
-    diff = myArray - target
-    mask = np.ma.greaterEqual(diff, 0)
-    # We need to mask the negative differences and zero
-    # since we are looking for values above
-    if np.all(mask):
-        return None # returns None if target is greater than any value
-    maskedDiff = np.ma.maskedArray(diff, mask)
-    return maskedDiff.argmax()
-
+    return np.around(vrand)
 
 
 class Robot:
@@ -264,8 +273,8 @@ class Robot:
 
         
         # Graph variables
-        self.graph = nx.Graph()
-        self.totalGraph = nx.Graph()
+        self.graph = nx.DiGraph()
+        self.totalGraph = nx.DiGraph()
         self.nodeCounter = 0
         self.nearestNodeIdx = 0
         self.vrand = np.array([0, 0])
@@ -278,7 +287,7 @@ class Robot:
         self.totalGraph = nx.compose(self.totalGraph,self.graph)
     
     def initializeGraph(self):
-        self.graph = nx.Graph()
+        self.graph = nx.DiGraph()
     
     def addNode(self, firstTime = False):
         """Add new node with pos and total time attributes and edge with edge travel time cost to graph based on self variables"""
