@@ -86,9 +86,19 @@ def main():
         print('robot 2: %d: t = ' %TOTALSAMPLES, robots[2].totalGraph.nodes[TOTALSAMPLES]['t'], '    %d: t = ' %(TOTALSAMPLES*2), robots[2].totalGraph.nodes[TOTALSAMPLES*2]['t'])
         print('robot 3: %d: t = ' %TOTALSAMPLES, robots[3].totalGraph.nodes[TOTALSAMPLES]['t'], '    %d: t = ' %(TOTALSAMPLES*2), robots[3].totalGraph.nodes[TOTALSAMPLES*2]['t'])
 
+#        print(robots[0].totalGraph.nodes.data())
+#        print(robots[1].totalGraph.nodes.data())
+        
 #    dataSensorMeasurements, totalMap = update(currentTime, robots, numRobots, locations)
 
 def createInitialPaths(schedule, teams, robots, numRobots, period):
+    """Update procedure of intermittent communication"""
+    # Input arguments:
+    # schedule = schedule of meeting events
+    # teams = which robot belongs to which team
+    # robots = instances of the robots that are to be moved
+    # numRobots = how many robots    
+    # period = how many epochs we have in the schedule
     
     #add node v0 to list of nodes for each robot       
     for r in range(0,numRobots):
@@ -116,14 +126,22 @@ def createInitialPaths(schedule, teams, robots, numRobots, period):
         for sample in range(0,TOTALSAMPLES):
             if sample == RANDOMSAMPLESMAX:
                 mean = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
-#                stdDev = np.diag(4*COMMRANGE*COMMRANGE*np.identity(2)) #TODO find a more elegant version to put dimension 2 there, something comming from the 2D or *D inputs
                 stdDev = 4*COMMRANGE*COMMRANGE*np.identity(2) #TODO find a more elegant version to put dimension 2 there, something comming from the 2D or *D inputs
                 distribution = 'gaussian'
                 rangeSamples = [mean,stdDev]
             
-            #find which robot is in team and get nearest nodes and new random samples for them
-            for r in teams[np.int(team)][0]:                
+            if sample > RANDOMSAMPLESMAX:
+                # TODO Testing if we should use the same point for all robots
                 vrand = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
+            
+            #find which robot is in team and get nearest nodes and new random samples for them
+            for r in teams[np.int(team)][0]:        
+                
+                # TODO Testing if we should use the same point for all robots
+                if distribution == 'uniform':
+                    vrand = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
+                
+#                vrand = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
                 robots[np.int(r-1)].vrand = vrand
                 
                 #find nearest node to random sample
@@ -184,6 +202,7 @@ def sampleTest(rangeSamples, distribution='uniform'):
     return vrand    
 
 
+#TODO change to what create initial paths does
 def update(currentTime, robots, numRobots, locations):
     """Update procedure of intermittent communication"""
     # Input arguments:
@@ -322,16 +341,16 @@ if __name__ == "__main__":
     COMMRANGE = 3 # TODO: communication range for robots
     
     DISCRETIZATION = np.array([600, 600]) #grid space
-    RANDOMSAMPLESMAX = 35 #how many random samples before trying to converge for communication
-    TOTALSAMPLES = 70 #how many samples in total
+    RANDOMSAMPLESMAX = 100 #how many random samples before trying to converge for communication
+    TOTALSAMPLES = 120 #how many samples in total
 
     SENSORPERIOD = 20 #time between sensor measurement or between updates of data
     EIGENVECPERIOD = 40 #time between POD calculations
     
     TOTALTIME = 1000 #total execution time of program
     
-    UMAX = 25 # TODO: Max velocity, 30 pixel/second
-    EPSILON = 50. # TODO: Maximum step size of robots
+    UMAX = 60 # TODO: Max velocity, 30 pixel/second
+    EPSILON = DISCRETIZATION[0]/10 # TODO: Maximum step size of robots
     GAMMARRT = 100 # TODO: constant for rrt* algorithm, can it be calculated?
     
     main()

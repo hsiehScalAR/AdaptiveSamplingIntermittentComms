@@ -18,8 +18,9 @@ def updateSuccessorNodes(robot, startNode, uMax):
     # uMax = maximum velocity of robot for cost computation
     
     allSuccessors = nx.dfs_successors(robot.graph,startNode)
+    """
     print('updateSuccesorNodes')
-    
+    """
     for key, value in allSuccessors.items():
         for v in value:
             
@@ -30,13 +31,14 @@ def updateSuccessorNodes(robot, startNode, uMax):
             
             robot.graph[key][v]['weight'] = succEdgeCost
             robot.graph.nodes[v]['t'] = succTotalCost
-            
+            """            
             print(key, '->', v)
             print(robot.graph.nodes[v]['t'])
             print(succTotalCost)
             print(succEdgeCost)
             print(robot.graph[key][v])
             print(robot.graph.nodes[v])        
+            """
 
 def rewireGraph(robot, setVnear, uMax):
     # TODO: Check if vnew is in goal set
@@ -61,9 +63,11 @@ def rewireGraph(robot, setVnear, uMax):
 
         if nearTotalCost < vnearTime:
             predecessor = list(robot.graph.pred[setVnear[n]])[-1]
+            """
             print(robot.ID)
             print(predecessor,setVnear[n])
             print(robot.vnewIdx,setVnear[n])
+            """
             robot.graph.remove_edge(predecessor,setVnear[n])
             robot.graph.add_edge(robot.vnewIdx,setVnear[n], weight = nearEdgeCost)
             robot.graph.nodes[setVnear[n]]['t'] = nearTotalCost
