@@ -7,7 +7,8 @@ Created on Mon Nov  4 10:48:29 2019
 """
 
 import numpy as np
-from IntermittentComms import Schedule, Robot, sampleVrand, measurement, findNearestNode, steer, buildSetVnear, extendGraph, rewireGraph
+import networkx as nx
+from IntermittentComms import Schedule, Robot, sampleVrand, measurement, findNearestNode, steer, buildSetVnear, extendGraph, rewireGraph, calculateGoalSet, checkGoalSet
 from Visualization import plotMatrix, plotMeetingGraphs, clearPlots
 
 def main():
@@ -73,6 +74,11 @@ def main():
         createInitialPaths(schedule, teams, robots, numRobots, period)
         for r in range(0,numRobots):
             robots[r].composeGraphs()
+            
+    print(nx.get_node_attributes(robots[0].totalGraph,'goalSet'))
+    print(nx.get_node_attributes(robots[1].totalGraph,'goalSet'))
+    print(nx.get_node_attributes(robots[2].totalGraph,'goalSet'))
+    print(nx.get_node_attributes(robots[3].totalGraph,'goalSet'))
     
     if DEBUG:
         plotMeetingGraphs(robots, [0, 1])
@@ -80,7 +86,7 @@ def main():
         plotMeetingGraphs(robots, [2, 3])
         plotMeetingGraphs(robots, [3, 0])
         
-        print('Times at node 20 and 40')
+        print('Times at node %d and %d' %(TOTALSAMPLES,TOTALSAMPLES*2))
         print('robot 0: %d: t = ' %TOTALSAMPLES, robots[0].totalGraph.nodes[TOTALSAMPLES]['t'], '    %d: t = ' %(TOTALSAMPLES*2), robots[0].totalGraph.nodes[TOTALSAMPLES*2]['t'])
         print('robot 1: %d: t = ' %TOTALSAMPLES, robots[1].totalGraph.nodes[TOTALSAMPLES]['t'], '    %d: t = ' %(TOTALSAMPLES*2), robots[1].totalGraph.nodes[TOTALSAMPLES*2]['t'])
         print('robot 2: %d: t = ' %TOTALSAMPLES, robots[2].totalGraph.nodes[TOTALSAMPLES]['t'], '    %d: t = ' %(TOTALSAMPLES*2), robots[2].totalGraph.nodes[TOTALSAMPLES*2]['t'])
@@ -102,6 +108,9 @@ def createInitialPaths(schedule, teams, robots, numRobots, period):
     
     #add node v0 to list of nodes for each robot       
     for r in range(0,numRobots):
+        robots[r].oldNodeCounter = robots[r].nodeCounter
+        robots[r].oldLocation = robots[r].vnew
+        robots[r-1].oldTotalTime = robots[r-1].totalTime 
         robots[r].nearestNodeIdx = robots[r].nodeCounter
         
         #make last node equal to the first of new period
@@ -110,58 +119,80 @@ def createInitialPaths(schedule, teams, robots, numRobots, period):
         
         robots[r].initializeGraph()
         robots[r].addNode(firstTime = True)
+    
         
     teamsDone = np.zeros(len(teams))
 
     #find out which team has a meeting event at period k=0
     for team in schedule[:, period]:
         
-        if teamsDone[np.int(team)] or team < 0:
+                
+        if teamsDone[team] or team < 0:
             continue
         
-        #sample new nodes and create path
-        distribution = 'uniform'
-        rangeSamples = DISCRETIZATION
+        connected = False
         
-        for sample in range(0,TOTALSAMPLES):
-            if sample == RANDOMSAMPLESMAX:
-                mean = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
-                stdDev = 4*COMMRANGE*COMMRANGE*np.identity(2) #TODO find a more elegant version to put dimension 2 there, something comming from the 2D or *D inputs
-                distribution = 'gaussian'
-                rangeSamples = [mean,stdDev]
+        while not connected:    
+            #sample new nodes and create path
+            distribution = 'uniform'
+            rangeSamples = DISCRETIZATION
             
-            if sample > RANDOMSAMPLESMAX:
-                # TODO Testing if we should use the same point for all robots
-                vrand = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
-            
-            #find which robot is in team and get nearest nodes and new random samples for them
-            for r in teams[np.int(team)][0]:        
+            for sample in range(0,TOTALSAMPLES):
+                if sample == RANDOMSAMPLESMAX:
+                    mean = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
+                    stdDev = 4*COMMRANGE*COMMRANGE*np.identity(2) #TODO find a more elegant version to put dimension 2 there, something comming from the 2D or *D inputs
+                    distribution = 'gaussian'
+                    rangeSamples = [mean,stdDev]
                 
-                # TODO Testing if we should use the same point for all robots
-                if distribution == 'uniform':
+                if sample > RANDOMSAMPLESMAX:
                     vrand = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
                 
-#                vrand = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
-                robots[np.int(r-1)].vrand = vrand
+                #find which robot is in team and get nearest nodes and new random samples for them
+                for r in teams[team][0]:        
+                    
+                    if distribution == 'uniform':
+                        vrand = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
+                    
+                    robots[r-1].vrand = vrand
+                    
+                    #find nearest node to random sample
+                    nearestNodeIdx = findNearestNode(robots[r-1].graph,vrand)
+                    robots[r-1].nearestNodeIdx = nearestNodeIdx
                 
-                #find nearest node to random sample
-                nearestNodeIdx = findNearestNode(robots[np.int(r-1)].graph,vrand)
-                robots[np.int(r-1)].nearestNodeIdx = nearestNodeIdx
+                #find new node towards max distance to random sample and incorporate time delay, that is why it is outside of previous loop since we need all the nearest nodes from the other robots
+                steer(robots, team, teams, UMAX, EPSILON)
+                
+                for r in teams[team][0]:
+                    # get all nodes close to new node
+                    buildSetVnear(robots[r-1], EPSILON, GAMMARRT)
+                    
+                    extendGraph(robots[r-1], UMAX)
+                    
+                    robots[r-1].addNode()
+                    
+                # finding out if vnew should be in goal set
+                calculateGoalSet(robots, team, teams, COMMRANGE, TIMEINTERVAL)
+                
+                rewireGraph(robots, team, teams, UMAX, TIMEINTERVAL)
+                
+            # TODO check if we have a path   
             
-            #find new node towards max distance to random sample and incorporate time delay, that is why it is outside of previous loop since we need all the nearest nodes from the other robots
-            steer(robots, team, teams, UMAX, EPSILON)
-            
-            for r in teams[np.int(team)][0]:
-                # get all nodes close to new node
-                setVnear = buildSetVnear(robots[np.int(r-1)], EPSILON, GAMMARRT)
+            for r in teams[team][0]: 
+                connected = checkGoalSet(robots[r-1].graph)
+                if not connected:
+                    robots[r-1].nodeCounter = robots[r-1].oldNodeCounter
+                    robots[r-1].vnew = robots[r-1].oldLocation
+                    robots[r-1].totalTime = robots[r-1].oldTotalTime
+                    robots[r-1].initializeGraph()
+                    robots[r-1].addNode(firstTime = True)
+                # TODO 
+                # 1: calculate least cost in goal set
+                # 2: calculate shortest path to node with least cost
+                # 3: set starting location for new graph to be this node with associated cost (time)
+#                else:
                 
-                extendGraph(robots[np.int(r-1)], setVnear, UMAX)
-                
-                robots[np.int(r-1)].addNode()
-                
-                rewireGraph(robots[np.int(r-1)], setVnear, UMAX)
-            
-        teamsDone[np.int(team)] = True     
+        teamsDone[team] = True
+#        print(teamsDone)
     
 
 def randomStartingPositions(numRobots):
@@ -307,7 +338,7 @@ def testScheduler(numRobots, numTeams, robTeams):
     
     #Assigns robot numbers to teams
     T = scheduleClass.createTeams()
-
+    T = np.asarray(T, dtype='int')
     #creates schedule
     S = scheduleClass.createSchedule()
     #communication period is equall to number of robots
@@ -332,24 +363,25 @@ if __name__ == "__main__":
     """Entry in Test Program"""
     
     """Setup"""
-    np.random.seed(19)
+    np.random.seed(1994)
     
     clearPlots()
     
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 2 robots 2 teams)
     DEBUG = True #debug to true shows prints
-    COMMRANGE = 3 # TODO: communication range for robots
+    COMMRANGE = 3 # TODO communication range for robots
+    TIMEINTERVAL = 2 # TODO time interval for communication events
     
     DISCRETIZATION = np.array([600, 600]) #grid space
-    RANDOMSAMPLESMAX = 100 #how many random samples before trying to converge for communication
-    TOTALSAMPLES = 120 #how many samples in total
+    RANDOMSAMPLESMAX = 30 #how many random samples before trying to converge for communication
+    TOTALSAMPLES = 40 #how many samples in total
 
     SENSORPERIOD = 20 #time between sensor measurement or between updates of data
     EIGENVECPERIOD = 40 #time between POD calculations
     
     TOTALTIME = 1000 #total execution time of program
     
-    UMAX = 60 # TODO: Max velocity, 30 pixel/second
+    UMAX = 50 # TODO: Max velocity, 30 pixel/second
     EPSILON = DISCRETIZATION[0]/10 # TODO: Maximum step size of robots
     GAMMARRT = 100 # TODO: constant for rrt* algorithm, can it be calculated?
     
