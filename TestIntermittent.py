@@ -8,8 +8,10 @@ Created on Mon Nov  4 10:48:29 2019
 
 import numpy as np
 import networkx as nx
-from IntermittentComms import Schedule, Robot, sampleVrand, measurement, findNearestNode, steer, buildSetVnear, extendGraph, rewireGraph, calculateGoalSet, checkGoalSet
-from Visualization import plotMatrix, plotMeetingGraphs, clearPlots
+from IntermittentComms import (Schedule, Robot, sampleVrand, measurement, findNearestNode, 
+                               steer, buildSetVnear, extendGraph, rewireGraph, 
+                               calculateGoalSet, checkGoalSet, leastCostGoalSet, getPath)
+from Visualization import plotMatrix, plotMeetingGraphs, plotMeetingPaths, clearPlots
 
 def main():
     """main test loop"""
@@ -71,14 +73,9 @@ def main():
         robots[r].totalTime = initialTime
     
     for period in range(0,schedule.shape[1]):
-        createInitialPaths(schedule, teams, robots, numRobots, period)
+        updatePaths(schedule, teams, robots, numRobots, period)
         for r in range(0,numRobots):
             robots[r].composeGraphs()
-            
-    print(nx.get_node_attributes(robots[0].totalGraph,'goalSet'))
-    print(nx.get_node_attributes(robots[1].totalGraph,'goalSet'))
-    print(nx.get_node_attributes(robots[2].totalGraph,'goalSet'))
-    print(nx.get_node_attributes(robots[3].totalGraph,'goalSet'))
     
     if DEBUG:
         plotMeetingGraphs(robots, [0, 1])
@@ -86,18 +83,19 @@ def main():
         plotMeetingGraphs(robots, [2, 3])
         plotMeetingGraphs(robots, [3, 0])
         
-        print('Times at node %d and %d' %(TOTALSAMPLES,TOTALSAMPLES*2))
-        print('robot 0: %d: t = ' %TOTALSAMPLES, robots[0].totalGraph.nodes[TOTALSAMPLES]['t'], '    %d: t = ' %(TOTALSAMPLES*2), robots[0].totalGraph.nodes[TOTALSAMPLES*2]['t'])
-        print('robot 1: %d: t = ' %TOTALSAMPLES, robots[1].totalGraph.nodes[TOTALSAMPLES]['t'], '    %d: t = ' %(TOTALSAMPLES*2), robots[1].totalGraph.nodes[TOTALSAMPLES*2]['t'])
-        print('robot 2: %d: t = ' %TOTALSAMPLES, robots[2].totalGraph.nodes[TOTALSAMPLES]['t'], '    %d: t = ' %(TOTALSAMPLES*2), robots[2].totalGraph.nodes[TOTALSAMPLES*2]['t'])
-        print('robot 3: %d: t = ' %TOTALSAMPLES, robots[3].totalGraph.nodes[TOTALSAMPLES]['t'], '    %d: t = ' %(TOTALSAMPLES*2), robots[3].totalGraph.nodes[TOTALSAMPLES*2]['t'])
-
-#        print(robots[0].totalGraph.nodes.data())
-#        print(robots[1].totalGraph.nodes.data())
+        plotMeetingPaths(robots, [0, 1],1)
+        plotMeetingPaths(robots, [1, 2],2)
+        plotMeetingPaths(robots, [2, 3],3)
+        plotMeetingPaths(robots, [3, 0],4)
         
-#    dataSensorMeasurements, totalMap = update(currentTime, robots, numRobots, locations)
-
-def createInitialPaths(schedule, teams, robots, numRobots, period):
+        
+    #TODO write general update control function which moves robots along the paths
+        
+    """    
+    dataSensorMeasurements, totalMap = update(currentTime, robots, numRobots, locations)
+    """
+    
+def updatePaths(schedule, teams, robots, numRobots, period):
     """Update procedure of intermittent communication"""
     # Input arguments:
     # schedule = schedule of meeting events
@@ -107,15 +105,15 @@ def createInitialPaths(schedule, teams, robots, numRobots, period):
     # period = how many epochs we have in the schedule
     
     #add node v0 to list of nodes for each robot       
-    for r in range(0,numRobots):
-        robots[r].oldNodeCounter = robots[r].nodeCounter
-        robots[r].oldLocation = robots[r].vnew
-        robots[r-1].oldTotalTime = robots[r-1].totalTime 
-        robots[r].nearestNodeIdx = robots[r].nodeCounter
-        
+    for r in range(0,numRobots):        
         #make last node equal to the first of new period
         if robots[r].nodeCounter > 0:
             robots[r].nodeCounter -= 1
+
+        robots[r].startNodeCounter = robots[r].nodeCounter
+        robots[r].startLocation = robots[r].endLocation
+        robots[r].startTotalTime = robots[r].endTotalTime 
+        robots[r].nearestNodeIdx = robots[r].endNodeCounter
         
         robots[r].initializeGraph()
         robots[r].addNode(firstTime = True)
@@ -138,13 +136,13 @@ def createInitialPaths(schedule, teams, robots, numRobots, period):
             rangeSamples = DISCRETIZATION
             
             for sample in range(0,TOTALSAMPLES):
-                if sample == RANDOMSAMPLESMAX:
+                if sample == RANDOMSAMPLESMAX-1:
                     mean = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
                     stdDev = 4*COMMRANGE*COMMRANGE*np.identity(2) #TODO find a more elegant version to put dimension 2 there, something comming from the 2D or *D inputs
                     distribution = 'gaussian'
                     rangeSamples = [mean,stdDev]
                 
-                if sample > RANDOMSAMPLESMAX:
+                if sample >= RANDOMSAMPLESMAX:
                     vrand = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
                 
                 #find which robot is in team and get nearest nodes and new random samples for them
@@ -171,28 +169,28 @@ def createInitialPaths(schedule, teams, robots, numRobots, period):
                     robots[r-1].addNode()
                     
                 # finding out if vnew should be in goal set
-                calculateGoalSet(robots, team, teams, COMMRANGE, TIMEINTERVAL)
+                if sample >= RANDOMSAMPLESMAX: # TODO should I really just start checking once we sample for meeting locations?
+                    calculateGoalSet(robots, team, teams, COMMRANGE, TIMEINTERVAL)
                 
                 rewireGraph(robots, team, teams, UMAX, TIMEINTERVAL)
                 
-            # TODO check if we have a path   
-            
+            # check if we have a path
             for r in teams[team][0]: 
                 connected = checkGoalSet(robots[r-1].graph)
+                
                 if not connected:
-                    robots[r-1].nodeCounter = robots[r-1].oldNodeCounter
-                    robots[r-1].vnew = robots[r-1].oldLocation
-                    robots[r-1].totalTime = robots[r-1].oldTotalTime
+                    robots[r-1].nodeCounter = robots[r-1].startNodeCounter
+                    robots[r-1].vnew = robots[r-1].startLocation
+                    robots[r-1].totalTime = robots[r-1].startTotalTime
                     robots[r-1].initializeGraph()
                     robots[r-1].addNode(firstTime = True)
-                # TODO 
-                # 1: calculate least cost in goal set
-                # 2: calculate shortest path to node with least cost
-                # 3: set starting location for new graph to be this node with associated cost (time)
-#                else:
+                else:
+                    leastCostGoalSet(robots[r-1])
+                    robots[r-1].vnew = robots[r-1].endLocation
+                    robots[r-1].totalTime = robots[r-1].endTotalTime
+                    getPath(robots[r-1])
                 
         teamsDone[team] = True
-#        print(teamsDone)
     
 
 def randomStartingPositions(numRobots):
@@ -233,8 +231,8 @@ def sampleTest(rangeSamples, distribution='uniform'):
     return vrand    
 
 
-#TODO change to what create initial paths does
-def update(currentTime, robots, numRobots, locations):
+
+def update(currentTime, robots, locations):
     """Update procedure of intermittent communication"""
     # Input arguments:
     # currentTime = current Time of the execution
@@ -244,26 +242,9 @@ def update(currentTime, robots, numRobots, locations):
     
     currentTime = 0 
     
-    # TODO needs massive rework, was wrong approch, need to take robots from teams which have a schedule on k, build their graph, take teams with k+1 and build there graph
     while currentTime < TOTALTIME:
-        
-        #sample new nodes and create path: Algorithm 1 from paper
-        distribution = 'uniform'
-        rangeSamples = DISCRETIZATION
-        
-        for sample in range(0,TOTALSAMPLES):
-            if sample == RANDOMSAMPLESMAX:
-                mean = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
-                stdDev = np.diag(4*COMMRANGE*COMMRANGE*np.identity(2)) #TODO find a more elegant version to put dimension 2 there
-                distribution = 'gaussian'
-                rangeSamples = [mean,stdDev]
-                print('mean and stddev')
-                print(rangeSamples)
-                 
-            vrand = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
-        
-        nearestNodeIdx = findNearestNode(locations, vrand)
-
+        currentTime += SENSORPERIOD
+        """
         # Collect and send sensing data
         for r in range(0, numRobots):
             dataValues, singleMeasurement = measurement(numRobots, SENSORPERIOD)  # Measurements for all robots during one sensor period
@@ -289,7 +270,7 @@ def update(currentTime, robots, numRobots, locations):
 
         
     return dataSensorMeasurements, totalMap
-
+    """
     
 def testRobot(numRobots, teams, schedule):
     """Test the robot class"""
@@ -338,7 +319,6 @@ def testScheduler(numRobots, numTeams, robTeams):
     
     #Assigns robot numbers to teams
     T = scheduleClass.createTeams()
-    T = np.asarray(T, dtype='int')
     #creates schedule
     S = scheduleClass.createSchedule()
     #communication period is equall to number of robots
@@ -370,11 +350,11 @@ if __name__ == "__main__":
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 2 robots 2 teams)
     DEBUG = True #debug to true shows prints
     COMMRANGE = 3 # TODO communication range for robots
-    TIMEINTERVAL = 2 # TODO time interval for communication events
+    TIMEINTERVAL = 1 # TODO time interval for communication events
     
     DISCRETIZATION = np.array([600, 600]) #grid space
     RANDOMSAMPLESMAX = 30 #how many random samples before trying to converge for communication
-    TOTALSAMPLES = 40 #how many samples in total
+    TOTALSAMPLES = 50 #how many samples in total
 
     SENSORPERIOD = 20 #time between sensor measurement or between updates of data
     EIGENVECPERIOD = 40 #time between POD calculations
