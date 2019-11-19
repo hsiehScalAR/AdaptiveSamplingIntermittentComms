@@ -11,6 +11,9 @@ from operator import itemgetter
 import networkx as nx
 
 def getPath(robot):
+    """Get the shortest path for the robot to the end location"""
+    # Input arguments
+    # robot = robot instance whose graph we have to analize
     
     graphReversed = robot.graph.reverse()
     predecessors = nx.dfs_successors(graphReversed,robot.endNodeCounter)
@@ -24,7 +27,7 @@ def getPath(robot):
 
     robot.path = robot.graph.subgraph(path)
 
-def leastCostGoalSet(robot):
+def leastCostGoalSet(robot, debug):
     """Get the goal set node with the least cost"""
     # Input arguments
     # robot = robot whose graph is to be checked
@@ -45,10 +48,12 @@ def leastCostGoalSet(robot):
     robot.endLocation = graph.nodes[goalNodes[np.argmin(times)]]['pos']
     robot.endTotalTime = np.min(times)
     robot.endNodeCounter = goalNodes[np.argmin(times)]
-    print('leastCostGoalSet')
-    print('Robot ID: %d' %robot.ID)
-    print('End Node: %d' %robot.endNodeCounter)
-    print('End Time: %.2f\n' %robot.endTotalTime)
+    
+    if debug:
+        print('leastCostGoalSet')
+        print('Robot ID: %d' %robot.ID)
+        print('End Node: %d' %robot.endNodeCounter)
+        print('End Time: %.2f\n' %robot.endTotalTime)
 
 def checkGoalSet(graph):
     """Check if there are any nodes in the goal set"""
@@ -63,7 +68,7 @@ def checkGoalSet(graph):
 
     return True
 
-def updateGoalSet(robots, team, teams, timeInterval):
+def updateGoalSet(robots, team, teams, timeInterval, debug):
     """Check if goal set is still valid after rewiring"""
     # Input arguments
     # robots = all robot instances
@@ -90,10 +95,12 @@ def updateGoalSet(robots, team, teams, timeInterval):
         timeDiff = np.abs(times - times[0])
         
         if not all(y <= timeInterval for y in timeDiff):
-            print('Update goal set')
-            print(timeDiff)
-            print('Deleted goalsetNode')
-            print(node)
+            
+            if debug:
+                print('Update goal set')
+                print(timeDiff)
+                print('Deleted goalsetNode')
+                print(node)
             
             for r in teams[team][0]: 
                 del robots[r-1].graph.nodes[node]['goalSet']                
@@ -143,7 +150,7 @@ def updateSuccessorNodes(robot, startNode, uMax):
             robot.graph[key][v]['weight'] = succEdgeCost
             robot.graph.nodes[v]['t'] = succTotalCost            
 
-def rewireGraph(robots, team, teams, uMax, timeInterval):
+def rewireGraph(robots, team, teams, uMax, timeInterval, debug):
     # TODO: Find out what this min t = max t means
 
     """Check if there is a node in setVnear which has a smaller cost as child from vnew than previous"""
@@ -177,7 +184,7 @@ def rewireGraph(robots, team, teams, uMax, timeInterval):
                 rewired = True
                 
     if rewired:
-        updateGoalSet(robots, team, teams, timeInterval)
+        updateGoalSet(robots, team, teams, timeInterval, debug)
             
 def cost(nearTime, nearPos, newPos, uMax):
     # TODO: add information gain cost

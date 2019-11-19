@@ -77,24 +77,65 @@ def main():
         for r in range(0,numRobots):
             robots[r].composeGraphs()
     
+    
+    
     if DEBUG:
-        plotMeetingGraphs(robots, [0, 1])
-        plotMeetingGraphs(robots, [1, 2])
-        plotMeetingGraphs(robots, [2, 3])
-        plotMeetingGraphs(robots, [3, 0])
-        
-        plotMeetingPaths(robots, [0, 1],1)
-        plotMeetingPaths(robots, [1, 2],2)
-        plotMeetingPaths(robots, [2, 3],3)
-        plotMeetingPaths(robots, [3, 0],4)
-        
-        
+        subplot = 1
+        for r in teams:
+            r = np.asarray(r[0]) -1
+            plotMeetingGraphs(robots, r, subplot, len(teams))
+            plotMeetingPaths(robots, r, subplot, len(teams))
+            subplot += 1        
+            
     #TODO write general update control function which moves robots along the paths
+    currentTime = initialTime
+    
+    while currentTime < TOTALTIME:
+        currentTime = update(currentTime, robots)
         
     """    
     dataSensorMeasurements, totalMap = update(currentTime, robots, numRobots, locations)
     """
+
+def update(currentTime, robots):
+    """Update procedure of intermittent communication"""
+    # Input arguments:
+    # currentTime = current Time of the execution
+    # robots = instances of the robots that are to be moved
+    # numRobots = how many robots    
+    # locations = starting locations of the robots
     
+    currentTime += SENSORPERIOD
+    
+    return currentTime
+    """
+        # Collect and send sensing data
+        for r in range(0, numRobots):
+            dataValues, singleMeasurement = measurement(numRobots, SENSORPERIOD)  # Measurements for all robots during one sensor period
+            robots[r].addNewData(dataValues, locations, currentTime, currentTime + SENSORPERIOD, 'sensor')  # Set data matrices
+            robots[r].createMap(singleMeasurement, locations[r])  # Create Map
+
+        currentTime += SENSORPERIOD
+        
+
+    dataSensorMeasurements = Robot.constructDataMatrix()  # Aggregated matrix of estimated values from robots
+    totalMap = Robot.getTotalMap()
+
+    if DEBUG:
+        
+        print('mean random Sample')
+        print(mean)
+        print('stdDev random Sample')
+        print(stdDev)
+        
+        print('Data Measurements')
+        print(np.any(dataSensorMeasurements))
+        plotMatrix(totalMap)
+
+        
+    return dataSensorMeasurements, totalMap
+    """
+
 def updatePaths(schedule, teams, robots, numRobots, period):
     """Update procedure of intermittent communication"""
     # Input arguments:
@@ -172,7 +213,7 @@ def updatePaths(schedule, teams, robots, numRobots, period):
                 if sample >= RANDOMSAMPLESMAX: # TODO should I really just start checking once we sample for meeting locations?
                     calculateGoalSet(robots, team, teams, COMMRANGE, TIMEINTERVAL)
                 
-                rewireGraph(robots, team, teams, UMAX, TIMEINTERVAL)
+                rewireGraph(robots, team, teams, UMAX, TIMEINTERVAL, DEBUG)
                 
             # check if we have a path
             for r in teams[team][0]: 
@@ -185,7 +226,7 @@ def updatePaths(schedule, teams, robots, numRobots, period):
                     robots[r-1].initializeGraph()
                     robots[r-1].addNode(firstTime = True)
                 else:
-                    leastCostGoalSet(robots[r-1])
+                    leastCostGoalSet(robots[r-1], DEBUG)
                     robots[r-1].vnew = robots[r-1].endLocation
                     robots[r-1].totalTime = robots[r-1].endTotalTime
                     getPath(robots[r-1])
@@ -229,48 +270,6 @@ def sampleTest(rangeSamples, distribution='uniform'):
         print(vrand)
 
     return vrand    
-
-
-
-def update(currentTime, robots, locations):
-    """Update procedure of intermittent communication"""
-    # Input arguments:
-    # currentTime = current Time of the execution
-    # robots = instances of the robots that are to be moved
-    # numRobots = how many robots    
-    # locations = starting locations of the robots
-    
-    currentTime = 0 
-    
-    while currentTime < TOTALTIME:
-        currentTime += SENSORPERIOD
-        """
-        # Collect and send sensing data
-        for r in range(0, numRobots):
-            dataValues, singleMeasurement = measurement(numRobots, SENSORPERIOD)  # Measurements for all robots during one sensor period
-            robots[r].addNewData(dataValues, locations, currentTime, currentTime + SENSORPERIOD, 'sensor')  # Set data matrices
-            robots[r].createMap(singleMeasurement, locations[r])  # Create Map
-
-        currentTime += SENSORPERIOD
-        
-
-    dataSensorMeasurements = Robot.constructDataMatrix()  # Aggregated matrix of estimated values from robots
-    totalMap = Robot.getTotalMap()
-
-    if DEBUG:
-        
-        print('mean random Sample')
-        print(mean)
-        print('stdDev random Sample')
-        print(stdDev)
-        
-        print('Data Measurements')
-        print(np.any(dataSensorMeasurements))
-        plotMatrix(totalMap)
-
-        
-    return dataSensorMeasurements, totalMap
-    """
     
 def testRobot(numRobots, teams, schedule):
     """Test the robot class"""
@@ -348,7 +347,7 @@ if __name__ == "__main__":
     clearPlots()
     
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 2 robots 2 teams)
-    DEBUG = True #debug to true shows prints
+    DEBUG = False #debug to true shows prints
     COMMRANGE = 3 # TODO communication range for robots
     TIMEINTERVAL = 1 # TODO time interval for communication events
     
