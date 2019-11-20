@@ -33,17 +33,17 @@ The project uses numpy, matplotlib and networkx.
 ## Source code organization
 
  * src/: 
-   1. Setup.py: Contains the setup information of the robot teams and their organization graph
-   2. TestIntermittent.py: Main script to be executed, performs the intermittent communiction algorithm
+   * `Setup.py`: Contains the setup information of the robot teams and their organization graph
+   * `TestIntermittent.py`: Main script to be executed, performs the intermittent communiction algorithm
    
    * Classes/:
-     1. Robot.py: Contains the robot class with all its attributes
-     2. Schedule.py: Creates the schedule and teams
+     * `Robot.py`: Contains the robot class with all its attributes
+     * `Schedule.py`: Creates the schedule and teams
 
    * Utilities/:
-     1. ControllerUtilities.py: Contains functions used in the main control loop update()
-     2. PathPlanningUtilities.py: Contains all the functions for the updatePath() function
-     3. VisualizationUtilities.py: Plotting functions for various data formats
+     * `ControllerUtilities.py`: Contains functions used in the main control loop update()
+     * `PathPlanningUtilities.py`: Contains all the functions for the updatePath() function
+     * `VisualizationUtilities.py`: Plotting functions for various data formats
 
 ## Support
 
