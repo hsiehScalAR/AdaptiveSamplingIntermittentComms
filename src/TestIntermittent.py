@@ -13,6 +13,7 @@ import numpy as np
 from Classes.Scheduler import Schedule
 from Classes.Robot import Robot
 from Utilities.ControllerUtilities import measurement
+from Setup import getSetup
 from Utilities.VisualizationUtilities import plotMatrix, plotMeetingGraphs, plotMeetingPaths, clearPlots
 from Utilities.PathPlanningUtilities import (sampleVrand, findNearestNode, steer, buildSetVnear, 
                                              extendGraph, rewireGraph, calculateGoalSet, 
@@ -24,55 +25,16 @@ def main():
     # no inputs 
                
     """create robot to team correspondence"""
-    #robot i belongs to team j
-    if CASE == 1:
-        numTeams = 8
-        numRobots = 8
-        robTeams = np.array([[1, 1, 0, 0, 0, 0, 0, 0], 
-                             [0, 1, 1, 0, 0, 0, 0, 0], 
-                             [0, 0, 1, 1, 0, 0, 0, 0], 
-                             [0, 0, 0, 1, 1, 0, 0, 0], 
-                             [0, 0, 0, 0, 1, 1, 0, 0], 
-                             [0, 0, 0, 0, 0, 1, 1, 0],
-                             [0, 0, 0, 0, 0, 0, 1, 1], 
-                             [1, 0, 0, 0, 0, 0, 0, 1],])
-    
-    elif CASE == 2:
-        numTeams = 5
-        numRobots = 8
-        robTeams = np.array([[1, 1, 0, 0, 0], 
-                             [1, 0, 0, 1, 0], 
-                             [1, 0, 0, 0, 1], 
-                             [0, 1, 1, 0, 0], 
-                             [0, 1, 0, 0, 1], 
-                             [0, 0, 1, 1, 0],
-                             [0, 0, 1, 0, 1], 
-                             [0, 0, 0, 1, 1],])
-    elif CASE == 3:
-        numTeams = 4
-        numRobots = 4
-        robTeams = np.array([[1, 0, 0, 1],
-                             [1, 1, 0, 0],
-                             [0, 1, 1, 0],
-                             [0, 0, 1, 1],])
-    
-    else:
-        exit()
+    numTeams, numRobots, robTeams = getSetup(CASE)
 
     """Variables"""
     locations = randomStartingPositions(numRobots) #locations or robots
 
-
-
-    """--------------------------------------------------------------------------"""    
-    """Perform Tests"""
-    #scheduler test
-    schedule, teams, commPeriod = testScheduler(numRobots, numTeams, robTeams)
+    """Initialize schedules and robots"""
+    schedule, teams, commPeriod = initializeScheduler(numRobots, numTeams, robTeams)
+    robots = initializeRobots(numRobots, teams, schedule)
     
-    #robot test
-    robots = testRobot(numRobots, teams, schedule)
-    
-    # create the initial plans for all periods
+    """create the initial plans for all periods"""
     initialTime = 0
     for r in range(0,numRobots):
         robots[r].vnew = locations[r]
@@ -83,8 +45,6 @@ def main():
         for r in range(0,numRobots):
             robots[r].composeGraphs()
     
-    
-    
     if DEBUG:
         subplot = 1
         for r in teams:
@@ -93,6 +53,7 @@ def main():
             plotMeetingPaths(robots, r, subplot, len(teams))
             subplot += 1        
             
+    """Control loop"""
     #TODO write general update control function which moves robots along the paths
     currentTime = initialTime
     
@@ -108,8 +69,6 @@ def update(currentTime, robots):
     # Input arguments:
     # currentTime = current Time of the execution
     # robots = instances of the robots that are to be moved
-    # numRobots = how many robots    
-    # locations = starting locations of the robots
     
     currentTime += SENSORPERIOD
     
@@ -266,20 +225,9 @@ def randomStartingPositions(numRobots):
         print(locations)
         
     return locations.astype(int)
-
-def sampleTest(rangeSamples, distribution='uniform'):
-    """Tests the random sample generation"""
     
-    vrand = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
-
-    if DEBUG:
-        print('vrand ' + distribution)
-        print(vrand)
-
-    return vrand    
-    
-def testRobot(numRobots, teams, schedule):
-    """Test the robot class"""
+def initializeRobots(numRobots, teams, schedule):
+    """initialize the robot class"""
     # Input arguments:
     # numRobots = how many robots
     # teams = team assignments
@@ -310,10 +258,7 @@ def testRobot(numRobots, teams, schedule):
     
     return robots
 
-    
-
- 
-def testScheduler(numRobots, numTeams, robTeams):
+def initializeScheduler(numRobots, numTeams, robTeams):
     """initialize schedule and create teams and schedule"""  
     # Input arguments:
     # numRobots = how many robots
@@ -342,8 +287,6 @@ def testScheduler(numRobots, numTeams, robTeams):
         print(communicationPeriod)
     
     return S, T, communicationPeriod
-
-
 
 if __name__ == "__main__":
     """Entry in Test Program"""
