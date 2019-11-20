@@ -10,13 +10,14 @@ Created on Wed Nov 20 09:44:07 2019
 import numpy as np
 
 class Schedule:
-    """scheduler class to create teams and schedules"""
-    # Input arguments:
-    # numRobots = how many robots
-    # numTeams = how many teams
-    # robTeams = which robots are in which teams, comes from initial graph design; robot i belongs to team j in matrix
     
     def __init__(self, numRobots, numTeams, robTeams):
+        """scheduler class to create teams and schedules"""
+        # Input arguments:
+        # numRobots = how many robots
+        # numTeams = how many teams
+        # robTeams = which robots are in which teams, comes from initial graph design; robot i belongs to team j in matrix
+        
         self.numRobots = numRobots
         self.numTeams = numTeams
         self.robTeams = robTeams

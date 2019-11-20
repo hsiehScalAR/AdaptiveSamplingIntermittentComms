@@ -12,10 +12,6 @@ import networkx as nx
 #TODO see if I need itemgetter
 from operator import itemgetter
 
-
-
-
-
 class Robot:
     
     objs = []  # Registrar keeps all attributes of class
@@ -35,9 +31,14 @@ class Robot:
         self.sensorData = {}  # Store data as (timeStart, timeEnd): data
         self.eigenData = {}
         self.mapping = np.zeros([600,600])
-        Robot.objs.append(self)
-        Robot.discretization = discretization
 
+        #Path variables
+        self.paths = []
+        self.scheduleCounter = 0
+        self.atEndLocation = False
+        self.currentLocation = np.array([0,0])
+        self.pathCounter = 0
+        self.trajectory = []
         
         # Graph variables
         self.graph = nx.DiGraph()
@@ -66,6 +67,9 @@ class Robot:
         self.endNodeCounter = 0
         self.endLocation = np.array([0, 0])
         
+        Robot.objs.append(self)
+        Robot.discretization = discretization
+        
     def composeGraphs(self):
         self.totalGraph = nx.compose(self.totalGraph,self.graph)
         self.totalPath = nx.compose(self.totalPath,self.path)
@@ -75,6 +79,8 @@ class Robot:
     
     def addNode(self, firstTime = False):
         """Add new node with pos and total time attributes and edge with edge travel time cost to graph based on self variables"""
+        # Input arguments:
+        # FirstTime = bool that decides if we should do an edge or not
         
         self.graph.add_node(self.nodeCounter, pos = self.vnew, t = self.totalTime)
         self.vnewIdx = self.nodeCounter

@@ -24,7 +24,7 @@ def getPath(robot):
         
     path.append(value[0])
     path.reverse()
-
+    robot.paths.append(path)
     robot.path = robot.graph.subgraph(path)
 
 def leastCostGoalSet(robot, debug):
@@ -200,7 +200,7 @@ def cost(nearTime, nearPos, newPos, uMax):
     nearEdgeCost = normDist/uMax
     nearTotalCost = nearTime + nearEdgeCost
     
-    return nearTotalCost, nearEdgeCost 
+    return round(nearTotalCost,1), round(nearEdgeCost,1) 
 
 def extendGraph(robot, uMax):
     """Check if there is a node in setVnear which has a smaller cost as parent to vnew than the nearest node"""
@@ -306,8 +306,8 @@ def steer(robots, team, teams, uMax, epsilon):
         
         totalTimeVnew = travelTimeVnew + nearestTime
         robots[r-1].vnew = np.around(vnew)
-        robots[r-1].vnewCost = travelTimeVnew
-        robots[r-1].totalTime = totalTimeVnew
+        robots[r-1].vnewCost = round(travelTimeVnew,1)
+        robots[r-1].totalTime = round(totalTimeVnew,1)
 
 def findNearestNode(graph, vrand):
     """Return nearest node index"""

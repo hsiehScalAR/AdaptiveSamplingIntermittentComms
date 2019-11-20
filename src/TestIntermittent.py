@@ -12,13 +12,12 @@ import numpy as np
 #Personal imports
 from Classes.Scheduler import Schedule
 from Classes.Robot import Robot
-from Utilities.ControllerUtilities import measurement
 from Setup import getSetup
-from Utilities.VisualizationUtilities import plotMatrix, plotMeetingGraphs, plotMeetingPaths, clearPlots
+from Utilities.ControllerUtilities import moveAlongPath, communicateToTeam
+from Utilities.VisualizationUtilities import plotMatrix, plotMeetingGraphs, plotMeetingPaths, clearPlots, plotTrajectory
 from Utilities.PathPlanningUtilities import (sampleVrand, findNearestNode, steer, buildSetVnear, 
                                              extendGraph, rewireGraph, calculateGoalSet, 
                                              checkGoalSet, leastCostGoalSet, getPath)
-
 
 def main():
     """main test loop"""
@@ -33,11 +32,12 @@ def main():
     """Initialize schedules and robots"""
     schedule, teams, commPeriod = initializeScheduler(numRobots, numTeams, robTeams)
     robots = initializeRobots(numRobots, teams, schedule)
-    
+
     """create the initial plans for all periods"""
     initialTime = 0
     for r in range(0,numRobots):
         robots[r].vnew = locations[r]
+        robots[r].currentLocation = locations[r]
         robots[r].totalTime = initialTime
     
     for period in range(0,schedule.shape[1]):
@@ -57,20 +57,47 @@ def main():
     #TODO write general update control function which moves robots along the paths
     currentTime = initialTime
     
+    
     while currentTime < TOTALTIME:
-        currentTime = update(currentTime, robots)
-        
+        currentTime = update(currentTime, robots, schedule, teams, commPeriod)
+
+    plotTrajectory(robots[0].trajectory)    
     """    
     dataSensorMeasurements, totalMap = update(currentTime, robots, numRobots, locations)
     """
 
-def update(currentTime, robots):
+def update(currentTime, robots, schedule, teams, commPeriod):
     """Update procedure of intermittent communication"""
     # Input arguments:
     # currentTime = current Time of the execution
     # robots = instances of the robots that are to be moved
+    # commPeriod = how many schedules there are
     
+    atEndPoint = np.zeros(len(robots))
+    
+    for i, rob in enumerate(robots):
+        atEndPoint[i] = moveAlongPath(rob, SENSORPERIOD, UMAX)
+
     currentTime += SENSORPERIOD
+#    for team in teams:
+#        print(team)
+#        team = 
+#        team -= 1
+#    if np.all(atEndPoint[team]):
+#        
+#        communicateToTeam()
+        
+#        rob.scheduleCounter += 1
+#        rob.atEndLocation = False
+#        
+#        rob.vnew = rob.currentLocation
+#        rob.totalTime = currentTime
+#        
+#        updatePaths(schedule, teams, robots, numRobots, rob.scheduleCounter % commPeriod)
+
+            
+            
+    
     
     return currentTime
     """
@@ -110,6 +137,8 @@ def updatePaths(schedule, teams, robots, numRobots, period):
     # numRobots = how many robots    
     # period = how many epochs we have in the schedule
     
+    
+    dimension = 2
     #add node v0 to list of nodes for each robot       
     for r in range(0,numRobots):        
         #make last node equal to the first of new period
@@ -117,20 +146,17 @@ def updatePaths(schedule, teams, robots, numRobots, period):
             robots[r].nodeCounter -= 1
 
         robots[r].startNodeCounter = robots[r].nodeCounter
-        robots[r].startLocation = robots[r].endLocation
+        robots[r].startLocation = robots[r].vnew
         robots[r].startTotalTime = robots[r].endTotalTime 
         robots[r].nearestNodeIdx = robots[r].endNodeCounter
         
         robots[r].initializeGraph()
         robots[r].addNode(firstTime = True)
-    
-        
+     
     teamsDone = np.zeros(len(teams))
 
     #find out which team has a meeting event at period k=0
     for team in schedule[:, period]:
-        
-                
         if teamsDone[team] or team < 0:
             continue
         
@@ -144,7 +170,7 @@ def updatePaths(schedule, teams, robots, numRobots, period):
             for sample in range(0,TOTALSAMPLES):
                 if sample == RANDOMSAMPLESMAX-1:
                     mean = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
-                    stdDev = 4*COMMRANGE*COMMRANGE*np.identity(2)
+                    stdDev = 4*COMMRANGE*COMMRANGE*np.identity(dimension)
                     distribution = 'gaussian'
                     rangeSamples = [mean,stdDev]
                 
@@ -199,40 +225,12 @@ def updatePaths(schedule, teams, robots, numRobots, period):
                 
         teamsDone[team] = True
     
-
-def randomStartingPositions(numRobots):
-    """Ensures that the starting position are exclusive within communication radius"""
-    # Input arguments:
-    # numRobots = how many robots
-    
-    locations = np.zeros([numRobots, 2])
-    pos = np.random.randint(0, COMMRANGE, size=2)
-    locations[0] = pos
-    
-    for i in range(1,numRobots):
-        equal = True
-        while equal:
-            pos = np.random.randint(0, numRobots, size=2)
-            equal = False
-            for l in range(0, i):
-                if np.array_equal(pos,locations[l]):
-                    equal = True
-                    break
-        locations[i] = pos
-        
-    if DEBUG:
-        print('Locations')
-        print(locations)
-        
-    return locations.astype(int)
-    
 def initializeRobots(numRobots, teams, schedule):
     """initialize the robot class"""
     # Input arguments:
     # numRobots = how many robots
     # teams = team assignments
     # schedule = schedule for meeting events
-
 
     robots = []
     for r in range(0, numRobots):
@@ -273,7 +271,7 @@ def initializeScheduler(numRobots, numTeams, robTeams):
     #creates schedule
     S = scheduleClass.createSchedule()
     #communication period is equall to number of robots
-    communicationPeriod = np.shape(S)[0]  # Communication schedule repeats infinitely often
+    communicationPeriod = np.shape(S)[1]  # Communication schedule repeats infinitely often
 
     #Print test information
     if DEBUG:
@@ -287,6 +285,32 @@ def initializeScheduler(numRobots, numTeams, robTeams):
         print(communicationPeriod)
     
     return S, T, communicationPeriod
+
+def randomStartingPositions(numRobots):
+    """Ensures that the starting position are exclusive within communication radius"""
+    # Input arguments:
+    # numRobots = how many robots
+    
+    locations = np.zeros([numRobots, 2])
+    pos = np.random.randint(0, COMMRANGE, size=2)
+    locations[0] = pos
+    
+    for i in range(1,numRobots):
+        equal = True
+        while equal:
+            pos = np.random.randint(0, numRobots, size=2)
+            equal = False
+            for l in range(0, i):
+                if np.array_equal(pos,locations[l]):
+                    equal = True
+                    break
+        locations[i] = pos
+        
+    if DEBUG:
+        print('Locations')
+        print(locations)
+        
+    return locations.astype(int)
 
 if __name__ == "__main__":
     """Entry in Test Program"""
@@ -305,10 +329,10 @@ if __name__ == "__main__":
     RANDOMSAMPLESMAX = 30 #how many random samples before trying to converge for communication
     TOTALSAMPLES = 50 #how many samples in total
 
-    SENSORPERIOD = 20 #time between sensor measurement or between updates of data
-    EIGENVECPERIOD = 40 #time between POD calculations
+    SENSORPERIOD = 0.1 #time between sensor measurement or between updates of data
+    EIGENVECPERIOD = 0.04 #time between POD calculations
     
-    TOTALTIME = 1000 #total execution time of program
+    TOTALTIME = 60 #total execution time of program
     
     UMAX = 50 # Max velocity, 30 pixel/second
     EPSILON = DISCRETIZATION[0]/10 # Maximum step size of robots

@@ -13,7 +13,12 @@ import numpy as np
 
 def clearPlots():
     plt.close('all')
-    
+
+def plotTrajectory(trajectory):
+    plt.figure()
+    x,y = zip(*trajectory)
+    plt.plot(x,y, '.-')
+
 def plotMatrix(data):
     plt.figure()
     plt.imshow(data);
@@ -21,6 +26,7 @@ def plotMatrix(data):
     plt.show()
     
 def plotMeetingGraphs(robots, index, subplot=None, length=0):
+    #TODO change so that any number of robots in same team can be plotted
     if subplot != None:
         plt.figure('RRT* Graphs')
         plt.subplot(np.ceil(length/2),2,subplot)
@@ -39,6 +45,7 @@ def plotMeetingGraphs(robots, index, subplot=None, length=0):
     
 
 def plotMeetingPaths(robots, index, subplot=None, length=0):
+    #TODO change so that any number of robots in same team can be plotted
     if subplot != None:
         plt.figure('RRT* Paths')
         plt.subplot(np.ceil(length/2),2,subplot)
