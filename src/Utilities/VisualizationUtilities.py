@@ -6,6 +6,7 @@ Created on Tue Nov  5 13:45:18 2019
 @author: hannes
 """
 
+#General imports
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np

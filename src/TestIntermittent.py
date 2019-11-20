@@ -6,12 +6,18 @@ Created on Mon Nov  4 10:48:29 2019
 @author: hannes
 """
 
+#General imports
 import numpy as np
-import networkx as nx
-from IntermittentComms import (Schedule, Robot, sampleVrand, measurement, findNearestNode, 
-                               steer, buildSetVnear, extendGraph, rewireGraph, 
-                               calculateGoalSet, checkGoalSet, leastCostGoalSet, getPath)
-from Visualization import plotMatrix, plotMeetingGraphs, plotMeetingPaths, clearPlots
+
+#Personal imports
+from Classes.Scheduler import Schedule
+from Classes.Robot import Robot
+from Utilities.ControllerUtilities import measurement
+from Utilities.VisualizationUtilities import plotMatrix, plotMeetingGraphs, plotMeetingPaths, clearPlots
+from Utilities.PathPlanningUtilities import (sampleVrand, findNearestNode, steer, buildSetVnear, 
+                                             extendGraph, rewireGraph, calculateGoalSet, 
+                                             checkGoalSet, leastCostGoalSet, getPath)
+
 
 def main():
     """main test loop"""
@@ -179,7 +185,7 @@ def updatePaths(schedule, teams, robots, numRobots, period):
             for sample in range(0,TOTALSAMPLES):
                 if sample == RANDOMSAMPLESMAX-1:
                     mean = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
-                    stdDev = 4*COMMRANGE*COMMRANGE*np.identity(2) #TODO find a more elegant version to put dimension 2 there, something comming from the 2D or *D inputs
+                    stdDev = 4*COMMRANGE*COMMRANGE*np.identity(2)
                     distribution = 'gaussian'
                     rangeSamples = [mean,stdDev]
                 
@@ -210,7 +216,8 @@ def updatePaths(schedule, teams, robots, numRobots, period):
                     robots[r-1].addNode()
                     
                 # finding out if vnew should be in goal set
-                if sample >= RANDOMSAMPLESMAX: # TODO should I really just start checking once we sample for meeting locations?
+                # TODO should I really just start checking once we sample for meeting locations?
+                if sample >= RANDOMSAMPLESMAX: 
                     calculateGoalSet(robots, team, teams, COMMRANGE, TIMEINTERVAL)
                 
                 rewireGraph(robots, team, teams, UMAX, TIMEINTERVAL, DEBUG)
@@ -347,9 +354,9 @@ if __name__ == "__main__":
     clearPlots()
     
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 2 robots 2 teams)
-    DEBUG = False #debug to true shows prints
-    COMMRANGE = 3 # TODO communication range for robots
-    TIMEINTERVAL = 1 # TODO time interval for communication events
+    DEBUG = True #debug to true shows prints
+    COMMRANGE = 3 # communication range for robots
+    TIMEINTERVAL = 1 # time interval for communication events
     
     DISCRETIZATION = np.array([600, 600]) #grid space
     RANDOMSAMPLESMAX = 30 #how many random samples before trying to converge for communication
@@ -360,8 +367,8 @@ if __name__ == "__main__":
     
     TOTALTIME = 1000 #total execution time of program
     
-    UMAX = 50 # TODO: Max velocity, 30 pixel/second
-    EPSILON = DISCRETIZATION[0]/10 # TODO: Maximum step size of robots
-    GAMMARRT = 100 # TODO: constant for rrt* algorithm, can it be calculated?
+    UMAX = 50 # Max velocity, 30 pixel/second
+    EPSILON = DISCRETIZATION[0]/10 # Maximum step size of robots
+    GAMMARRT = 100 # constant for rrt* algorithm, can it be calculated?
     
     main()
