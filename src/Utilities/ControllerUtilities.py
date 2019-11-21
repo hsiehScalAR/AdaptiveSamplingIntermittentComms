@@ -18,6 +18,7 @@ def moveAlongPath(robot, deltaT, uMax):
     if robot.pathCounter >= len(robot.paths[robot.scheduleCounter]) or robot.atEndLocation:
         robot.pathCounter = 0
         robot.atEndLocation = True
+        robot.trajectory.append(robot.currentLocation)
         return True
     
     currentNode = robot.paths[robot.scheduleCounter][robot.pathCounter]

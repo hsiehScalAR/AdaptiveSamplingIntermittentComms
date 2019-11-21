@@ -10,14 +10,55 @@ Created on Tue Nov  5 13:45:18 2019
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
+import matplotlib.animation as animation
 
 def clearPlots():
     plt.close('all')
 
-def plotTrajectory(trajectory):
+def plotTrajectoryAnimation(robots):
+    
+    fig = plt.figure()
+    ax1 = plt.axes(xlim=(0, 600), ylim=(0,600))
+    graph, = ax1.plot([], [], '.-')
+    
+    graphs = []
+    for r in range(len(robots)):
+        graphobj = ax1.plot([], [], '-', label='Robot %d'%r)[0]
+        graphs.append(graphobj)
+    
+    
+    def init():
+        for graph in graphs:
+            graph.set_data([],[])
+        return graphs
+    
+    xlist = [i for i in range(len(robots))]
+    ylist = [i for i in range(len(robots))]
+    
+    def animate(i):
+        for r in range(0,len(robots)):
+            x,y = zip(*robots[r].trajectory)
+            xlist[r] = x[:i]
+            ylist[r] = y[:i]
+
+        for gnum,graph in enumerate(graphs):
+            
+            graph.set_data(xlist[gnum], ylist[gnum]) # set data for each line separately.     
+        return graphs
+
+    ani = animation.FuncAnimation(fig, animate, init_func=init,
+                                  frames=len(robots[-1].trajectory), interval=1000)
+    plt.legend()
+    plt.show()
+    ani.save('basic_animation.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
+    
+def plotTrajectory(robots):
     plt.figure()
-    x,y = zip(*trajectory)
-    plt.plot(x,y, '.-')
+    for r in range(0,len(robots)):
+        x,y = zip(*robots[r].trajectory)
+        plt.plot(x,y, '.-', label='Robot %d'%r)
+    plt.legend()
+    plt.show()
 
 def plotMatrix(data):
     plt.figure()

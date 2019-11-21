@@ -14,7 +14,8 @@ from Classes.Scheduler import Schedule
 from Classes.Robot import Robot
 from Setup import getSetup
 from Utilities.ControllerUtilities import moveAlongPath, communicateToTeam
-from Utilities.VisualizationUtilities import plotMatrix, plotMeetingGraphs, plotMeetingPaths, clearPlots, plotTrajectory
+from Utilities.VisualizationUtilities import (plotMatrix, plotMeetingGraphs, plotMeetingPaths, 
+                                              clearPlots, plotTrajectory, plotTrajectoryAnimation)
 from Utilities.PathPlanningUtilities import (sampleVrand, findNearestNode, steer, buildSetVnear, 
                                              extendGraph, rewireGraph, calculateGoalSet, 
                                              checkGoalSet, leastCostGoalSet, getPath)
@@ -41,32 +42,46 @@ def main():
         robots[r].totalTime = initialTime
     
     for period in range(0,schedule.shape[1]):
-        updatePaths(schedule, teams, robots, numRobots, period)
-        for r in range(0,numRobots):
-            robots[r].composeGraphs()
+        teamsDone = np.zeros(len(teams))
     
+        #find out which team has a meeting event at period k=0
+        for team in schedule[:, period]:
+            if teamsDone[team] or team < 0:
+                continue
+            
+            robs = []
+            for r in teams[team][0]:
+                robs.append(robots[r-1])
+            
+            updatePaths(robs)
+            teamsDone[team] = True
+            
+        for r in range(0,numRobots):
+            robots[r].composeGraphs() 
+            
+    """Control loop"""
+    #TODO write general update control function which moves robots along the paths
+    currentTime = initialTime
+    
+    while currentTime < TOTALTIME:
+        currentTime = update(currentTime, robots, teams, commPeriod)
+
+    plotTrajectoryAnimation(robots)
     if DEBUG:
         subplot = 1
         for r in teams:
             r = np.asarray(r[0]) -1
             plotMeetingGraphs(robots, r, subplot, len(teams))
             plotMeetingPaths(robots, r, subplot, len(teams))
-            subplot += 1        
+            subplot += 1  
             
-    """Control loop"""
-    #TODO write general update control function which moves robots along the paths
-    currentTime = initialTime
-    
-    
-    while currentTime < TOTALTIME:
-        currentTime = update(currentTime, robots, schedule, teams, commPeriod)
+        plotTrajectory(robots)
 
-    plotTrajectory(robots[0].trajectory)    
     """    
     dataSensorMeasurements, totalMap = update(currentTime, robots, numRobots, locations)
     """
 
-def update(currentTime, robots, schedule, teams, commPeriod):
+def update(currentTime, robots, teams, commPeriod):
     """Update procedure of intermittent communication"""
     # Input arguments:
     # currentTime = current Time of the execution
@@ -80,21 +95,23 @@ def update(currentTime, robots, schedule, teams, commPeriod):
 
     currentTime += SENSORPERIOD
     for team in teams:
-        if np.all(atEndPoint[team-1]):
-            print(team)
-            print(atEndPoint)
-            print(atEndPoint[team-1])
+        
+        # TODO this condition doesn't work properly since it allows that if two robots 
+        #      how do not have a meeting together could be waiting for an communication event and could be in the next team together
+        if np.all(atEndPoint[team-1]):         
             
-#            for r in teams[team][0]:
-#                communicateToTeam()
-#            
-#                rob.scheduleCounter += 1
-#                rob.atEndLocation = False
-#                
-#                rob.vnew = rob.currentLocation
-#                rob.totalTime = currentTime
-#                
-#                updatePaths(schedule, teams, robots, numRobots, rob.scheduleCounter % commPeriod)
+            robs = []         
+            for r in team[0]:                
+                robots[r-1].scheduleCounter += 1
+                robots[r-1].atEndLocation = False
+                
+                robots[r-1].endTotalTime  = currentTime
+                robs.append(robots[r-1])
+                
+            communicateToTeam()
+            updatePaths(robs)
+            for r in team[0]:
+                robots[r-1].composeGraphs()
 
     return currentTime
     
@@ -126,19 +143,13 @@ def update(currentTime, robots, schedule, teams, commPeriod):
     return dataSensorMeasurements, totalMap
     """
 
-def updatePaths(schedule, teams, robots, numRobots, period):
+def updatePaths(robots):
     """Update procedure of intermittent communication"""
     # Input arguments:
-    # schedule = schedule of meeting events
-    # teams = which robot belongs to which team
     # robots = instances of the robots that are to be moved
-    # numRobots = how many robots    
-    # period = how many epochs we have in the schedule
     
-    
-    dimension = 2
     #add node v0 to list of nodes for each robot       
-    for r in range(0,numRobots):        
+    for r in range(0, len(robots)):        
         #make last node equal to the first of new period
         if robots[r].nodeCounter > 0:
             robots[r].nodeCounter -= 1
@@ -150,78 +161,70 @@ def updatePaths(schedule, teams, robots, numRobots, period):
         
         robots[r].initializeGraph()
         robots[r].addNode(firstTime = True)
-     
-    teamsDone = np.zeros(len(teams))
-
-    #find out which team has a meeting event at period k=0
-    for team in schedule[:, period]:
-        if teamsDone[team] or team < 0:
-            continue
+             
+    connected = False
+    
+    while not connected:    
+        #sample new nodes and create path
+        distribution = 'uniform'
+        rangeSamples = DISCRETIZATION
         
-        connected = False
-        
-        while not connected:    
-            #sample new nodes and create path
-            distribution = 'uniform'
-            rangeSamples = DISCRETIZATION
+        for sample in range(0,TOTALSAMPLES):
+            if sample == RANDOMSAMPLESMAX-1:
+                mean = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
+                stdDev = 4*COMMRANGE*COMMRANGE*np.identity(DIMENSION)
+                distribution = 'gaussian'
+                rangeSamples = [mean,stdDev]
             
-            for sample in range(0,TOTALSAMPLES):
-                if sample == RANDOMSAMPLESMAX-1:
-                    mean = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
-                    stdDev = 4*COMMRANGE*COMMRANGE*np.identity(dimension)
-                    distribution = 'gaussian'
-                    rangeSamples = [mean,stdDev]
+            if sample >= RANDOMSAMPLESMAX:
+                vrand = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
+            
+            #find which robot is in team and get nearest nodes and new random samples for them
+            for r in range(0, len(robots)):       
                 
-                if sample >= RANDOMSAMPLESMAX:
+                if distribution == 'uniform':
                     vrand = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
                 
-                #find which robot is in team and get nearest nodes and new random samples for them
-                for r in teams[team][0]:        
-                    
-                    if distribution == 'uniform':
-                        vrand = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
-                    
-                    robots[r-1].vrand = vrand
-                    
-                    #find nearest node to random sample
-                    nearestNodeIdx = findNearestNode(robots[r-1].graph,vrand)
-                    robots[r-1].nearestNodeIdx = nearestNodeIdx
+                robots[r].vrand = vrand
                 
-                #find new node towards max distance to random sample and incorporate time delay, that is why it is outside of previous loop since we need all the nearest nodes from the other robots
-                steer(robots, team, teams, UMAX, EPSILON)
+                #find nearest node to random sample
+                nearestNodeIdx = findNearestNode(robots[r].graph,vrand)
+                robots[r].nearestNodeIdx = nearestNodeIdx
+            
+            #find new node towards max distance to random sample and incorporate time delay, that is why it is outside of previous loop since we need all the nearest nodes from the other robots
+            steer(robots, UMAX, EPSILON)
+            
+            for r in range(0, len(robots)): 
+                # get all nodes close to new node
+                buildSetVnear(robots[r], EPSILON, GAMMARRT)
                 
-                for r in teams[team][0]:
-                    # get all nodes close to new node
-                    buildSetVnear(robots[r-1], EPSILON, GAMMARRT)
-                    
-                    extendGraph(robots[r-1], UMAX)
-                    
-                    robots[r-1].addNode()
-                    
-                # finding out if vnew should be in goal set
-                # TODO should I really just start checking once we sample for meeting locations?
-                if sample >= RANDOMSAMPLESMAX: 
-                    calculateGoalSet(robots, team, teams, COMMRANGE, TIMEINTERVAL)
+                extendGraph(robots[r], UMAX)
                 
-                rewireGraph(robots, team, teams, UMAX, TIMEINTERVAL, DEBUG)
+                robots[r].addNode()
                 
-            # check if we have a path
-            for r in teams[team][0]: 
-                connected = checkGoalSet(robots[r-1].graph)
+            # finding out if vnew should be in goal set
+            # TODO should I really just start checking once we sample for meeting locations?
+            if sample >= RANDOMSAMPLESMAX: 
+                calculateGoalSet(robots, COMMRANGE, TIMEINTERVAL)
+            
+            rewireGraph(robots, UMAX, TIMEINTERVAL, DEBUG)
+            
+        # check if we have a path
+        for r in range(0, len(robots)):  
+            connected = checkGoalSet(robots[r].graph)
+            
+            if not connected:
+                robots[r].nodeCounter = robots[r].startNodeCounter
+                robots[r].vnew = robots[r].startLocation
+                robots[r].totalTime = robots[r].startTotalTime
+                robots[r].initializeGraph()
+                robots[r].addNode(firstTime = True)
+            else:
+                leastCostGoalSet(robots[r], DEBUG)
+                robots[r].vnew = robots[r].endLocation
+                robots[r].totalTime = robots[r].endTotalTime
+                getPath(robots[r])
                 
-                if not connected:
-                    robots[r-1].nodeCounter = robots[r-1].startNodeCounter
-                    robots[r-1].vnew = robots[r-1].startLocation
-                    robots[r-1].totalTime = robots[r-1].startTotalTime
-                    robots[r-1].initializeGraph()
-                    robots[r-1].addNode(firstTime = True)
-                else:
-                    leastCostGoalSet(robots[r-1], DEBUG)
-                    robots[r-1].vnew = robots[r-1].endLocation
-                    robots[r-1].totalTime = robots[r-1].endTotalTime
-                    getPath(robots[r-1])
-                
-        teamsDone[team] = True
     
 def initializeRobots(numRobots, teams, schedule):
     """initialize the robot class"""
@@ -319,18 +322,19 @@ if __name__ == "__main__":
     clearPlots()
     
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 2 robots 2 teams)
-    DEBUG = True #debug to true shows prints
+    DEBUG = False #debug to true shows prints
     COMMRANGE = 3 # communication range for robots
     TIMEINTERVAL = 1 # time interval for communication events
     
     DISCRETIZATION = np.array([600, 600]) #grid space
+    DIMENSION = 2 #dimension of robot space
     RANDOMSAMPLESMAX = 30 #how many random samples before trying to converge for communication
     TOTALSAMPLES = 50 #how many samples in total
 
     SENSORPERIOD = 0.1 #time between sensor measurement or between updates of data
     EIGENVECPERIOD = 0.04 #time between POD calculations
     
-    TOTALTIME = 10 #total execution time of program
+    TOTALTIME = 60 #total execution time of program
     
     UMAX = 50 # Max velocity, 30 pixel/second
     EPSILON = DISCRETIZATION[0]/10 # Maximum step size of robots
