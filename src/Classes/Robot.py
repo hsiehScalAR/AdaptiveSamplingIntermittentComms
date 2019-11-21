@@ -94,7 +94,7 @@ class Robot:
         # newData = new measurement for single robot
         # currentLocations = sensing location of single robot
         
-        self.mapping[currentLocations[0],currentLocations[1]] = newData
+        self.mapping[np.int(currentLocations[0]),np.int(currentLocations[1])] = newData
     
     @classmethod     
     def getTotalMap(cls):

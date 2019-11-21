@@ -37,15 +37,27 @@ def moveAlongPath(robot, deltaT, uMax):
         
     robot.trajectory.append(robot.currentLocation)
     
+    singleMeasurement = measurement()
+    robot.createMap(singleMeasurement, robot.currentLocation)  # Create Map
+    
     return False
     
-def measurement(numRobots, sensorPeriod): 
+def measurement():
     #TODO check how we measure stuff, if single value since each robot measure one place or measurement over time for all robots
-    """Simulates a measurement for all robots over time and for a single robot at one time instance"""
-    # Input Arguments
-    # numRobots = how many robots
-    # sensorPeriod = period of sensing in ms
+    """Simulates a measurement for a single robot at one time instance"""
+    # No input
     
-    allMeasurementsOverTime = np.random.uniform(0,1,(numRobots, sensorPeriod))
     singleMeasurement = np.random.uniform(0,1)
-    return allMeasurementsOverTime, singleMeasurement
+
+    return singleMeasurement
+
+#def measurement(numRobots, sensorPeriod): 
+#    #TODO check how we measure stuff, if single value since each robot measure one place or measurement over time for all robots
+#    """Simulates a measurement for all robots over time and for a single robot at one time instance"""
+#    # Input Arguments
+#    # numRobots = how many robots
+#    # sensorPeriod = period of sensing in ms
+#    
+#    allMeasurementsOverTime = np.random.uniform(0,1,(numRobots, sensorPeriod))
+#    singleMeasurement = np.random.uniform(0,1)
+#    return allMeasurementsOverTime, singleMeasurement

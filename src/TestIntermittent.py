@@ -79,27 +79,25 @@ def update(currentTime, robots, schedule, teams, commPeriod):
         atEndPoint[i] = moveAlongPath(rob, SENSORPERIOD, UMAX)
 
     currentTime += SENSORPERIOD
-#    for team in teams:
-#        print(team)
-#        team = 
-#        team -= 1
-#    if np.all(atEndPoint[team]):
-#        
-#        communicateToTeam()
-        
-#        rob.scheduleCounter += 1
-#        rob.atEndLocation = False
-#        
-#        rob.vnew = rob.currentLocation
-#        rob.totalTime = currentTime
-#        
-#        updatePaths(schedule, teams, robots, numRobots, rob.scheduleCounter % commPeriod)
+    for team in teams:
+        if np.all(atEndPoint[team-1]):
+            print(team)
+            print(atEndPoint)
+            print(atEndPoint[team-1])
+            
+#            for r in teams[team][0]:
+#                communicateToTeam()
+#            
+#                rob.scheduleCounter += 1
+#                rob.atEndLocation = False
+#                
+#                rob.vnew = rob.currentLocation
+#                rob.totalTime = currentTime
+#                
+#                updatePaths(schedule, teams, robots, numRobots, rob.scheduleCounter % commPeriod)
 
-            
-            
-    
-    
     return currentTime
+    
     """
         # Collect and send sensing data
         for r in range(0, numRobots):
@@ -332,7 +330,7 @@ if __name__ == "__main__":
     SENSORPERIOD = 0.1 #time between sensor measurement or between updates of data
     EIGENVECPERIOD = 0.04 #time between POD calculations
     
-    TOTALTIME = 60 #total execution time of program
+    TOTALTIME = 10 #total execution time of program
     
     UMAX = 50 # Max velocity, 30 pixel/second
     EPSILON = DISCRETIZATION[0]/10 # Maximum step size of robots
