@@ -8,6 +8,17 @@ Created on Wed Nov 20 10:21:38 2019
 
 #General imports
 import numpy as np
+from scipy.stats import multivariate_normal
+
+def setupMeasurmentData(discretization):
+    mean = [400, 250]
+    cov = [[500, 0], [0, 100]]
+
+    x, y = np.mgrid[0:discretization[0]:1, 0:discretization[1]:1]
+    pos = np.dstack((x, y))
+    measurementData = multivariate_normal.pdf(pos, mean, cov)
+
+    return measurementData
 
 def getSetup(case):
     """returns the setup for the robot teams based on the case"""

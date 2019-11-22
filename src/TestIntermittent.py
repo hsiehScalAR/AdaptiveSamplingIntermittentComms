@@ -12,7 +12,7 @@ import numpy as np
 #Personal imports
 from Classes.Scheduler import Schedule
 from Classes.Robot import Robot
-from Setup import getSetup
+from Setup import getSetup, setupMeasurmentData
 from Utilities.ControllerUtilities import moveAlongPath, communicateToTeam, checkMeetingLocation
 from Utilities.VisualizationUtilities import (plotMatrix, plotMeetingGraphs, plotMeetingPaths, 
                                               clearPlots, plotTrajectory, plotTrajectoryAnimation)
@@ -23,7 +23,12 @@ from Utilities.PathPlanningUtilities import (sampleVrand, findNearestNode, steer
 def main():
     """main test loop"""
     # no inputs 
-               
+    
+    """Create Measurement Data"""
+    # TODO fix this to something that I can work with
+    data = setupMeasurmentData(DISCRETIZATION)
+    plotMatrix(data)
+           
     """create robot to team correspondence"""
     numTeams, numRobots, robTeams = getSetup(CASE)
 
@@ -66,7 +71,8 @@ def main():
     while currentTime < TOTALTIME:
         currentTime = update(currentTime, robots, teams, commPeriod)
 
-    plotTrajectoryAnimation(robots)
+    totalMap = robots[0].mapping
+    
     if DEBUG:
         subplot = 1
         for r in teams:
@@ -76,7 +82,11 @@ def main():
             subplot += 1  
             
         plotTrajectory(robots)
+        plotTrajectoryAnimation(robots, save=SAVE)
+    
+    plotMatrix(totalMap)
 
+    
     """    
     dataSensorMeasurements, totalMap = update(currentTime, robots, numRobots, locations)
     """
@@ -86,6 +96,7 @@ def update(currentTime, robots, teams, commPeriod):
     # Input arguments:
     # currentTime = current Time of the execution
     # robots = instances of the robots that are to be moved
+    # teams = teams of the robots
     # commPeriod = how many schedules there are
     
     atEndPoint = np.zeros(len(robots))
@@ -94,18 +105,19 @@ def update(currentTime, robots, teams, commPeriod):
         atEndPoint[i] = moveAlongPath(rob, SENSORPERIOD, UMAX)
 
     currentTime += SENSORPERIOD
+    
     for team in teams:
         
-        # TODO this condition doesn't work properly since it allows that if two robots 
-        #      who do not have a meeting together could be waiting for a communication event and could be in the next team together
         if np.all(atEndPoint[team-1]):         
             
             currentLocation = []
             for r in team[0]: 
                 currentLocation.append(robots[r-1].currentLocation)
             currentLocation = np.asarray(currentLocation)
+            
             if not checkMeetingLocation(currentLocation, COMMRANGE):
                 continue
+            
             robs = []         
             for r in team[0]:                
                 robots[r-1].scheduleCounter += 1
@@ -113,9 +125,12 @@ def update(currentTime, robots, teams, commPeriod):
                 
                 robots[r-1].endTotalTime  = currentTime
                 robs.append(robots[r-1])
-                
-            communicateToTeam()
+            
+            # TODO complete communicate function
+            communicateToTeam(robs)
+            
             updatePaths(robs)
+            
             for r in team[0]:
                 robots[r-1].composeGraphs()
 
@@ -329,6 +344,8 @@ if __name__ == "__main__":
     
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 2 robots 2 teams)
     DEBUG = False #debug to true shows prints
+    SAVE = True #if animation should be saved
+    
     COMMRANGE = 3 # communication range for robots
     TIMEINTERVAL = 1 # time interval for communication events
     
@@ -346,4 +363,5 @@ if __name__ == "__main__":
     EPSILON = DISCRETIZATION[0]/10 # Maximum step size of robots
     GAMMARRT = 100 # constant for rrt* algorithm, can it be calculated?
     
-    main()
+    
+#    main()
