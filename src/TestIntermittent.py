@@ -13,7 +13,7 @@ import numpy as np
 from Classes.Scheduler import Schedule
 from Classes.Robot import Robot
 from Setup import getSetup
-from Utilities.ControllerUtilities import moveAlongPath, communicateToTeam
+from Utilities.ControllerUtilities import moveAlongPath, communicateToTeam, checkMeetingLocation
 from Utilities.VisualizationUtilities import (plotMatrix, plotMeetingGraphs, plotMeetingPaths, 
                                               clearPlots, plotTrajectory, plotTrajectoryAnimation)
 from Utilities.PathPlanningUtilities import (sampleVrand, findNearestNode, steer, buildSetVnear, 
@@ -97,9 +97,15 @@ def update(currentTime, robots, teams, commPeriod):
     for team in teams:
         
         # TODO this condition doesn't work properly since it allows that if two robots 
-        #      how do not have a meeting together could be waiting for an communication event and could be in the next team together
+        #      who do not have a meeting together could be waiting for a communication event and could be in the next team together
         if np.all(atEndPoint[team-1]):         
             
+            currentLocation = []
+            for r in team[0]: 
+                currentLocation.append(robots[r-1].currentLocation)
+            currentLocation = np.asarray(currentLocation)
+            if not checkMeetingLocation(currentLocation, COMMRANGE):
+                continue
             robs = []         
             for r in team[0]:                
                 robots[r-1].scheduleCounter += 1

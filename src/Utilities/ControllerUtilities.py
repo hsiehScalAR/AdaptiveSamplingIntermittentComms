@@ -9,6 +9,14 @@ Created on Wed Nov 20 09:54:18 2019
 #General imports
 import numpy as np
 
+def checkMeetingLocation(positions, commRadius):
+    normDist = np.sqrt(np.sum((positions[0] - positions)**2, axis=1))
+
+    if all(x <= commRadius for x in normDist):
+        return True
+    else:
+        return False
+
 def communicateToTeam():
     print('communicateToTeam')
     return False
