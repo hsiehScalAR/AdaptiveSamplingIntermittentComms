@@ -30,7 +30,8 @@ def communicateToTeam(robots):
     mapping = np.zeros(robots[0].discretization)
     
     for r in range(0, len(robots)):
-        mapping[robots[r].mapping.any()] = robots[r].mapping[robots[r].mapping.any()]
+        pixels = np.where(robots[r].mapping != 0, True,False)
+        mapping[pixels] = robots[r].mapping[pixels]
     
     for r in range(0, len(robots)):
         robots[r].mapping = mapping
@@ -62,21 +63,26 @@ def moveAlongPath(robot, deltaT, uMax):
     else:
         step = np.around(uMax*deltaT*distance/normDist)
         robot.currentLocation = robot.currentLocation + step
-        
+    
     robot.trajectory.append(robot.currentLocation)
     
-    singleMeasurement = measurement()
+    singleMeasurement = measurement(robot)
     robot.createMap(singleMeasurement, robot.currentLocation)  # Create Map
     
     return False
     
-def measurement():
+def measurement(robot):
     """Simulates a measurement for a single robot at one time instance"""
-    # No input
+    # Input arguments
+    # robot = robot with currentlocation and ground truth measurement map
     
-    singleMeasurement = np.random.uniform(0,1)
+#    singleMeasurement = np.random.uniform(0,1)
+    x = np.int(robot.currentLocation[0])
+    y = np.int(robot.currentLocation[1])
+    sensingRange = robot.sensingRange
 
-    return singleMeasurement
+    newData = robot.mappingGroundTruth[x-sensingRange:x+sensingRange, y-sensingRange:y+sensingRange]
+    return newData
 
 #def measurement(numRobots, sensorPeriod): 
 #    #TODO check how we measure stuff, if single value since each robot measure one place or measurement over time for all robots

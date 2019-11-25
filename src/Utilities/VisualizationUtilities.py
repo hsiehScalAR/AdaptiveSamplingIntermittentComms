@@ -61,11 +61,17 @@ def plotTrajectory(robots):
     plt.legend()
     plt.show()
 
-def plotMatrix(data):
-    plt.figure()
-    plt.title('Measurements of robots after communication events')
-    plt.imshow(data);
+def plotMeasurement(data):
+    
+    fig, ax = plt.subplots()
+
+    ax.set_title('Measurements of robots after communication events')
+    plt.imshow(data, origin='lower');
     plt.colorbar()
+    
+#    ax.set_xlim(0, 600)
+#    ax.set_ylim(0, 600)
+
     plt.show()
     
 def plotMeetingGraphs(robots, index, subplot=None, length=0):

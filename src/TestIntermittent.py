@@ -12,9 +12,9 @@ import numpy as np
 #Personal imports
 from Classes.Scheduler import Schedule
 from Classes.Robot import Robot
-from Setup import getSetup, setupMeasurmentData
+from Setup import getSetup, setupMatlabFileMeasurementData
 from Utilities.ControllerUtilities import moveAlongPath, communicateToTeam, checkMeetingLocation
-from Utilities.VisualizationUtilities import (plotMatrix, plotMeetingGraphs, plotMeetingPaths, 
+from Utilities.VisualizationUtilities import (plotMeasurement, plotMeetingGraphs, plotMeetingPaths, 
                                               clearPlots, plotTrajectory, plotTrajectoryAnimation)
 from Utilities.PathPlanningUtilities import (sampleVrand, findNearestNode, steer, buildSetVnear, 
                                              extendGraph, rewireGraph, calculateGoalSet, 
@@ -25,9 +25,8 @@ def main():
     # no inputs 
     
     """Create Measurement Data"""
-    # TODO fix this to something that I can work with
-    data = setupMeasurmentData(DISCRETIZATION)
-    plotMatrix(data)
+    measurementGroundTruth = setupMatlabFileMeasurementData(DISCRETIZATION)
+    plotMeasurement(measurementGroundTruth)
            
     """create robot to team correspondence"""
     numTeams, numRobots, robTeams = getSetup(CASE)
@@ -45,6 +44,8 @@ def main():
         robots[r].vnew = locations[r]
         robots[r].currentLocation = locations[r]
         robots[r].totalTime = initialTime
+        robots[r].mappingGroundTruth = measurementGroundTruth
+        robots[r].sensingRange = SENSINGRANGE
     
     for period in range(0,schedule.shape[1]):
         teamsDone = np.zeros(len(teams))
@@ -71,7 +72,7 @@ def main():
     while currentTime < TOTALTIME:
         currentTime = update(currentTime, robots, teams, commPeriod)
 
-    totalMap = robots[0].mapping
+    totalMap = Robot.getTotalMap()
     
     if DEBUG:
         subplot = 1
@@ -81,11 +82,10 @@ def main():
             plotMeetingPaths(robots, r, subplot, len(teams))
             subplot += 1  
             
-        plotTrajectory(robots)
         plotTrajectoryAnimation(robots, save=SAVE)
     
-    plotMatrix(totalMap)
-
+    plotMeasurement(totalMap)
+    plotTrajectory(robots)
     
     """    
     dataSensorMeasurements, totalMap = update(currentTime, robots, numRobots, locations)
@@ -346,6 +346,7 @@ if __name__ == "__main__":
     DEBUG = False #debug to true shows prints
     SAVE = True #if animation should be saved
     
+    SENSINGRANGE = 10 # Sensing range of robots
     COMMRANGE = 3 # communication range for robots
     TIMEINTERVAL = 1 # time interval for communication events
     
@@ -364,4 +365,4 @@ if __name__ == "__main__":
     GAMMARRT = 100 # constant for rrt* algorithm, can it be calculated?
     
     
-#    main()
+    main()

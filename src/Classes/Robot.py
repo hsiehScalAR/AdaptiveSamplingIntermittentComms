@@ -31,6 +31,8 @@ class Robot:
         self.sensorData = {}  # Store data as (timeStart, timeEnd): data
         self.eigenData = {}
         self.mapping = np.zeros([600,600])
+        self.mappingGroundTruth = np.zeros([600,600])
+        self.sensingRange = 0
 
         #Path variables
         self.paths = []
@@ -94,7 +96,11 @@ class Robot:
         # newData = new measurement for single robot
         # currentLocations = sensing location of single robot
         
-        self.mapping[np.int(currentLocations[0]),np.int(currentLocations[1])] = newData
+        x = np.int(self.currentLocation[0])
+        y = np.int(self.currentLocation[1])
+        sensingRange = self.sensingRange
+    
+        self.mapping[x-sensingRange:x+sensingRange, y-sensingRange:y+sensingRange] = newData
     
     @classmethod     
     def getTotalMap(cls):
@@ -102,8 +108,10 @@ class Robot:
         # Input is class
         
         totalMap = np.zeros(Robot.discretization)
-        for obj in cls.objs: 
-            totalMap += obj.mapping
+        for obj in cls.objs:
+            pixels = np.where(obj.mapping != 0, True,False)
+            totalMap[pixels] = obj.mapping[pixels]
+#            totalMap += obj.mapping
         return totalMap
         
     def addNewData(self, newData, currentLocations, timeStart, timeEnd, dataType):
