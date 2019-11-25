@@ -111,7 +111,6 @@ class Robot:
         for obj in cls.objs:
             pixels = np.where(obj.mapping != 0, True,False)
             totalMap[pixels] = obj.mapping[pixels]
-#            totalMap += obj.mapping
         return totalMap
         
     def addNewData(self, newData, currentLocations, timeStart, timeEnd, dataType):
