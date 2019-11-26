@@ -14,7 +14,7 @@ from Classes.Scheduler import Schedule
 from Classes.Robot import Robot
 from Setup import getSetup, setupMatlabFileMeasurementData
 from Utilities.ControllerUtilities import moveAlongPath, communicateToTeam, checkMeetingLocation
-from Utilities.VisualizationUtilities import (plotMeasurement, plotMeetingGraphs, plotMeetingPaths, 
+from Utilities.VisualizationUtilities import (plotMultivariateNormal, plotMeasurement, plotMeetingGraphs, plotMeetingPaths, 
                                               clearPlots, plotTrajectory, plotTrajectoryAnimation)
 from Utilities.PathPlanningUtilities import (sampleVrand, findNearestNode, steer, buildSetVnear, 
                                              extendGraph, rewireGraph, calculateGoalSet, 
@@ -26,7 +26,7 @@ def main():
     
     """Create Measurement Data"""
     measurementGroundTruth = setupMatlabFileMeasurementData(DISCRETIZATION)
-    plotMeasurement(measurementGroundTruth)
+    plotMeasurement(measurementGroundTruth, 'Ground truth measuement map')
            
     """create robot to team correspondence"""
     numTeams, numRobots, robTeams = getSetup(CASE)
@@ -72,7 +72,8 @@ def main():
     while currentTime < TOTALTIME:
         currentTime = update(currentTime, robots, teams, commPeriod)
 
-    totalMap = Robot.getTotalMap()
+#    totalMap = Robot.getTotalMap()
+    totalMap = robots[0].mapping
     
     if DEBUG:
         subplot = 1
@@ -81,11 +82,12 @@ def main():
             plotMeetingGraphs(robots, r, subplot, len(teams))
             plotMeetingPaths(robots, r, subplot, len(teams))
             subplot += 1  
-            
+        
+        plotTrajectory(robots)    
         plotTrajectoryAnimation(robots, save=SAVE)
     
-    plotMeasurement(totalMap)
-    plotTrajectory(robots)
+    plotMeasurement(totalMap, 'Measurements of robots after communication events')
+    
     
     """    
     dataSensorMeasurements, totalMap = update(currentTime, robots, numRobots, locations)
@@ -344,7 +346,7 @@ if __name__ == "__main__":
     
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 2 robots 2 teams)
     DEBUG = False #debug to true shows prints
-    SAVE = True #if animation should be saved
+    SAVE = False #if animation should be saved
     
     SENSINGRANGE = 10 # Sensing range of robots
     COMMRANGE = 3 # communication range for robots
@@ -358,11 +360,10 @@ if __name__ == "__main__":
     SENSORPERIOD = 0.1 #time between sensor measurement or between updates of data
     EIGENVECPERIOD = 0.04 #time between POD calculations
     
-    TOTALTIME = 60 #total execution time of program
+    TOTALTIME = 120 #total execution time of program
     
     UMAX = 50 # Max velocity, 30 pixel/second
     EPSILON = DISCRETIZATION[0]/10 # Maximum step size of robots
     GAMMARRT = 100 # constant for rrt* algorithm, can it be calculated?
-    
     
     main()

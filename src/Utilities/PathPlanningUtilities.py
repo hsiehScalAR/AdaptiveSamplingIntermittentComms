@@ -171,6 +171,8 @@ def rewireGraph(robots, uMax, timeInterval, debug):
             nearTotalCost, nearEdgeCost = cost(timeVnew,posVnew,vnearPos,uMax) 
     
             if nearTotalCost < vnearTime:
+                if list(robot.graph.pred[setVnear[n]]) == []:
+                    continue
                 predecessor = list(robot.graph.pred[setVnear[n]])[-1]
                 robot.graph.remove_edge(predecessor,setVnear[n])
                 robot.graph.add_edge(robot.vnewIdx,setVnear[n], weight = nearEdgeCost)

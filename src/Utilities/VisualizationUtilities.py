@@ -12,6 +12,26 @@ import networkx as nx
 import numpy as np
 import matplotlib.animation as animation
 
+from scipy.stats import multivariate_normal
+
+def plotMultivariateNormal():
+    x, y = np.mgrid[0:600:1, 0:600:1]
+    pos = np.empty(x.shape + (2,))
+    pos[:, :, 0] = x; pos[:, :, 1] = y
+    rv = []
+    plt.figure()
+    totalrv = 0
+    rv.append(multivariate_normal([30, 30], [[200.0, 100], [100, 200]]).pdf(pos))
+    rv.append(multivariate_normal([30, 60], [[200.0, 100], [100, 200]]).pdf(pos))
+    rv.append(multivariate_normal([60, 30], [[200.0, 100], [100, 200]]).pdf(pos))
+    rv.append(multivariate_normal([60, 60], [[800.0, 100], [100, 800]]).pdf(pos))
+    
+    for i in range(0,4):
+        totalrv += rv[i]
+
+    plt.contourf(x, y, totalrv)
+    plt.colorbar()
+
 def clearPlots():
     plt.close('all')
 
@@ -61,11 +81,11 @@ def plotTrajectory(robots):
     plt.legend()
     plt.show()
 
-def plotMeasurement(data):
+def plotMeasurement(data, title):
     
     fig, ax = plt.subplots()
 
-    ax.set_title('Measurements of robots after communication events')
+    ax.set_title(title)
     plt.imshow(data, origin='lower');
     plt.colorbar()
 
