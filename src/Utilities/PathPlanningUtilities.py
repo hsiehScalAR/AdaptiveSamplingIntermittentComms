@@ -271,6 +271,7 @@ def steer(robots, uMax, epsilon):
         
         minTimes.append(nearestTime)
     
+    # TODO: Add different motion model
     #steer towards vrand
     for r in range(0, len(robots)):   
         nearestNodeIdx = robots[r].nearestNodeIdx

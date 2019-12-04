@@ -8,6 +8,7 @@ Created on Tue Nov  5 13:45:18 2019
 
 #General imports
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
 import networkx as nx
 import numpy as np
 import matplotlib.animation as animation
@@ -91,39 +92,41 @@ def plotMeasurement(data, title):
 
     plt.show()
     
-def plotMeetingGraphs(robots, index, subplot=None, length=0):
-    #TODO change so that any number of robots in same team can be plotted
+def plotMeetingGraphs(robots, index, team, subplot=None, length=0):
+
     if subplot != None:
         plt.figure('RRT* Graphs')
         plt.subplot(np.ceil(length/2),2,subplot)
     else:
         plt.figure()
    
-    plt.title('robots %.d and %.d' %(index[0],index[1]))
-    
-    graph1 = robots[index[0]].totalGraph
-    graph2 = robots[index[1]].totalGraph
-    nx.draw(graph1, label='robot %.d' %(index[0]), pos=nx.get_node_attributes(graph1, 'pos'), node_color='r',node_size=100,edge_color='r',with_labels = True,font_color='w',font_size=8)
-    nx.draw(graph2, label='robot %.d' %(index[1]), pos=nx.get_node_attributes(graph2, 'pos'), node_color='b',node_size=100,edge_color='b',with_labels = True,font_color='w',font_size=8)
+    plt.title('Team %.d' %team)
+    cmap = plt.get_cmap('hsv')
+    for i in range(0,len(index)):
+        graph = robots[index[i]].totalGraph
+        node_color = colors.to_hex(cmap(i/len(index)))
+        nx.draw(graph, label='robot %.d' %(index[i]), pos=nx.get_node_attributes(graph, 'pos'),
+                node_color=node_color,node_size=100,with_labels = True,font_color='w',font_size=8)
     
     plt.legend()
     plt.show()
     
 
-def plotMeetingPaths(robots, index, subplot=None, length=0):
-    #TODO change so that any number of robots in same team can be plotted
+def plotMeetingPaths(robots, index, team, subplot=None, length=0):
+
     if subplot != None:
         plt.figure('RRT* Paths')
         plt.subplot(np.ceil(length/2),2,subplot)
     else:
         plt.figure()
     
-    plt.title('robots %.d and %.d' %(index[0],index[1]))
-    
-    graph1 = robots[index[0]].totalPath
-    graph2 = robots[index[1]].totalPath
-    nx.draw(graph1, label='robot %.d' %(index[0]), pos=nx.get_node_attributes(graph1, 'pos'), node_color='r',node_size=100,edge_color='r',with_labels = True,font_color='w',font_size=8)
-    nx.draw(graph2, label='robot %.d' %(index[1]), pos=nx.get_node_attributes(graph2, 'pos'), node_color='b',node_size=100,edge_color='b',with_labels = True,font_color='w',font_size=8)
+    plt.title('Team %.d' %team)
+    cmap = plt.get_cmap('hsv')
+    for i in range(0,len(index)):
+        graph = robots[index[i]].totalPath
+        node_color = colors.to_hex(cmap(i/len(index)))
+        nx.draw(graph, label='robot %.d' %(index[i]), pos=nx.get_node_attributes(graph, 'pos'),
+                node_color=node_color,node_size=100,with_labels = True,font_color='w',font_size=8)
     
     plt.legend()
     plt.show()

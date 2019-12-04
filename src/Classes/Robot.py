@@ -10,7 +10,7 @@ Created on Mon Nov  4 10:48:29 2019
 import numpy as np
 import networkx as nx
 #TODO see if I need itemgetter
-from operator import itemgetter
+#from operator import itemgetter
 
 class Robot:
     

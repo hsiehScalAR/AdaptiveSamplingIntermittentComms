@@ -13,7 +13,7 @@ import numpy as np
 from Classes.Scheduler import Schedule
 from Classes.Robot import Robot
 from Setup import getSetup, setupMatlabFileMeasurementData
-from Utilities.ControllerUtilities import moveAlongPath, communicateToTeam, checkMeetingLocation
+from Utilities.ControllerUtilities import moveAlongPath, communicateToTeam, checkMeetingLocation, measurement
 from Utilities.VisualizationUtilities import (plotMultivariateNormal, plotMeasurement, plotMeetingGraphs, plotMeetingPaths, 
                                               clearPlots, plotTrajectory, plotTrajectoryAnimation)
 from Utilities.PathPlanningUtilities import (sampleVrand, findNearestNode, steer, buildSetVnear, 
@@ -44,8 +44,13 @@ def main():
         robots[r].vnew = locations[r]
         robots[r].currentLocation = locations[r]
         robots[r].totalTime = initialTime
-        robots[r].mappingGroundTruth = measurementGroundTruth
         robots[r].sensingRange = SENSINGRANGE
+        
+        # TODO: This needs to be changed if different measurements are used like time series data
+        robots[r].mappingGroundTruth = measurementGroundTruth
+        
+
+    
     
     for period in range(0,schedule.shape[1]):
         teamsDone = np.zeros(len(teams))
@@ -66,7 +71,6 @@ def main():
             robots[r].composeGraphs() 
             
     """Control loop"""
-    #TODO write general update control function which moves robots along the paths
     currentTime = initialTime
     
     while currentTime < TOTALTIME:
@@ -77,14 +81,16 @@ def main():
     
     if DEBUG:
         subplot = 1
+        team = 0
         for r in teams:
             r = np.asarray(r[0]) -1
-            plotMeetingGraphs(robots, r, subplot, len(teams))
-            plotMeetingPaths(robots, r, subplot, len(teams))
-            subplot += 1  
+            plotMeetingGraphs(robots, r, team, subplot, len(teams))
+            plotMeetingPaths(robots, r, team, subplot, len(teams))
+            subplot += 1
+            team += 1
         
-        plotTrajectory(robots)    
-        plotTrajectoryAnimation(robots, save=SAVE)
+#        plotTrajectory(robots)    
+#        plotTrajectoryAnimation(robots, save=SAVE)
     
     plotMeasurement(totalMap, 'Measurements of robots after communication events')
     
@@ -128,7 +134,6 @@ def update(currentTime, robots, teams, commPeriod):
                 robots[r-1].endTotalTime  = currentTime
                 robs.append(robots[r-1])
             
-            # TODO complete communicate function
             communicateToTeam(robs)
             
             updatePaths(robs)

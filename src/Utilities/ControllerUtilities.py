@@ -37,6 +37,8 @@ def communicateToTeam(robots):
         robots[r].mapping = mapping
 
 def moveAlongPath(robot, deltaT, uMax):
+    # TODO: Add different motion model
+    
     """move the robot along the planned path and take measurements on the way"""
     # Input arguments
     # robot = which robot we are moving
