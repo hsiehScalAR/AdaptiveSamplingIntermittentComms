@@ -27,7 +27,7 @@ def main():
     
     """Create Measurement Data"""
     measurementGroundTruth = setupMatlabFileMeasurementData(DISCRETIZATION)
-    plotMeasurement(measurementGroundTruth, 'Ground truth measuement map')
+#    plotMeasurement(measurementGroundTruth, 'Ground truth measuement map')
            
     """create robot to team correspondence"""
     numTeams, numRobots, robTeams = getSetup(CASE)
@@ -53,7 +53,7 @@ def main():
         """Initialize GPs"""
         # TODO: Write GPs initialize function
         measurement(robots[r])
-        robots[r].GP.initializeGP(robots[r])
+#        robots[r].GP.initializeGP(robots[r])
     
     
     for period in range(0,schedule.shape[1]):
@@ -96,7 +96,9 @@ def main():
         plotTrajectoryAnimation(robots, save=SAVE)
 
     totalMap = robots[0].mapping
-    plotMeasurement(totalMap, 'Measurements of robots after communication events')
+#    plotMeasurement(totalMap, 'Measurements of robots after communication events')
+    
+    robots[0].GP.demo()
     
     """    
     dataSensorMeasurements, totalMap = update(currentTime, robots, numRobots, locations)
