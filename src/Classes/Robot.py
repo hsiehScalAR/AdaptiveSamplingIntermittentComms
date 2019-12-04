@@ -12,6 +12,9 @@ import networkx as nx
 #TODO see if I need itemgetter
 #from operator import itemgetter
 
+#Personal imports
+from Classes.GaussianProcess import GaussianProcess
+
 class Robot:
     
     objs = []  # Registrar keeps all attributes of class
@@ -69,6 +72,7 @@ class Robot:
         self.endNodeCounter = 0
         self.endLocation = np.array([0, 0])
         
+        self.GP = GaussianProcess()
         Robot.objs.append(self)
         Robot.discretization = discretization
         
@@ -104,6 +108,7 @@ class Robot:
     
     @classmethod     
     def getTotalMap(cls):
+        # TODO: Is essentially not needed since we communicate with each other
         """Gives the complete sensor measurements of all robots in the grid space"""
         # Input is class
         

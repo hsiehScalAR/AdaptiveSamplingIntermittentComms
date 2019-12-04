@@ -13,6 +13,7 @@ import numpy as np
 from Classes.Scheduler import Schedule
 from Classes.Robot import Robot
 from Setup import getSetup, setupMatlabFileMeasurementData
+
 from Utilities.ControllerUtilities import moveAlongPath, communicateToTeam, checkMeetingLocation, measurement
 from Utilities.VisualizationUtilities import (plotMultivariateNormal, plotMeasurement, plotMeetingGraphs, plotMeetingPaths, 
                                               clearPlots, plotTrajectory, plotTrajectoryAnimation)
@@ -52,6 +53,7 @@ def main():
         """Initialize GPs"""
         # TODO: Write GPs initialize function
         measurement(robots[r])
+        robots[r].GP.initializeGP(robots[r])
     
     
     for period in range(0,schedule.shape[1]):
@@ -78,8 +80,7 @@ def main():
     while currentTime < TOTALTIME:
         currentTime = update(currentTime, robots, teams, commPeriod)
 
-#    totalMap = Robot.getTotalMap()
-    totalMap = robots[0].mapping
+
     
     if DEBUG:
         subplot = 1
@@ -91,11 +92,11 @@ def main():
             subplot += 1
             team += 1
         
-#        plotTrajectory(robots)    
-#        plotTrajectoryAnimation(robots, save=SAVE)
-    
+        plotTrajectory(robots)    
+        plotTrajectoryAnimation(robots, save=SAVE)
+
+    totalMap = robots[0].mapping
     plotMeasurement(totalMap, 'Measurements of robots after communication events')
-    
     
     """    
     dataSensorMeasurements, totalMap = update(currentTime, robots, numRobots, locations)
@@ -367,7 +368,7 @@ if __name__ == "__main__":
     SENSORPERIOD = 0.1 #time between sensor measurement or between updates of data
     EIGENVECPERIOD = 0.04 #time between POD calculations
     
-    TOTALTIME = 120 #total execution time of program
+    TOTALTIME = 40 #total execution time of program
     
     UMAX = 50 # Max velocity, 30 pixel/second
     EPSILON = DISCRETIZATION[0]/10 # Maximum step size of robots
