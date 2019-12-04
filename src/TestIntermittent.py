@@ -49,7 +49,9 @@ def main():
         # TODO: This needs to be changed if different measurements are used like time series data
         robots[r].mappingGroundTruth = measurementGroundTruth
         
-
+        """Initialize GPs"""
+        # TODO: Write GPs initialize function
+        measurement(robots[r])
     
     
     for period in range(0,schedule.shape[1]):
