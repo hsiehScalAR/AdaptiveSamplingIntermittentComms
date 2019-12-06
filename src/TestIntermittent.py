@@ -98,7 +98,7 @@ def main():
     totalMap = robots[0].mapping
 #    plotMeasurement(totalMap, 'Measurements of robots after communication events')
     
-    robots[0].GP.demo()
+    robots[0].GP.demoGPy()
     
     """    
     dataSensorMeasurements, totalMap = update(currentTime, robots, numRobots, locations)
