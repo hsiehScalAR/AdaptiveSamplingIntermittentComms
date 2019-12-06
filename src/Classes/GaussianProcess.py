@@ -9,21 +9,63 @@ Created on Wed Dec  4 11:22:42 2019
 #General imports
 import numpy as np
 import GPy
-GPy.plotting.change_plotting_library('matplotlib')
+#GPy.plotting.change_plotting_library('matplotlib')
 
 import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal
 
 class GaussianProcess:
     def __init__(self):
-#        self.model = pyGPs.GPR()
-        print('Init GP')
+        print('Initialized GP kernel')
+        self.kernel = GPy.kern.RBF(input_dim=2, variance=1., lengthscale=1.)
+
     
     def initializeGP(self, robot):
-#        x = robot.currentLocation
-#        y = robot.mapping
-#        self.model.getPosterior(x, y)
         print('Initialize GP')
+        r,c = np.where(robot.mapping)
+        
+        y = robot.mapping[r,c]
+        y = y.reshape(-1,1)
+        
+        x = np.dstack((r,c))
+        x = x.reshape(-1,2)
+
+        self.model = GPy.models.GPRegression(x,y, self.kernel)
+#        self.model = GPy.models.SparseGPRegression(x,y, kernel=self.kernel, num_inducing=10)
+        self.model.optimize(messages=False,max_f_eval = 100,ipython_notebook=False)
+
+        
+    def updateGP(self, robot):
+        print('Updating GP')
+        r,c = np.where(robot.mapping > 0)
+        
+        y = robot.mapping[r,c]
+        y = y.reshape(-1,1)
+        
+        x = np.dstack((r,c))
+        x = x.reshape(-1,2)
+        print(y.shape)
+        self.model.set_XY(x,y)
+        
+        self.model.optimize(messages=False,max_f_eval = 100,ipython_notebook=False)
+        
+    def inferGP(self, robot):
+        X, Y = np.mgrid[0:robot.discretization[0]:1, 0:robot.discretization[1]:1]
+        z = np.dstack((np.ravel(X),np.ravel(Y)))
+        z = z.reshape(-1,2)
+
+        ym, ys = self.model.predict(z)         # predict test cases
+        
+        return ym,ys
+    
+    def plotInferGP(self, robot):
+        X, Y = np.mgrid[0:robot.discretization[0]:1, 0:robot.discretization[1]:1]
+
+        ym, ys = self.inferGP(robot)
+
+        plt.figure()
+        plt.contourf(X, Y, ym.reshape(robot.discretization))
+        plt.colorbar()
         
     def demo(self):
         
@@ -38,14 +80,15 @@ class GaussianProcess:
         m = GPy.models.GPRegression(X,Y,ker)
         
         # optimize and plot
-        m.optimize(messages=True,max_f_eval = 1000)
+        m.optimize(messages=False,max_f_eval = 1000)
 
         m.plot()
         
-    def demoGpy(self):
+    def demoGPy(self):
         mean = [0, 0]
         cov = [[1, 0], [0, 100]]  # diagonal covariance
         scale = 1 #0.001
+        
         x, y = np.random.multivariate_normal(mean, cov, 100).T
         
         xx, yy = np.meshgrid(x,y)
@@ -69,7 +112,7 @@ class GaussianProcess:
         y = y.reshape(100,1)
         kernel = GPy.kern.RBF(input_dim=2, variance=1., lengthscale=1.)
         m = GPy.models.GPRegression(posMeas,y, kernel)
-        m.optimize(messages=True,max_f_eval = 1000,ipython_notebook=False)        
+        m.optimize(messages=False,max_f_eval = 1000,ipython_notebook=False)        
         m.plot()
         
         z = np.dstack((np.ravel(X),np.ravel(Y)))

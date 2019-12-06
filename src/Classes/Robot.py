@@ -33,10 +33,14 @@ class Robot:
         self.activeLocations = {}  # Store active location as indexed by (timeStart, timeEnd): locations
         self.sensorData = {}  # Store data as (timeStart, timeEnd): data
         self.eigenData = {}
-        self.mapping = np.zeros([600,600])
-        self.mappingGroundTruth = np.zeros([600,600])
+        self.mapping = np.zeros([discretization[0],discretization[1]])
+        self.mappingGroundTruth = np.zeros_like([discretization[0],discretization[1]])
         self.sensingRange = 0
-
+        self.measurementRangeX = np.array([self.sensingRange, self.sensingRange])
+        self.measurementRangeY = np.array([self.sensingRange, self.sensingRange])
+        # TODO: use expected Measurement for cost of edges
+        self.expectedMeasurement = np.zeros_like([discretization[0],discretization[1]])
+        
         #Path variables
         self.paths = []
         self.scheduleCounter = 0
@@ -102,9 +106,12 @@ class Robot:
         
         x = np.int(self.currentLocation[0])
         y = np.int(self.currentLocation[1])
-        sensingRange = self.sensingRange
+        if self.sensingRange < 2:
+            self.mapping[x, y] = newData
     
-        self.mapping[x-sensingRange:x+sensingRange, y-sensingRange:y+sensingRange] = newData
+        else:
+            self.mapping[x-self.measurementRangeX[0]:x+self.measurementRangeX[1], 
+                         y-self.measurementRangeY[0]:y+self.measurementRangeY[1]] = newData
     
     @classmethod     
     def getTotalMap(cls):

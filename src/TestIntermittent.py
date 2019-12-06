@@ -27,7 +27,7 @@ def main():
     
     """Create Measurement Data"""
     measurementGroundTruth = setupMatlabFileMeasurementData(DISCRETIZATION)
-#    plotMeasurement(measurementGroundTruth, 'Ground truth measuement map')
+    plotMeasurement(measurementGroundTruth, 'Ground truth measurement map')
            
     """create robot to team correspondence"""
     numTeams, numRobots, robTeams = getSetup(CASE)
@@ -52,8 +52,9 @@ def main():
         
         """Initialize GPs"""
         # TODO: Write GPs initialize function
-        measurement(robots[r])
-#        robots[r].GP.initializeGP(robots[r])
+        meas = measurement(robots[r])
+        robots[r].createMap(meas, robots[r].currentLocation)
+        robots[r].GP.initializeGP(robots[r])
     
     
     for period in range(0,schedule.shape[1]):
@@ -95,10 +96,10 @@ def main():
         plotTrajectory(robots)    
         plotTrajectoryAnimation(robots, save=SAVE)
 
-    totalMap = robots[0].mapping
+#    totalMap = robots[0].mapping
 #    plotMeasurement(totalMap, 'Measurements of robots after communication events')
     
-    robots[0].GP.demoGPy()
+    robots[0].GP.plotInferGP(robots[0])
     
     """    
     dataSensorMeasurements, totalMap = update(currentTime, robots, numRobots, locations)
@@ -358,7 +359,7 @@ if __name__ == "__main__":
     DEBUG = False #debug to true shows prints
     SAVE = False #if animation should be saved
     
-    SENSINGRANGE = 10 # Sensing range of robots
+    SENSINGRANGE = 0 # Sensing range of robots, 0 or bigger then 2
     COMMRANGE = 3 # communication range for robots
     TIMEINTERVAL = 1 # time interval for communication events
     
@@ -370,7 +371,7 @@ if __name__ == "__main__":
     SENSORPERIOD = 0.1 #time between sensor measurement or between updates of data
     EIGENVECPERIOD = 0.04 #time between POD calculations
     
-    TOTALTIME = 40 #total execution time of program
+    TOTALTIME = 15 #total execution time of program
     
     UMAX = 50 # Max velocity, 30 pixel/second
     EPSILON = DISCRETIZATION[0]/10 # Maximum step size of robots

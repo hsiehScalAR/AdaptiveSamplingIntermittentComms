@@ -35,6 +35,7 @@ def communicateToTeam(robots):
     
     for r in range(0, len(robots)):
         robots[r].mapping = mapping
+        robots[r].GP.updateGP(robots[r])
 
 def moveAlongPath(robot, deltaT, uMax):
     # TODO: Add different motion model
@@ -81,9 +82,25 @@ def measurement(robot):
 #    singleMeasurement = np.random.uniform(0,1)
     x = np.int(robot.currentLocation[0])
     y = np.int(robot.currentLocation[1])
-    sensingRange = robot.sensingRange
 
-    newData = robot.mappingGroundTruth[x-sensingRange:x+sensingRange, y-sensingRange:y+sensingRange]
+    if robot.sensingRange < 2:
+        newData = robot.mappingGroundTruth[x, y]
+        return newData
+    robot.measurementRangeX = np.array([robot.sensingRange, robot.sensingRange])
+    robot.measurementRangeY = np.array([robot.sensingRange, robot.sensingRange])
+    
+    if x-robot.sensingRange <= 0:
+        robot.measurementRangeX[0] = x
+    elif x+robot.sensingRange >= robot.discretization[0]:
+        robot.measurementRangeX[1] = robot.discretization[0] - x
+    if y-robot.sensingRange <= 0:
+        robot.measurementRangeY[0] = y
+    elif y+robot.sensingRange >= robot.discretization[1]:
+        robot.measurementRangeY[1] = robot.discretization[1] - y
+        
+    newData = robot.mappingGroundTruth[x-robot.measurementRangeX[0]:x+robot.measurementRangeX[1], 
+                                       y-robot.measurementRangeY[0]:y+robot.measurementRangeY[1]]
+
     return newData
 
 #def measurement(numRobots, sensorPeriod): 

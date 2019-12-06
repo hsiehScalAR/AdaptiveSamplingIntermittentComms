@@ -13,7 +13,7 @@ import scipy.io
 def setupMatlabFileMeasurementData(discetization):
     mat = scipy.io.loadmat('Data/FTLEDoubleGyre.mat')
     data = mat['FTLE']
-    return data
+    return data + 1
 
 def getSetup(case):
     """returns the setup for the robot teams based on the case"""
