@@ -26,7 +26,7 @@ def main():
     # no inputs 
     
     """Create Measurement Data"""
-    measurementGroundTruth = setupMatlabFileMeasurementData(DISCRETIZATION)
+    measurementGroundTruth = setupMatlabFileMeasurementData(DISCRETIZATION, invert=True)
     plotMeasurement(measurementGroundTruth, 'Ground truth measurement map')
            
     """create robot to team correspondence"""
@@ -359,7 +359,7 @@ if __name__ == "__main__":
     DEBUG = False #debug to true shows prints
     SAVE = False #if animation should be saved
     
-    SENSINGRANGE = 0 # Sensing range of robots, 0 or bigger then 2
+    SENSINGRANGE = 0 # Sensing range of robots, 0 or bigger than 2
     COMMRANGE = 3 # communication range for robots
     TIMEINTERVAL = 1 # time interval for communication events
     
@@ -371,7 +371,7 @@ if __name__ == "__main__":
     SENSORPERIOD = 0.1 #time between sensor measurement or between updates of data
     EIGENVECPERIOD = 0.04 #time between POD calculations
     
-    TOTALTIME = 15 #total execution time of program
+    TOTALTIME = 20 #total execution time of program
     
     UMAX = 50 # Max velocity, 30 pixel/second
     EPSILON = DISCRETIZATION[0]/10 # Maximum step size of robots

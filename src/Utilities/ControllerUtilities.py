@@ -36,6 +36,7 @@ def communicateToTeam(robots):
     for r in range(0, len(robots)):
         robots[r].mapping = mapping
         robots[r].GP.updateGP(robots[r])
+        robots[r].GP.inferGP(robots[r])
 
 def moveAlongPath(robot, deltaT, uMax):
     # TODO: Add different motion model

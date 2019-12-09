@@ -39,7 +39,7 @@ class Robot:
         self.measurementRangeX = np.array([self.sensingRange, self.sensingRange])
         self.measurementRangeY = np.array([self.sensingRange, self.sensingRange])
         # TODO: use expected Measurement for cost of edges
-        self.expectedMeasurement = np.zeros_like([discretization[0],discretization[1]])
+        self.expectedMeasurement = np.ones([discretization[0],discretization[1]])
         
         #Path variables
         self.paths = []

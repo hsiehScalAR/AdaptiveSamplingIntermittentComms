@@ -10,10 +10,13 @@ Created on Wed Nov 20 10:21:38 2019
 import numpy as np
 import scipy.io
 
-def setupMatlabFileMeasurementData(discetization):
+def setupMatlabFileMeasurementData(discetization, invert=True):
     mat = scipy.io.loadmat('Data/FTLEDoubleGyre.mat')
     data = mat['FTLE']
-    return data + 1
+    if invert:
+        return (data + 1)*-1 +4
+    else:
+        return data + 1
 
 def getSetup(case):
     """returns the setup for the robot teams based on the case"""

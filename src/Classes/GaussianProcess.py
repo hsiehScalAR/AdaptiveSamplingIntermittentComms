@@ -17,8 +17,8 @@ from scipy.stats import multivariate_normal
 class GaussianProcess:
     def __init__(self):
         print('Initialized GP kernel')
-        self.kernel = GPy.kern.RBF(input_dim=2, variance=1., lengthscale=1.)
-
+        self.kernel = GPy.kern.RBF(input_dim=2, variance=1., lengthscale=1.,ARD=1)
+#        self.kernel = GPy.kern.RBF(input_dim=2, variance=1., lengthscale=1.)
     
     def initializeGP(self, robot):
         print('Initialize GP')
@@ -37,6 +37,7 @@ class GaussianProcess:
         
     def updateGP(self, robot):
         print('Updating GP')
+        print('Time: %.1f' %robot.totalTime)
         r,c = np.where(robot.mapping > 0)
         
         y = robot.mapping[r,c]
@@ -55,7 +56,7 @@ class GaussianProcess:
         z = z.reshape(-1,2)
 
         ym, ys = self.model.predict(z)         # predict test cases
-        
+        robot.expectedMeasurement = ym.reshape(robot.discretization)
         return ym,ys
     
     def plotInferGP(self, robot):
