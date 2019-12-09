@@ -12,7 +12,7 @@ import numpy as np
 #Personal imports
 from Classes.Scheduler import Schedule
 from Classes.Robot import Robot
-from Setup import getSetup, setupMatlabFileMeasurementData
+from Setup import getSetup, setupMatlabFileMeasurementData, loadMeshFiles
 
 from Utilities.ControllerUtilities import moveAlongPath, communicateToTeam, checkMeetingLocation, measurement
 from Utilities.VisualizationUtilities import (plotMultivariateNormal, plotMeasurement, plotMeetingGraphs, plotMeetingPaths, 
@@ -26,7 +26,8 @@ def main():
     # no inputs 
     
     """Create Measurement Data"""
-    measurementGroundTruth = setupMatlabFileMeasurementData(DISCRETIZATION, invert=True)
+#    measurementGroundTruth = setupMatlabFileMeasurementData(DISCRETIZATION, invert=True)
+    measurementGroundTruth = loadMeshFiles()
     plotMeasurement(measurementGroundTruth, 'Ground truth measurement map')
            
     """create robot to team correspondence"""
@@ -51,7 +52,6 @@ def main():
         robots[r].mappingGroundTruth = measurementGroundTruth
         
         """Initialize GPs"""
-        # TODO: Write GPs initialize function
         meas = measurement(robots[r])
         robots[r].createMap(meas, robots[r].currentLocation)
         robots[r].GP.initializeGP(robots[r])
@@ -96,8 +96,8 @@ def main():
         plotTrajectory(robots)    
         plotTrajectoryAnimation(robots, save=SAVE)
 
-#    totalMap = robots[0].mapping
-#    plotMeasurement(totalMap, 'Measurements of robots after communication events')
+    totalMap = robots[0].mapping
+    plotMeasurement(totalMap, 'Measurements of robots after communication events')
     
     robots[0].GP.plotInferGP(robots[0])
     
@@ -371,7 +371,7 @@ if __name__ == "__main__":
     SENSORPERIOD = 0.1 #time between sensor measurement or between updates of data
     EIGENVECPERIOD = 0.04 #time between POD calculations
     
-    TOTALTIME = 20 #total execution time of program
+    TOTALTIME = 50 #total execution time of program
     
     UMAX = 50 # Max velocity, 30 pixel/second
     EPSILON = DISCRETIZATION[0]/10 # Maximum step size of robots

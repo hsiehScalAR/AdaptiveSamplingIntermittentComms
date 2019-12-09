@@ -9,7 +9,6 @@ Created on Wed Dec  4 11:22:42 2019
 #General imports
 import numpy as np
 import GPy
-#GPy.plotting.change_plotting_library('matplotlib')
 
 import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal
@@ -65,8 +64,13 @@ class GaussianProcess:
         ym, ys = self.inferGP(robot)
 
         plt.figure()
-        plt.contourf(X, Y, ym.reshape(robot.discretization))
+#        plt.contourf(Y, X, ym.reshape(robot.discretization))
+#        plt.colorbar()
+#        
+        plt.imshow(ym.reshape(robot.discretization), origin='lower');
         plt.colorbar()
+    
+        plt.show()
         
     def demo(self):
         

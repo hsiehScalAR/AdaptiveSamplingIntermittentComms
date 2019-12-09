@@ -201,7 +201,7 @@ def cost(nearTime, nearPos, newPos, uMax, robot):
     if information < 1:
         information = 1
         
-#    nearEdgeCost = nearEdgeCost/information
+    nearEdgeCost = nearEdgeCost/information
     nearTotalCost = nearTime + nearEdgeCost
     return round(nearTotalCost,1), round(nearEdgeCost,1) 
 
