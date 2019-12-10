@@ -200,9 +200,10 @@ def cost(nearTime, nearPos, newPos, uMax, robot):
     information = robot.expectedMeasurement[np.int(newPos[0]),np.int(newPos[1])]
     if information < 1:
         information = 1
-        
     nearEdgeCost = nearEdgeCost/information
+
     nearTotalCost = nearTime + nearEdgeCost
+
     return round(nearTotalCost,1), round(nearEdgeCost,1) 
 
 def extendGraph(robot, uMax):

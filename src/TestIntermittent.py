@@ -54,7 +54,8 @@ def main():
         """Initialize GPs"""
         meas = measurement(robots[r])
         robots[r].createMap(meas, robots[r].currentLocation)
-        robots[r].GP.initializeGP(robots[r])
+        if GAUSSIAN:
+            robots[r].GP.initializeGP(robots[r])
     
     
     for period in range(0,schedule.shape[1]):
@@ -99,7 +100,8 @@ def main():
     totalMap = robots[0].mapping
     plotMeasurement(totalMap, 'Measurements of robots after communication events')
     
-    robots[0].GP.plotInferGP(robots[0])
+    if GAUSSIAN:
+        robots[0].GP.plotInferGP(robots[0])
     
     """    
     dataSensorMeasurements, totalMap = update(currentTime, robots, numRobots, locations)
@@ -140,7 +142,7 @@ def update(currentTime, robots, teams, commPeriod):
                 robots[r-1].endTotalTime  = currentTime
                 robs.append(robots[r-1])
             
-            communicateToTeam(robs)
+            communicateToTeam(robs, GAUSSIAN)
             
             updatePaths(robs)
             
@@ -358,6 +360,7 @@ if __name__ == "__main__":
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 2 robots 2 teams)
     DEBUG = False #debug to true shows prints
     SAVE = False #if animation should be saved
+    GAUSSIAN = False #if GP should be calculated
     
     SENSINGRANGE = 0 # Sensing range of robots, 0 or bigger than 2
     COMMRANGE = 3 # communication range for robots

@@ -22,7 +22,7 @@ def checkMeetingLocation(positions, commRadius):
     else:
         return False
 
-def communicateToTeam(robots):
+def communicateToTeam(robots, GP=True):
     """communicate sensor measurements between robots of same team at meeting location"""
     # Input arguments
     # robots = robots of same team
@@ -35,8 +35,9 @@ def communicateToTeam(robots):
     
     for r in range(0, len(robots)):
         robots[r].mapping = mapping
-        robots[r].GP.updateGP(robots[r])
-        robots[r].GP.inferGP(robots[r])
+        if GP:
+            robots[r].GP.updateGP(robots[r])
+            robots[r].GP.inferGP(robots[r])
 
 def moveAlongPath(robot, deltaT, uMax):
     # TODO: Add different motion model
@@ -101,7 +102,10 @@ def measurement(robot):
         
     newData = robot.mappingGroundTruth[x-robot.measurementRangeX[0]:x+robot.measurementRangeX[1], 
                                        y-robot.measurementRangeY[0]:y+robot.measurementRangeY[1]]
-
+    # Add noise
+    sigma = 0.1
+    mean = 0
+    newData = newData + sigma*np.random.randn(newData.shape) + mean
     return newData
 
 #def measurement(numRobots, sensorPeriod): 

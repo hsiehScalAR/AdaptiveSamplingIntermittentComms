@@ -15,7 +15,6 @@ from scipy.stats import multivariate_normal
 
 class GaussianProcess:
     def __init__(self):
-        print('Initialized GP kernel')
         self.kernel = GPy.kern.RBF(input_dim=2, variance=1., lengthscale=1.,ARD=1)
 #        self.kernel = GPy.kern.RBF(input_dim=2, variance=1., lengthscale=1.)
     
