@@ -63,6 +63,7 @@ class Robot:
         self.vnew = np.array([0, 0])
         self.vnewIdx = 0
         self.vnewCost = 0
+        self.vnewInformation = 0
         
         self.totalTime = 0
         
@@ -92,7 +93,7 @@ class Robot:
         # Input arguments:
         # FirstTime = bool that decides if we should do an edge or not
         
-        self.graph.add_node(self.nodeCounter, pos = self.vnew, t = self.totalTime)
+        self.graph.add_node(self.nodeCounter, pos = self.vnew, t = self.totalTime, informationGain = self.vnewInformation)
         self.vnewIdx = self.nodeCounter
         if self.nodeCounter != 0 and firstTime == False:
             self.graph.add_edge(self.nearestNodeIdx,self.nodeCounter, weight = self.vnewCost)

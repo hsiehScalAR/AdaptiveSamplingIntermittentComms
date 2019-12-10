@@ -95,7 +95,7 @@ def main():
             team += 1
         
         plotTrajectory(robots)    
-        plotTrajectoryAnimation(robots, save=SAVE)
+#        plotTrajectoryAnimation(robots, save=SAVE)
 
     totalMap = robots[0].mapping
     plotMeasurement(totalMap, 'Measurements of robots after communication events')
@@ -358,9 +358,9 @@ if __name__ == "__main__":
     clearPlots()
     
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 2 robots 2 teams)
-    DEBUG = False #debug to true shows prints
+    DEBUG = True #debug to true shows prints
     SAVE = False #if animation should be saved
-    GAUSSIAN = False #if GP should be calculated
+    GAUSSIAN = True #if GP should be calculated
     
     SENSINGRANGE = 0 # Sensing range of robots, 0 or bigger than 2
     COMMRANGE = 3 # communication range for robots

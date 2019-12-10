@@ -139,7 +139,7 @@ def updateSuccessorNodes(robot, startNode, uMax):
             startTime = robot.graph.nodes[key]['t']
             startPos = robot.graph.nodes[key]['pos']
             succPos = robot.graph.nodes[v]['pos']
-            succTotalCost, succEdgeCost = cost(startTime,startPos,succPos,uMax,robot)
+            succTotalCost, succEdgeCost, information = cost(startTime,startPos,succPos,uMax,robot)
             
             robot.graph[key][v]['weight'] = succEdgeCost
             robot.graph.nodes[v]['t'] = succTotalCost            
@@ -164,22 +164,31 @@ def rewireGraph(robots, uMax, timeInterval, debug):
             
         nearTotalCost = 0
         nearEdgeCost = 0
+        information = 0
         
         for n in range(0,len(setVnear)):
             vnearTime = robot.graph.nodes[setVnear[n]]['t']
+            
+            vnearInformation = robot.graph.nodes[setVnear[n]]['informationGain']
+            vnearUtility = getUtility(vnearTime,vnearInformation)
+            
             vnearPos = robot.graph.nodes[setVnear[n]]['pos']
-            nearTotalCost, nearEdgeCost = cost(timeVnew,posVnew,vnearPos,uMax,robot) 
-    
+            nearTotalCost, nearEdgeCost, information = cost(timeVnew,posVnew,vnearPos,uMax,robot) 
+            
+            nearUtility = getUtility(nearTotalCost,information)
+            
             if nearTotalCost < vnearTime:
-                if list(robot.graph.pred[setVnear[n]]) == []:
-                    continue
-                predecessor = list(robot.graph.pred[setVnear[n]])[-1]
-                robot.graph.remove_edge(predecessor,setVnear[n])
-                robot.graph.add_edge(robot.vnewIdx,setVnear[n], weight = nearEdgeCost)
-                robot.graph.nodes[setVnear[n]]['t'] = nearTotalCost
-                updateSuccessorNodes(robot, setVnear[n], uMax)
-                rewired = True
-                
+                if nearUtility >= vnearUtility:
+                    if list(robot.graph.pred[setVnear[n]]) == []:
+                        continue
+                    predecessor = list(robot.graph.pred[setVnear[n]])[-1]
+                    robot.graph.remove_edge(predecessor,setVnear[n])
+                    robot.graph.add_edge(robot.vnewIdx,setVnear[n], weight = nearEdgeCost)
+                    robot.graph.nodes[setVnear[n]]['t'] = nearTotalCost
+                    robot.graph.nodes[setVnear[n]]['informationGain'] = information
+                    updateSuccessorNodes(robot, setVnear[n], uMax)
+                    rewired = True
+                    
     if rewired:
         updateGoalSet(robots, timeInterval, debug)
             
@@ -197,14 +206,12 @@ def cost(nearTime, nearPos, newPos, uMax, robot):
     normDist = np.sqrt(np.sum((nearPos - newPos)**2))
     nearEdgeCost = normDist/uMax
 
-    information = robot.expectedMeasurement[np.int(newPos[0]),np.int(newPos[1])]
-    if information < 1:
-        information = 1
-    nearEdgeCost = nearEdgeCost/information
+    information = getInformationGain(robot,newPos)
+#    nearEdgeCost = nearEdgeCost/information
 
     nearTotalCost = nearTime + nearEdgeCost
 
-    return round(nearTotalCost,1), round(nearEdgeCost,1) 
+    return round(nearTotalCost,1), round(nearEdgeCost,1), information 
 
 def extendGraph(robot, uMax):
     """Check if there is a node in setVnear which has a smaller cost as parent to vnew than the nearest node"""
@@ -216,21 +223,33 @@ def extendGraph(robot, uMax):
     
     vnew = robot.vnew
     vminCost = robot.totalTime
+
+    vminInformation = robot.vnewInformation
+    
+    vminUtility = getUtility(vminCost,vminInformation)
     
     nearTotalCost = 0
-    nearEdgeCost = robot.vnewCost
+    vminEdgeCost = robot.vnewCost
     
     for n in range(0,len(setVnear)):
         time = robot.graph.nodes[setVnear[n]]['t']
         pos = robot.graph.nodes[setVnear[n]]['pos']
-        nearTotalCost, nearEdgeCost = cost(time,pos,vnew,uMax,robot) 
+        nearTotalCost, nearEdgeCost, information = cost(time,pos,vnew,uMax,robot) 
+        
+        nearUtility = getUtility(nearTotalCost,information)
 
-        if nearTotalCost < vminCost:
-            robot.nearestNodeIdx = setVnear[n]
-            vminCost = nearTotalCost     
+        if nearTotalCost < vminCost:        
+            if nearUtility >= vminUtility:
     
-    robot.vnewCost = nearEdgeCost
+                robot.nearestNodeIdx = setVnear[n]
+                vminCost = nearTotalCost
+                vminEdgeCost = nearEdgeCost
+                vminUtility = nearUtility
+                vminInformation = information
+        
+    robot.vnewCost = vminEdgeCost
     robot.totalTime = vminCost
+    robot.vnewInformation = vminInformation
 
 def buildSetVnear(robot, epsilon, gammaRRT):
     """Examine all nodes and build set with nodes close to vnew with a radius of communication range"""
@@ -321,11 +340,14 @@ def steer(robots, uMax, epsilon):
             if vnew[1] < 0:
                 vnew[1] = 0
             print(vnew)
-                
+        
+        information = getInformationGain(robots[r], vnew)
+        
         robots[r].vnew = np.around(vnew)
         robots[r].vnewCost = round(travelTimeVnew,1)
         robots[r].totalTime = round(totalTimeVnew,1)
-
+        robots[r].vnewInformation = information
+        
 def findNearestNode(graph, vrand):
     """Return nearest node index"""
     # Input Arguments
@@ -359,3 +381,13 @@ def sampleVrand(discretization, rangeSamples, distribution = 'uniform'):
             inBoundary = True
   
     return np.around(vrand)
+
+def getInformationGain(robot, pos):
+    information = robot.expectedMeasurement[np.int(pos[0]),np.int(pos[1])]
+#    if information < 1:
+#        information = 1
+    return information
+
+def getUtility(time, informationGain):
+    beta = 2
+    return time + beta*informationGain 
