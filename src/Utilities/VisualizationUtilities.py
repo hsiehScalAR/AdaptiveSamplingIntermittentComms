@@ -36,7 +36,7 @@ def plotMultivariateNormal():
 def clearPlots():
     plt.close('all')
 
-def plotTrajectoryAnimation(robots, save=False):
+def plotTrajectoryAnimation(robots):
     
     fig = plt.figure()
     ax1 = plt.axes(xlim=(0, 600), ylim=(0,600))
@@ -64,21 +64,20 @@ def plotTrajectoryAnimation(robots, save=False):
 
         for gnum,graph in enumerate(graphs):
             
-            graph.set_data(xlist[gnum], ylist[gnum]) # set data for each line separately.     
+            graph.set_data(ylist[gnum], xlist[gnum]) # set data for each line separately.     
         return graphs
 
     ani = animation.FuncAnimation(fig, animate, init_func=init,
                                   frames=len(robots[-1].trajectory), interval=200)
     plt.legend()
     plt.show()
-    if save:
-        ani.save('basic_animation.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
+    ani.save('basic_animation.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
     
 def plotTrajectory(robots):
     plt.figure()
     for r in range(0,len(robots)):
         x,y = zip(*robots[r].trajectory)
-        plt.plot(x,y, '-', label='Robot %d'%r)
+        plt.plot(y,x, '-', label='Robot %d'%r)
     plt.legend()
     plt.show()
 

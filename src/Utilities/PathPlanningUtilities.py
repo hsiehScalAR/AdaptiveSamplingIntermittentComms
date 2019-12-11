@@ -177,17 +177,16 @@ def rewireGraph(robots, uMax, timeInterval, debug):
             
             nearUtility = getUtility(nearTotalCost,information)
             
-            if nearTotalCost < vnearTime:
-                if nearUtility >= vnearUtility:
-                    if list(robot.graph.pred[setVnear[n]]) == []:
-                        continue
-                    predecessor = list(robot.graph.pred[setVnear[n]])[-1]
-                    robot.graph.remove_edge(predecessor,setVnear[n])
-                    robot.graph.add_edge(robot.vnewIdx,setVnear[n], weight = nearEdgeCost)
-                    robot.graph.nodes[setVnear[n]]['t'] = nearTotalCost
-                    robot.graph.nodes[setVnear[n]]['informationGain'] = information
-                    updateSuccessorNodes(robot, setVnear[n], uMax)
-                    rewired = True
+            if (nearTotalCost < vnearTime) or (nearUtility < vnearUtility):
+                if list(robot.graph.pred[setVnear[n]]) == []:
+                    continue
+                predecessor = list(robot.graph.pred[setVnear[n]])[-1]
+                robot.graph.remove_edge(predecessor,setVnear[n])
+                robot.graph.add_edge(robot.vnewIdx,setVnear[n], weight = nearEdgeCost)
+                robot.graph.nodes[setVnear[n]]['t'] = nearTotalCost
+                robot.graph.nodes[setVnear[n]]['informationGain'] = information
+                updateSuccessorNodes(robot, setVnear[n], uMax)
+                rewired = True
                     
     if rewired:
         updateGoalSet(robots, timeInterval, debug)
@@ -238,14 +237,12 @@ def extendGraph(robot, uMax):
         
         nearUtility = getUtility(nearTotalCost,information)
 
-        if nearTotalCost < vminCost:        
-            if nearUtility >= vminUtility:
-    
-                robot.nearestNodeIdx = setVnear[n]
-                vminCost = nearTotalCost
-                vminEdgeCost = nearEdgeCost
-                vminUtility = nearUtility
-                vminInformation = information
+        if (nearTotalCost < vminCost) or (nearUtility < vminUtility):        
+            robot.nearestNodeIdx = setVnear[n]
+            vminCost = nearTotalCost
+            vminEdgeCost = nearEdgeCost
+            vminUtility = nearUtility
+            vminInformation = information
         
     robot.vnewCost = vminEdgeCost
     robot.totalTime = vminCost
@@ -383,11 +380,13 @@ def sampleVrand(discretization, rangeSamples, distribution = 'uniform'):
     return np.around(vrand)
 
 def getInformationGain(robot, pos):
-    information = robot.expectedMeasurement[np.int(pos[0]),np.int(pos[1])]
+    information = robot.expectedVariance[np.int(pos[0]),np.int(pos[1])]
 #    if information < 1:
 #        information = 1
     return information
 
 def getUtility(time, informationGain):
-    beta = 2
-    return time + beta*informationGain 
+    beta = 1
+    if informationGain < 1/beta:
+        informationGain = 1/beta
+    return time/(beta*informationGain) 

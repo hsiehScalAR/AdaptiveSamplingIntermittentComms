@@ -31,10 +31,13 @@ def main():
     plotMeasurement(measurementGroundTruth, 'Ground truth measurement map')
            
     """create robot to team correspondence"""
-    numTeams, numRobots, robTeams = getSetup(CASE)
-
+    numTeams, numRobots, robTeams, positions = getSetup(CASE)
+    
     """Variables"""
-    locations = randomStartingPositions(numRobots) #locations or robots
+    if positions.any():
+        locations = positions
+    else:
+        locations = randomStartingPositions(numRobots) #locations or robots
 
     """Initialize schedules and robots"""
     schedule, teams, commPeriod = initializeScheduler(numRobots, numTeams, robTeams)
@@ -94,14 +97,19 @@ def main():
             subplot += 1
             team += 1
         
-        plotTrajectory(robots)    
-#        plotTrajectoryAnimation(robots, save=SAVE)
+        plotTrajectory(robots)
+        if ANIMATION:
+            plotTrajectoryAnimation(robots)
 
     totalMap = robots[0].mapping
     plotMeasurement(totalMap, 'Measurements of robots after communication events')
     
+    
     if GAUSSIAN:
         robots[0].GP.plotInferGP(robots[0])
+        robots[1].GP.plotInferGP(robots[1])
+        robots[2].GP.plotInferGP(robots[2])
+        robots[3].GP.plotInferGP(robots[3])
     
     """    
     dataSensorMeasurements, totalMap = update(currentTime, robots, numRobots, locations)
@@ -357,9 +365,9 @@ if __name__ == "__main__":
     
     clearPlots()
     
-    CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 2 robots 2 teams)
-    DEBUG = True #debug to true shows prints
-    SAVE = False #if animation should be saved
+    CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 4 robots 4 teams)
+    DEBUG = False #debug to true shows prints
+    ANIMATION = False #if animation should be done
     GAUSSIAN = True #if GP should be calculated
     
     SENSINGRANGE = 0 # Sensing range of robots, 0 or bigger than 2
@@ -376,7 +384,7 @@ if __name__ == "__main__":
     
     TOTALTIME = 50 #total execution time of program
     
-    UMAX = 50 # Max velocity, 30 pixel/second
+    UMAX = 50 # Max velocity, pixel/second
     EPSILON = DISCRETIZATION[0]/10 # Maximum step size of robots
     GAMMARRT = 100 # constant for rrt* algorithm, can it be calculated?
     
