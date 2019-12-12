@@ -108,7 +108,7 @@ class Robot:
         
         x = np.int(self.currentLocation[0])
         y = np.int(self.currentLocation[1])
-        if self.sensingRange < 2:
+        if self.sensingRange < 1:
             self.mapping[x, y] = newData
     
         else:

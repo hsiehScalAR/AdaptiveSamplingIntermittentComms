@@ -38,7 +38,7 @@ def loadMeshFiles():
         posy = np.int(meshNodes[:,idx][1])
         data[posx-radius:posx+radius,posy-radius:posy+radius] = nodeSol1[idx]
         
-    return data/20 +1
+    return data/20
     
 def getSetup(case):
     """returns the setup for the robot teams based on the case"""
@@ -78,10 +78,10 @@ def getSetup(case):
                              [0, 1, 1, 0],
                              [0, 0, 1, 1],])
     
-        positions = np.array([[100, 100],
-                             [100, 500],
-                             [500, 100],
-                             [500, 500],])
+        positions = np.array([[0, 0],
+                             [0, 599],
+                             [599, 0],
+                             [599, 599],])
     
     else:
         exit()

@@ -327,7 +327,6 @@ def steer(robots, uMax, epsilon):
         discretization = robots[r].discretization
 
         if not (0 <= vnew[0] < discretization[0] and 0 <= vnew[1] < discretization[1]):
-            print('Vnew outside bounds ', vnew)
             if vnew[0] >= discretization[0]:
                 vnew[0] = discretization[0]-1
             if vnew[1] >= discretization[1]:
@@ -336,7 +335,6 @@ def steer(robots, uMax, epsilon):
                 vnew[0] = 0
             if vnew[1] < 0:
                 vnew[1] = 0
-            print(vnew)
         
         information = getInformationGain(robots[r], vnew)
         
@@ -380,13 +378,44 @@ def sampleVrand(discretization, rangeSamples, distribution = 'uniform'):
     return np.around(vrand)
 
 def getInformationGain(robot, pos):
-    information = robot.expectedVariance[np.int(pos[0]),np.int(pos[1])]
-#    if information < 1:
-#        information = 1
-    return information
+    # TODO: Check if better to calculate all positions or just new node positions
+#    information = robot.expectedVariance[np.int(pos[0]),np.int(pos[1])]
+    ym, ys = robot.GP.inferGP(robot,pos)
+    return ys
 
 def getUtility(time, informationGain):
+    # TODO: write better utility function or use variance to choose new points
     beta = 1
     if informationGain < 1/beta:
         informationGain = 1/beta
     return time/(beta*informationGain) 
+#    return 0
+    
+def sampleNPoints(robot, discretization, rangeSamples, distribution = 'uniform'):
+    maxVariance = 0
+    vrand = np.array([0, 0])
+    for i in range(0,10):
+        point = sampleVrand(discretization, rangeSamples, distribution)
+        var = getInformationGain(robot, point)
+        if var > maxVariance:
+            vrand = point
+            maxVariance = var
+    return vrand
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

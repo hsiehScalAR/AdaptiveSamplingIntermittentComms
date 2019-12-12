@@ -13,13 +13,15 @@ import GPy
 import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal
 
+ITERATIONS = 100
+
 class GaussianProcess:
     def __init__(self):
-        self.kernel = GPy.kern.RBF(input_dim=2, variance=1., lengthscale=1.,ARD=True,useGPU=True)
+        self.kernel = GPy.kern.RBF(input_dim=2, variance=1., lengthscale=1.,ARD=True,useGPU=False)
 #        self.kernel = GPy.kern.RBF(input_dim=2, variance=1., lengthscale=1.)
     
     def initializeGP(self, robot):
-        r,c = np.where(robot.mapping)
+        r,c = np.where(robot.mapping != 0)
         
         y = robot.mapping[r,c]
         y = y.reshape(-1,1)
@@ -27,19 +29,24 @@ class GaussianProcess:
         x = np.dstack((r,c))
         x = x.reshape(-1,2)
         
-        self.model = GPy.models.GPRegression(x,y, self.kernel)
-#        self.model = GPy.models.BayesianGPLVM(y,2,X=x,kernel = self.kernel)
-#        self.model = GPy.models.SparseGPLVM(y,2,X=x,kernel = self.kernel)
-#        self.model = GPy.models.GPRegressionGrid(x, y, kernel=self.kernel)
+        self.model = GPy.models.GPRegression(x,y, self.kernel)                                 # Works good
+#        self.model = GPy.models.BayesianGPLVM(y,2,X=x,kernel = self.kernel)                    # Error
+#        self.model = GPy.models.SparseGPLVM(y,2,X=x,kernel = self.kernel, num_inducing=100)    # Don't know how to induce correctly
         
-#        self.model = GPy.models.SparseGPRegression(x,y, kernel=self.kernel, num_inducing=10)
-        self.model.optimize(messages=False,max_f_eval = 100,ipython_notebook=False)
+#        self.model = GPy.models.GPRegressionGrid(x, y, kernel=self.kernel)                     # Error       
+
+#        self.model = GPy.models.SparseGPRegression(x,y, kernel=self.kernel, num_inducing=100)  # Don't know how to induce correctly
+#        self.model.inference_method=GPy.inference.latent_function_inference.FITC()
+        
+#        self.model.optimize(optimizer= 'scg',messages=False,max_iters = ITERATIONS,ipython_notebook=False)       # Don't see difference, maybe slower
+        self.model.optimize(optimizer='lbfgsb',messages=False,max_f_eval = ITERATIONS,ipython_notebook=False)    # Works good
 
         
     def updateGP(self, robot):
         
+        print('Updating GP for robot %d' %robot.ID)
         print('Time: %.1f' %robot.endTotalTime)
-        r,c = np.where(robot.mapping > 0)
+        r,c = np.where(robot.mapping > 0.05)
         
         y = robot.mapping[r,c]
         y = y.reshape(-1,1)
@@ -49,35 +56,43 @@ class GaussianProcess:
         print(y.shape)
         if y.shape[0] == 0:
             return
+
         self.model.set_XY(x,y)
         
-        self.model.optimize(messages=False,max_f_eval = 100,ipython_notebook=False)
-        print('Updated GP\n')
+#        self.model.optimize(optimizer= 'scg',messages=False,max_iters = ITERATIONS,ipython_notebook=False)       # Don't see difference, maybe slower       
+        self.model.optimize(optimizer='lbfgsb',messages=False,max_f_eval = ITERATIONS,ipython_notebook=False)    # Works good
+        print('GP Updated\n')
         
-    def inferGP(self, robot):
-        X, Y = np.mgrid[0:robot.discretization[0]:1, 0:robot.discretization[1]:1]
-        z = np.dstack((np.ravel(X),np.ravel(Y)))
-        z = z.reshape(-1,2)
-
+    def inferGP(self, robot, pos=None):
+        
+        if isinstance(pos,np.ndarray):
+            z = pos.reshape(-1,2)
+            ym, ys = self.model.predict(z)
+            return ym, ys
+        else:
+            X, Y = np.mgrid[0:robot.discretization[0]:1, 0:robot.discretization[1]:1]
+            z = np.dstack((np.ravel(X),np.ravel(Y)))
+            z = z.reshape(-1,2)
+        print('inferring GP')
         ym, ys = self.model.predict(z)
 
         robot.expectedMeasurement = ym.reshape(robot.discretization)
         robot.expectedVariance = ys.reshape(robot.discretization)
-        return ym,ys
-    
-    def plotInferGP(self, robot):
-#        X, Y = np.mgrid[0:robot.discretization[0]:1, 0:robot.discretization[1]:1]
-
-#        ym, ys = self.inferGP(robot)
-        ym = robot.expectedMeasurement
-        plt.figure()        
-#        plt.imshow(ym.reshape(robot.discretization), origin='lower');
-        plt.imshow(ym, origin='lower');
+        print('GP inferred\n')
         
+    def plotGP(self, robot):
+
+        self.inferGP(robot)
+        ym = robot.expectedMeasurement
+
+        fig, ax = plt.subplots()
+        ax.set_title('Robot %d' %robot.ID)     
+        plt.imshow(ym, origin='lower');        
         plt.colorbar()
-    
         plt.show()
         
+#        self.model.plot()
+#
 #        slices = [100, 200, 300, 400, 500]
 #        figure = GPy.plotting.plotting_library().figure(len(slices), 1)
 #        for i, y in zip(range(len(slices)), slices):

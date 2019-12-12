@@ -19,7 +19,7 @@ from Utilities.VisualizationUtilities import (plotMultivariateNormal, plotMeasur
                                               clearPlots, plotTrajectory, plotTrajectoryAnimation)
 from Utilities.PathPlanningUtilities import (sampleVrand, findNearestNode, steer, buildSetVnear, 
                                              extendGraph, rewireGraph, calculateGoalSet, 
-                                             checkGoalSet, leastCostGoalSet, getPath)
+                                             checkGoalSet, leastCostGoalSet, getPath, sampleNPoints)
 
 def main():
     """main test loop"""
@@ -34,7 +34,7 @@ def main():
     numTeams, numRobots, robTeams, positions = getSetup(CASE)
     
     """Variables"""
-    if positions.any():
+    if isinstance(positions, np.ndarray):
         locations = positions
     else:
         locations = randomStartingPositions(numRobots) #locations or robots
@@ -45,6 +45,8 @@ def main():
 
     """create the initial plans for all periods"""
     initialTime = 0
+    
+    print('Initializing Environment')
     for r in range(0,numRobots):
         robots[r].vnew = locations[r]
         robots[r].currentLocation = locations[r]
@@ -59,8 +61,9 @@ def main():
         robots[r].createMap(meas, robots[r].currentLocation)
         if GAUSSIAN:
             robots[r].GP.initializeGP(robots[r])
+    print('Environment Initialized\n')
     
-    
+    print('Initializing Paths')
     for period in range(0,schedule.shape[1]):
         teamsDone = np.zeros(len(teams))
     
@@ -78,15 +81,19 @@ def main():
             
         for r in range(0,numRobots):
             robots[r].composeGraphs() 
-            
+    print('Paths Initialized\n')    
+    
     """Control loop"""
+    
+    print('Starting ControlLoop')
     currentTime = initialTime
     
     while currentTime < TOTALTIME:
         currentTime = update(currentTime, robots, teams, commPeriod)
 
-
+    print('ControlLoop Finished\n')
     
+    print('Starting Plotting')
     if DEBUG:
         subplot = 1
         team = 0
@@ -101,16 +108,18 @@ def main():
         if ANIMATION:
             plotTrajectoryAnimation(robots)
 
+    plotTrajectory(robots)
     totalMap = robots[0].mapping
     plotMeasurement(totalMap, 'Measurements of robots after communication events')
     
     
     if GAUSSIAN:
-        robots[0].GP.plotInferGP(robots[0])
-        robots[1].GP.plotInferGP(robots[1])
-        robots[2].GP.plotInferGP(robots[2])
-        robots[3].GP.plotInferGP(robots[3])
+        robots[0].GP.updateGP(robots[0])
+        robots[0].GP.plotGP(robots[0])
+        robots[2].GP.updateGP(robots[2])
+        robots[2].GP.plotGP(robots[2])
     
+    print('Plotting Finished\n')
     """    
     dataSensorMeasurements, totalMap = update(currentTime, robots, numRobots, locations)
     """
@@ -152,7 +161,9 @@ def update(currentTime, robots, teams, commPeriod):
             
             communicateToTeam(robs, GAUSSIAN)
             
+            print('Updating Paths')
             updatePaths(robs)
+            print('Paths Updated\n')
             
             for r in team[0]:
                 robots[r-1].composeGraphs()
@@ -207,7 +218,7 @@ def updatePaths(robots):
         robots[r].addNode(firstTime = True)
              
     connected = False
-    
+    counter = 0
     while not connected:    
         #sample new nodes and create path
         distribution = 'uniform'
@@ -227,7 +238,10 @@ def updatePaths(robots):
             for r in range(0, len(robots)):       
                 
                 if distribution == 'uniform':
-                    vrand = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
+                    # TODO: trying to get highest variance point by sampling several ones
+                    vrand = sampleNPoints(robots[r], DISCRETIZATION, rangeSamples, distribution)
+#                    vrand = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
+                    
                 
                 robots[r].vrand = vrand
                 
@@ -268,7 +282,8 @@ def updatePaths(robots):
                 robots[r].vnew = robots[r].endLocation
                 robots[r].totalTime = robots[r].endTotalTime
                 getPath(robots[r])
-                
+        counter += 1
+    print('Needed %d retry(-ies) for path planning' %(counter-1))
     
 def initializeRobots(numRobots, teams, schedule):
     """initialize the robot class"""
@@ -370,7 +385,7 @@ if __name__ == "__main__":
     ANIMATION = False #if animation should be done
     GAUSSIAN = True #if GP should be calculated
     
-    SENSINGRANGE = 0 # Sensing range of robots, 0 or bigger than 2
+    SENSINGRANGE = 0 # Sensing range of robots
     COMMRANGE = 3 # communication range for robots
     TIMEINTERVAL = 1 # time interval for communication events
     
@@ -382,7 +397,7 @@ if __name__ == "__main__":
     SENSORPERIOD = 0.1 #time between sensor measurement or between updates of data
     EIGENVECPERIOD = 0.04 #time between POD calculations
     
-    TOTALTIME = 50 #total execution time of program
+    TOTALTIME = 100 #total execution time of program
     
     UMAX = 50 # Max velocity, pixel/second
     EPSILON = DISCRETIZATION[0]/10 # Maximum step size of robots
