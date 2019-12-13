@@ -24,11 +24,18 @@ The project uses numpy, matplotlib and networkx.
 #### Numpy, scipy and matplotlib
 
 `sudo apt-get install python-pip`
+
 `python -m pip install --user numpy scipy matplotlib`
 
 #### Networkx
 
 `pip install networkx`
+
+
+#### GPy
+
+`pip install gpy`
+
 
 ## Source code organization
 

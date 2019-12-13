@@ -17,10 +17,17 @@ ITERATIONS = 100
 
 class GaussianProcess:
     def __init__(self):
+        """Initialize kernel for the GPs"""
+        # No input
+        
         self.kernel = GPy.kern.RBF(input_dim=2, variance=1., lengthscale=1.,ARD=True,useGPU=False)
 #        self.kernel = GPy.kern.RBF(input_dim=2, variance=1., lengthscale=1.)
     
     def initializeGP(self, robot):
+        """Initialize model for the GPs"""
+        # Input arguments:
+        # robot = robot whose GP is to be initialized
+        
         r,c = np.where(robot.mapping != 0)
         
         y = robot.mapping[r,c]
@@ -43,6 +50,9 @@ class GaussianProcess:
 
         
     def updateGP(self, robot):
+        """Update function for GPs, adds new measurements to model"""
+        # Input arguments:
+        # robot = robot whose GP is to be updated
         
         print('Updating GP for robot %d' %robot.ID)
         print('Time: %.1f' %robot.endTotalTime)
@@ -64,6 +74,10 @@ class GaussianProcess:
         print('GP Updated\n')
         
     def inferGP(self, robot, pos=None):
+        """Calculates estimated measurement at location"""
+        # Input arguments:
+        # robot = robot whose GP should calculate estimate
+        # pos = if single position, else whole grid is calculated
         
         if isinstance(pos,np.ndarray):
             z = pos.reshape(-1,2)
@@ -73,7 +87,7 @@ class GaussianProcess:
             X, Y = np.mgrid[0:robot.discretization[0]:1, 0:robot.discretization[1]:1]
             z = np.dstack((np.ravel(X),np.ravel(Y)))
             z = z.reshape(-1,2)
-        print('inferring GP')
+        print('Inferring GP')
         ym, ys = self.model.predict(z)
 
         robot.expectedMeasurement = ym.reshape(robot.discretization)
@@ -81,7 +95,10 @@ class GaussianProcess:
         print('GP inferred\n')
         
     def plotGP(self, robot):
-
+        """Plotting model of the GP"""
+        # Input arguments:
+        # robot = robot whose GP is to be plotted
+        
         self.inferGP(robot)
         ym = robot.expectedMeasurement
 
@@ -99,6 +116,9 @@ class GaussianProcess:
 #            self.model.plot(figure=figure, fixed_inputs=[(0,y)], row=(i+1), plot_data=False)
         
     def demoGPy(self):
+        """Demo function to demonstrate GPy library"""
+        # No input
+        
         mean = [0, 0]
         cov = [[1, 0], [0, 100]]  # diagonal covariance
         scale = 1 #0.001

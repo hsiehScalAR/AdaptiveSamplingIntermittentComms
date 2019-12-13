@@ -115,76 +115,78 @@ class Robot:
             self.mapping[x-self.measurementRangeX[0]:x+self.measurementRangeX[1], 
                          y-self.measurementRangeY[0]:y+self.measurementRangeY[1]] = newData
     
-    @classmethod     
-    def getTotalMap(cls):
-        # TODO: Is essentially not needed since we communicate with each other
-        """Gives the complete sensor measurements of all robots in the grid space"""
-        # Input is class
+    # TODO: remove if sure about it
+    
+    # @classmethod     
+    # def getTotalMap(cls):
+    #     # TODO: Is essentially not needed since we communicate with each other
+    #     """Gives the complete sensor measurements of all robots in the grid space"""
+    #     # Input is class
         
-        totalMap = np.zeros(Robot.discretization)
-        for obj in cls.objs:
-            pixels = np.where(obj.mapping != 0, True,False)
-            totalMap[pixels] = obj.mapping[pixels]
-        return totalMap
+    #     totalMap = np.zeros(Robot.discretization)
+    #     for obj in cls.objs:
+    #         pixels = np.where(obj.mapping != 0, True,False)
+    #         totalMap[pixels] = obj.mapping[pixels]
+    #     return totalMap
         
-    def addNewData(self, newData, currentLocations, timeStart, timeEnd, dataType):
-        """Update Robot data either from measurements or eigenvalues"""
-        # Input arguments:
-        # newData = new measurement or eigenvalue calculations of all robots
-        # currentLocations = sensing locations of all robots
-        # timeStart = start time of measurements
-        # timeEnd = end time of measurements
-        # dataType = if sensor or eigenvalue
+    # def addNewData(self, newData, currentLocations, timeStart, timeEnd, dataType):
+    #     """Update Robot data either from measurements or eigenvalues"""
+    #     # Input arguments:
+    #     # newData = new measurement or eigenvalue calculations of all robots
+    #     # currentLocations = sensing locations of all robots
+    #     # timeStart = start time of measurements
+    #     # timeEnd = end time of measurements
+    #     # dataType = if sensor or eigenvalue
         
-        if dataType == 'sensor':
-            self.sensorData[(timeStart, timeEnd)] = newData
+    #     if dataType == 'sensor':
+    #         self.sensorData[(timeStart, timeEnd)] = newData
             
-        else:
-            self.eigenData[(timeStart, timeEnd)] = newData
+    #     else:
+    #         self.eigenData[(timeStart, timeEnd)] = newData
 
-        self.activeLocations[(timeStart, timeEnd)] = currentLocations  # Store active location as indexed by (timeStart, timeEnd): locations
+    #     self.activeLocations[(timeStart, timeEnd)] = currentLocations  # Store active location as indexed by (timeStart, timeEnd): locations
 
-    def getDataRobots(self, newData, dataType):
-        """Get Robot data either from measurements or eigenvalues"""
-        # Input arguments:
-        # newData = new measurement or eigenvalue calculations
-        # dataType = if sensor or eigenvalue
+    # def getDataRobots(self, newData, dataType):
+    #     """Get Robot data either from measurements or eigenvalues"""
+    #     # Input arguments:
+    #     # newData = new measurement or eigenvalue calculations
+    #     # dataType = if sensor or eigenvalue
         
-        if dataType == 'sensor':
-            self.sensorData = {**self.sensorData, **newData}
-        else:
-            self.eigenData = {**self.eigenData, **newData}
+    #     if dataType == 'sensor':
+    #         self.sensorData = {**self.sensorData, **newData}
+    #     else:
+    #         self.eigenData = {**self.eigenData, **newData}
 
-    @classmethod 
-    def constructDataMatrix(cls):
-        #TODO check if I can do that differently and if I even need it
-        """Gives the time evolution of the measurements in [gridX,gridY, time]"""
+    # @classmethod 
+    # def constructDataMatrix(cls):
+    #     #TODO check if I can do that differently and if I even need it
+    #     """Gives the time evolution of the measurements in [gridX,gridY, time]"""
         
-        maxTime = 0
-        # Find end time of data matrix
-        for obj in cls.objs:
-            keys = list(obj.sensorData.keys())
-            maxKeys = max(keys, key=itemgetter(1))[1]  # Returns largest end time
-            if maxTime < maxKeys:
-                maxTime = maxKeys
+    #     maxTime = 0
+    #     # Find end time of data matrix
+    #     for obj in cls.objs:
+    #         keys = list(obj.sensorData.keys())
+    #         maxKeys = max(keys, key=itemgetter(1))[1]  # Returns largest end time
+    #         if maxTime < maxKeys:
+    #             maxTime = maxKeys
 
-        dataMatrix = np.zeros((Robot.discretization[0], Robot.discretization[1], maxTime))
+    #     dataMatrix = np.zeros((Robot.discretization[0], Robot.discretization[1], maxTime))
         
-        for obj in cls.objs:  # Fill in data matrix
+    #     for obj in cls.objs:  # Fill in data matrix
 
-            # Match sensor data start and end time to active locations
-            for key, data in obj.sensorData.items():
-                dataStartTime, dataEndTime = key[0], key[1]
+    #         # Match sensor data start and end time to active locations
+    #         for key, data in obj.sensorData.items():
+    #             dataStartTime, dataEndTime = key[0], key[1]
                 
-                dataMatrix[obj.activeLocations[(dataStartTime, dataEndTime)][:, 0], obj.activeLocations[(dataStartTime, dataEndTime)][:, 1], dataStartTime:dataEndTime] = data
-        return dataMatrix
+    #             dataMatrix[obj.activeLocations[(dataStartTime, dataEndTime)][:, 0], obj.activeLocations[(dataStartTime, dataEndTime)][:, 1], dataStartTime:dataEndTime] = data
+    #     return dataMatrix
 
-    @classmethod
-    def estimateLossyMatrix(cls, dataMatrix, eigenvalues, eigenvectors):
-        """Estimates missing values of matrix using POD eigenvalues and vectors"""
+    # @classmethod
+    # def estimateLossyMatrix(cls, dataMatrix, eigenvalues, eigenvectors):
+    #     """Estimates missing values of matrix using POD eigenvalues and vectors"""
         
-        estimateMatrix = np.zeros_like(dataMatrix)
-        return estimateMatrix
+    #     estimateMatrix = np.zeros_like(dataMatrix)
+    #     return estimateMatrix
 
 
 

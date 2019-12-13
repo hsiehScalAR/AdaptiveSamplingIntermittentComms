@@ -105,12 +105,12 @@ def main():
             team += 1
         
         plotTrajectory(robots)
+        totalMap = robots[0].mapping
+        plotMeasurement(totalMap, 'Measurements of robots after communication events')
+
         if ANIMATION:
             plotTrajectoryAnimation(robots)
-
-    plotTrajectory(robots)
-    totalMap = robots[0].mapping
-    plotMeasurement(totalMap, 'Measurements of robots after communication events')
+        
     
     
     if GAUSSIAN:
@@ -120,9 +120,7 @@ def main():
         robots[2].GP.plotGP(robots[2])
     
     print('Plotting Finished\n')
-    """    
-    dataSensorMeasurements, totalMap = update(currentTime, robots, numRobots, locations)
-    """
+    
 
 def update(currentTime, robots, teams, commPeriod):
     """Update procedure of intermittent communication"""
@@ -169,34 +167,6 @@ def update(currentTime, robots, teams, commPeriod):
                 robots[r-1].composeGraphs()
 
     return currentTime
-    
-    """
-        # Collect and send sensing data
-        for r in range(0, numRobots):
-            dataValues, singleMeasurement = measurement(numRobots, SENSORPERIOD)  # Measurements for all robots during one sensor period
-            robots[r].addNewData(dataValues, locations, currentTime, currentTime + SENSORPERIOD, 'sensor')  # Set data matrices
-            robots[r].createMap(singleMeasurement, locations[r])  # Create Map
-
-        currentTime += SENSORPERIOD
-        
-
-    dataSensorMeasurements = Robot.constructDataMatrix()  # Aggregated matrix of estimated values from robots
-    totalMap = Robot.getTotalMap()
-
-    if DEBUG:
-        
-        print('mean random Sample')
-        print(mean)
-        print('stdDev random Sample')
-        print(stdDev)
-        
-        print('Data Measurements')
-        print(np.any(dataSensorMeasurements))
-        plotMatrix(totalMap)
-
-        
-    return dataSensorMeasurements, totalMap
-    """
 
 def updatePaths(robots):
     """Update procedure of intermittent communication"""
@@ -397,7 +367,7 @@ if __name__ == "__main__":
     SENSORPERIOD = 0.1 #time between sensor measurement or between updates of data
     EIGENVECPERIOD = 0.04 #time between POD calculations
     
-    TOTALTIME = 100 #total execution time of program
+    TOTALTIME = 40 #total execution time of program
     
     UMAX = 50 # Max velocity, pixel/second
     EPSILON = DISCRETIZATION[0]/10 # Maximum step size of robots
