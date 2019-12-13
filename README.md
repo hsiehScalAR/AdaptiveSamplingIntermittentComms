@@ -40,12 +40,13 @@ The project uses numpy, matplotlib and networkx.
 ## Source code organization
 
  * src/: 
-   * `Setup.py`: Contains the setup information of the robot teams and their organization graph
+   * `Setup.py`: Contains the setup information of the robot teams and their organization graph as well as starting locations and measurment data setup
    * `TestIntermittent.py`: Main script to be executed, performs the intermittent communiction algorithm
    
    * Classes/:
      * `Robot.py`: Contains the robot class with all its attributes
      * `Schedule.py`: Creates the schedule and teams
+     * `GaussianProcess.py`: Creates the Gaussian Process for each robot
 
    * Utilities/:
      * `ControllerUtilities.py`: Contains functions used in the main control loop update()
@@ -55,6 +56,9 @@ The project uses numpy, matplotlib and networkx.
    * Data/:
      * `FTLEDoubleGyre.jpg`: FTLE image used for the measurements
      * `FTLEDoubleGyre.mat`: FTLE matrix from matlab calculations
+     * meshfiles/:
+       * `600x600_mesh.mat`: Defines the mesh locations
+       * `600x600_node_soln_fine.mat`: Gives the measurements of solvant for each mesh node defined in `600x600_mesh.mat`
  
  * matlab/:
    * `double_gyre_func.m`: Velocity function of the double gyre
