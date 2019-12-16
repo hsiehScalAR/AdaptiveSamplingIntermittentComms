@@ -19,7 +19,8 @@ from Utilities.VisualizationUtilities import (plotMultivariateNormal, plotMeasur
                                               clearPlots, plotTrajectory, plotTrajectoryAnimation)
 from Utilities.PathPlanningUtilities import (sampleVrand, findNearestNode, steer, buildSetVnear, 
                                              extendGraph, rewireGraph, calculateGoalSet, 
-                                             checkGoalSet, leastCostGoalSet, getPath, sampleNPoints)
+                                             checkGoalSet, leastCostGoalSet, getPath, 
+                                             getInformationGainAlongPath, sampleNPoints)
 
 def main():
     """main test loop"""
@@ -133,7 +134,7 @@ def update(currentTime, robots, teams, commPeriod):
     atEndPoint = np.zeros(len(robots))
     
     for i, rob in enumerate(robots):
-        atEndPoint[i] = moveAlongPath(rob, SENSORPERIOD, UMAX)
+        atEndPoint[i] = moveAlongPath(rob, SENSORPERIOD)
 
     currentTime += SENSORPERIOD
     
@@ -209,24 +210,45 @@ def updatePaths(robots):
                 
                 if distribution == 'uniform':
                     # TODO: trying to get highest variance point by sampling several ones
-                    vrand = sampleNPoints(robots[r], DISCRETIZATION, rangeSamples, distribution)
-#                    vrand = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
+                    if OPTPATH:              
+                        maxVariance = 0
+                        vrand = np.array([0, 0])
+                        nearNIdx = 0
+                        
+                        for i in range(0,10):
+                            point = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
+                            #find nearest node to random sample
+                            nearNIdx = findNearestNode(robots[r].graph,point)
+                            var = getInformationGainAlongPath(robots[r], point, nearNIdx, EPSILON)
+                            
+                            if var >= maxVariance:
+                                maxVariance = var
+                                vrand = point                                                          
+                    elif OPTPOINT:
+                        vrand = sampleNPoints(robots[r], DISCRETIZATION, rangeSamples, distribution)
+                    else: 
+                        vrand = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
+                        
+                    robots[r].vrand = vrand
+                    nearestNodeIdx = findNearestNode(robots[r].graph,vrand)
+                            
+                    robots[r].nearestNodeIdx = nearestNodeIdx
                     
-                
-                robots[r].vrand = vrand
-                
-                #find nearest node to random sample
-                nearestNodeIdx = findNearestNode(robots[r].graph,vrand)
-                robots[r].nearestNodeIdx = nearestNodeIdx
+                else:
+                    robots[r].vrand = vrand
+                    
+                    #find nearest node to random sample
+                    nearestNodeIdx = findNearestNode(robots[r].graph,vrand)
+                    robots[r].nearestNodeIdx = nearestNodeIdx
             
             #find new node towards max distance to random sample and incorporate time delay, that is why it is outside of previous loop since we need all the nearest nodes from the other robots
-            steer(robots, UMAX, EPSILON)
+            steer(robots, EPSILON)
             
             for r in range(0, len(robots)): 
                 # get all nodes close to new node
                 buildSetVnear(robots[r], EPSILON, GAMMARRT)
                 
-                extendGraph(robots[r], UMAX)
+                extendGraph(robots[r])
                 
                 robots[r].addNode()
                 
@@ -235,7 +257,7 @@ def updatePaths(robots):
             if sample >= RANDOMSAMPLESMAX: 
                 calculateGoalSet(robots, COMMRANGE, TIMEINTERVAL)
             
-            rewireGraph(robots, UMAX, TIMEINTERVAL, DEBUG)
+            rewireGraph(robots, TIMEINTERVAL, DEBUG)
             
         # check if we have a path
         for r in range(0, len(robots)):  
@@ -270,7 +292,7 @@ def initializeRobots(numRobots, teams, schedule):
             if r+1 in teams[t]:
 #                print('Robot ', str(r), ' in team ', str(t))
                 belongsToTeam.append(t)
-        rob = Robot(r, np.asarray(belongsToTeam), schedule[r], DISCRETIZATION)
+        rob = Robot(r, np.asarray(belongsToTeam), schedule[r], DISCRETIZATION, UMAX, SENSORPERIOD, OPTPATH)
         robots.append(rob)
     
     #Print test information
@@ -354,6 +376,8 @@ if __name__ == "__main__":
     DEBUG = False #debug to true shows prints
     ANIMATION = False #if animation should be done
     GAUSSIAN = True #if GP should be calculated
+    OPTPATH = True #if path optimization should be used, can not be true if optpoint is used
+    OPTPOINT = False #if point optimization should be used, can not be true if optpath is used
     
     SENSINGRANGE = 0 # Sensing range of robots
     COMMRANGE = 3 # communication range for robots
@@ -367,7 +391,7 @@ if __name__ == "__main__":
     SENSORPERIOD = 0.1 #time between sensor measurement or between updates of data
     EIGENVECPERIOD = 0.04 #time between POD calculations
     
-    TOTALTIME = 40 #total execution time of program
+    TOTALTIME = 50 #total execution time of program
     
     UMAX = 50 # Max velocity, pixel/second
     EPSILON = DISCRETIZATION[0]/10 # Maximum step size of robots

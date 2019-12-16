@@ -41,20 +41,21 @@ def communicateToTeam(robots, GP=True):
     # TODO: copy models to robots of same teams
     if GP:
         robots[0].GP.updateGP(robots[0])
-        #robots[0].GP.inferGP(robots[0])
+        if robots[0].optPath:
+            robots[0].GP.inferGP(robots[0])
         for r in range(1,len(robots)):
             robots[r].GP.model = robots[0].GP.model.copy()
-            #robots[r].expectedMeasurement = robots[0].expectedMeasurement
-            #robots[r].expectedVariance = robots[0].expectedVariance
+            if robots[0].optPath:
+                robots[r].expectedMeasurement = robots[0].expectedMeasurement
+                robots[r].expectedVariance = robots[0].expectedVariance
 
-def moveAlongPath(robot, deltaT, uMax):
+def moveAlongPath(robot, deltaT):
     # TODO: Add different motion model
     
     """move the robot along the planned path and take measurements on the way"""
     # Input arguments
     # robot = which robot we are moving
     # deltaT = sensor time step so that we move and take a measurement at each deltaT
-    # uMax = maximum velocity of robot
     
     if robot.pathCounter >= len(robot.paths[robot.scheduleCounter]) or robot.atEndLocation:
         robot.pathCounter = 0
@@ -68,13 +69,13 @@ def moveAlongPath(robot, deltaT, uMax):
     distance = goalPos - robot.currentLocation
     normDist = np.sqrt(np.sum((goalPos - robot.currentLocation)**2))
     
-    travelTime = normDist/uMax
+    travelTime = normDist/robot.uMax
     
     if travelTime <= deltaT:
         robot.currentLocation = goalPos
         robot.pathCounter += 1
     else:
-        step = np.around(uMax*deltaT*distance/normDist)
+        step = np.around(robot.uMax*deltaT*distance/normDist)
         robot.currentLocation = robot.currentLocation + step
     
     robot.trajectory.append(robot.currentLocation)

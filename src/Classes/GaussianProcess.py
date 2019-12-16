@@ -108,12 +108,12 @@ class GaussianProcess:
         plt.colorbar()
         plt.show()
         
-#        self.model.plot()
-#
-#        slices = [100, 200, 300, 400, 500]
-#        figure = GPy.plotting.plotting_library().figure(len(slices), 1)
-#        for i, y in zip(range(len(slices)), slices):
-#            self.model.plot(figure=figure, fixed_inputs=[(0,y)], row=(i+1), plot_data=False)
+        self.model.plot()
+
+        # slices = [100, 200, 300, 400, 500]
+        # figure = GPy.plotting.plotting_library().figure(len(slices), 1)
+        # for i, y in zip(range(len(slices)), slices):
+        #     self.model.plot(figure=figure, fixed_inputs=[(0,y)], row=(i+1), plot_data=False)
         
     def demoGPy(self):
         """Demo function to demonstrate GPy library"""

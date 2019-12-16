@@ -124,12 +124,12 @@ def calculateGoalSet(robots, commRadius, timeInterval):
         for r in range(0, len(robots)): 
             robots[r].graph.nodes[robots[r].vnewIdx]['goalSet'] = True
 
-def updateSuccessorNodes(robot, startNode, uMax):
+def updateSuccessorNodes(robot, startNode):
     """Update successor node weight and times as the rewiring changed the graph structure"""
     # Input arguments
     # robot = which robot graph that we are analyzing
     # startNode = which node got changed
-    # uMax = maximum velocity of robot for cost computation
+
     
     allSuccessors = nx.dfs_successors(robot.graph,startNode)
 
@@ -139,18 +139,17 @@ def updateSuccessorNodes(robot, startNode, uMax):
             startTime = robot.graph.nodes[key]['t']
             startPos = robot.graph.nodes[key]['pos']
             succPos = robot.graph.nodes[v]['pos']
-            succTotalCost, succEdgeCost, information = cost(startTime,startPos,succPos,uMax,robot)
+            succTotalCost, succEdgeCost, information = cost(startTime,startPos,succPos,robot)
             
             robot.graph[key][v]['weight'] = succEdgeCost
             robot.graph.nodes[v]['t'] = succTotalCost            
 
-def rewireGraph(robots, uMax, timeInterval, debug):
+def rewireGraph(robots, timeInterval, debug):
     # TODO: Find out what this min t = max t means
 
     """Check if there is a node in setVnear which has a smaller cost as child from vnew than previous"""
     # Input arguments
     # robots = which robot graph that we are analyzing
-    # uMax = maximum velocity of robot for cost computation
     # timeInterval = interval for meeting time arrival
     # debug = show values
     
@@ -173,7 +172,7 @@ def rewireGraph(robots, uMax, timeInterval, debug):
             vnearUtility = getUtility(vnearTime,vnearInformation)
             
             vnearPos = robot.graph.nodes[setVnear[n]]['pos']
-            nearTotalCost, nearEdgeCost, information = cost(timeVnew,posVnew,vnearPos,uMax,robot) 
+            nearTotalCost, nearEdgeCost, information = cost(timeVnew,posVnew,vnearPos,robot) 
             
             nearUtility = getUtility(nearTotalCost,information)
             
@@ -185,13 +184,13 @@ def rewireGraph(robots, uMax, timeInterval, debug):
                 robot.graph.add_edge(robot.vnewIdx,setVnear[n], weight = nearEdgeCost)
                 robot.graph.nodes[setVnear[n]]['t'] = nearTotalCost
                 robot.graph.nodes[setVnear[n]]['informationGain'] = information
-                updateSuccessorNodes(robot, setVnear[n], uMax)
+                updateSuccessorNodes(robot, setVnear[n])
                 rewired = True
                     
     if rewired:
         updateGoalSet(robots, timeInterval, debug)
             
-def cost(nearTime, nearPos, newPos, uMax, robot):
+def cost(nearTime, nearPos, newPos, robot):
     # TODO: add information gain cost to a utility quantity and leave travel time alone..
 
     """Calculate cost between two nodes"""
@@ -199,11 +198,10 @@ def cost(nearTime, nearPos, newPos, uMax, robot):
     # nearTime = time at current near node
     # nearPos = position at current near node
     # newPos = position of vnew for which we search a less costly parent node
-    # uMax = maximum velocity of robot for cost computation
     # robot = robot which is updating cost
     
     normDist = np.sqrt(np.sum((nearPos - newPos)**2))
-    nearEdgeCost = normDist/uMax
+    nearEdgeCost = normDist/robot.uMax
 
     information = getInformationGain(robot,newPos)
 #    nearEdgeCost = nearEdgeCost/information
@@ -212,7 +210,7 @@ def cost(nearTime, nearPos, newPos, uMax, robot):
 
     return round(nearTotalCost,1), round(nearEdgeCost,1), information 
 
-def extendGraph(robot, uMax):
+def extendGraph(robot):
     """Check if there is a node in setVnear which has a smaller cost as parent to vnew than the nearest node"""
     # Input arguments
     # robot = which robot graph that we are analyzing
@@ -233,7 +231,7 @@ def extendGraph(robot, uMax):
     for n in range(0,len(setVnear)):
         time = robot.graph.nodes[setVnear[n]]['t']
         pos = robot.graph.nodes[setVnear[n]]['pos']
-        nearTotalCost, nearEdgeCost, information = cost(time,pos,vnew,uMax,robot) 
+        nearTotalCost, nearEdgeCost, information = cost(time,pos,vnew,robot) 
         
         nearUtility = getUtility(nearTotalCost,information)
 
@@ -276,11 +274,10 @@ def buildSetVnear(robot, epsilon, gammaRRT):
     
     robot.setVnear = setVnear
     
-def steer(robots, uMax, epsilon):
+def steer(robots, epsilon):
     """Steer towards vrand but only as much as allowed by the dynamics"""
     # Input Arguments
     # robots = robot classes
-    # uMax = maximal velocity in pixel/second
     # epsilon = maximum allowed distance traveled
     
     #find minTimes for nearest nodes of all robots
@@ -311,14 +308,14 @@ def steer(robots, uMax, epsilon):
         normDist = np.sqrt(np.sum((nearestNode - vrand)**2))
 
         s = min(epsilon,normDist)
-        travelTime = s/uMax
+        travelTime = s/robots[r].uMax
 
         deltaTcost = travelTime - (nearestTime - min(minTimes))
         
         if deltaTcost > 0:          
-            vnew = np.around(nearestNode + uMax*deltaTcost*dist/normDist)
+            vnew = np.around(nearestNode + robots[r].uMax*deltaTcost*dist/normDist)
             distVnew = np.sqrt(np.sum((nearestNode - vnew)**2))
-            travelTimeVnew = distVnew/uMax            
+            travelTimeVnew = distVnew/robots[r].uMax            
         else: 
             vnew = nearestNode
             travelTimeVnew = 0        
@@ -379,8 +376,10 @@ def sampleVrand(discretization, rangeSamples, distribution = 'uniform'):
 
 def getInformationGain(robot, pos):
     # TODO: Check if better to calculate all positions or just new node positions
-#    information = robot.expectedVariance[np.int(pos[0]),np.int(pos[1])]
-    ym, ys = robot.GP.inferGP(robot,pos)
+    if robot.optPath:
+        ys = robot.expectedVariance[np.int(pos[0]),np.int(pos[1])]
+    else:
+        ym, ys = robot.GP.inferGP(robot,pos)
     return ys
 
 def getUtility(time, informationGain):
@@ -402,7 +401,61 @@ def sampleNPoints(robot, discretization, rangeSamples, distribution = 'uniform')
             maxVariance = var
     return vrand
 
-
+def getInformationGainAlongPath(robot, pos, nearestNodeIdx, epsilon):
+    
+    positionNotReached = True    
+    deltaT = robot.sensorPeriod
+    discretization = robot.discretization
+    
+    graphDict = robot.graph.nodes[nearestNodeIdx]
+    vnearest = list(graphDict.values())
+    nearestNode = np.asarray(vnearest[0])
+    
+    measPos = nearestNode
+    var = 0
+    
+    distance = pos - measPos
+    normDist = np.sqrt(np.sum((pos - nearestNode)**2))
+    s = min(epsilon,normDist)
+    if normDist == 0:
+        return 0
+    
+    vnew = np.around(nearestNode + s*distance/normDist)
+    pos = vnew
+    
+    while positionNotReached:
+        
+        distance = pos - measPos
+        normDist = np.sqrt(np.sum((pos - measPos)**2))
+    
+        travelTime = normDist/robot.uMax
+    
+        if travelTime <= deltaT:
+            measPos = pos
+            positionNotReached = False
+        else:
+            step = np.around(robot.uMax*deltaT*distance/normDist)
+            measPos = measPos + step
+        
+        if not (0 <= measPos[0] < discretization[0] and 0 <= measPos[1] < discretization[1]):
+            if measPos[0] >= discretization[0]:
+                measPos[0] = discretization[0]-1
+            if measPos[1] >= discretization[1]:
+                measPos[1] = discretization[1]-1
+            if measPos[0] < 0:
+                measPos[0] = 0
+            if measPos[1] < 0:
+                measPos[1] = 0
+                
+        # TODO: change if infer is not used in communication
+        if robot.optPath:
+            ys = robot.expectedVariance[np.int(measPos[0]),np.int(measPos[1])]
+        else:
+            ym, ys = robot.GP.inferGP(robot,measPos)
+        
+        var += ys    
+    
+    return var
 
 
 

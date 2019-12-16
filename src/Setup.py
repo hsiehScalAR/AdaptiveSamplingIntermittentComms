@@ -30,7 +30,7 @@ def loadMeshFiles():
     mat_contents = sio.loadmat(pathname_node)
     nodeSoln = mat_contents['NodalSolution']
     
-    nodeSol1 = nodeSoln[:,70]
+    nodeSol1 = nodeSoln[:,1500]
     data = np.zeros([600,600])
     radius = 10    
     for idx in range(0,meshNodes.shape[1]):
