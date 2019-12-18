@@ -15,8 +15,9 @@ from Classes.Robot import Robot
 from Setup import getSetup, setupMatlabFileMeasurementData, loadMeshFiles
 
 from Utilities.ControllerUtilities import moveAlongPath, communicateToTeam, checkMeetingLocation, measurement
-from Utilities.VisualizationUtilities import (plotMultivariateNormal, plotMeasurement, plotMeetingGraphs, plotMeetingPaths, 
-                                              clearPlots, plotTrajectory, plotTrajectoryAnimation)
+from Utilities.VisualizationUtilities import (plotMeasurement, plotMeetingGraphs, plotMeetingPaths, 
+                                              clearPlots, plotTrajectory, plotTrajectoryAnimation,
+                                              plotTrajectoryOverlayGroundTruth)
 from Utilities.PathPlanningUtilities import (sampleVrand, findNearestNode, steer, buildSetVnear, 
                                              extendGraph, rewireGraph, calculateGoalSet, 
                                              checkGoalSet, leastCostGoalSet, getPath, 
@@ -28,8 +29,9 @@ def main():
     
     """Create Measurement Data"""
 #    measurementGroundTruth = setupMatlabFileMeasurementData(DISCRETIZATION, invert=True)
-    measurementGroundTruth = loadMeshFiles()
-    plotMeasurement(measurementGroundTruth, 'Ground truth measurement map')
+    measurementGroundTruthList, maxTime = loadMeshFiles(TOTALTIME, SENSORPERIOD)
+    measurementGroundTruth = measurementGroundTruthList[STARTINGTIME]
+    # plotMeasurement(measurementGroundTruth, 'Ground truth measurement map')
            
     """create robot to team correspondence"""
     numTeams, numRobots, robTeams, positions = getSetup(CASE)
@@ -88,8 +90,13 @@ def main():
     
     print('Starting ControlLoop')
     currentTime = initialTime
-    
-    while currentTime < TOTALTIME:
+
+    # while currentTime < TOTALTIME:
+    for t in range(0,np.int(maxTime/SENSORPERIOD)):
+        if not STATIONARY:
+            for r in range(0,numRobots):
+                robots[r].mappingGroundTruth = measurementGroundTruthList[t]
+            
         currentTime = update(currentTime, robots, teams, commPeriod)
 
     print('ControlLoop Finished\n')
@@ -115,10 +122,11 @@ def main():
     
     
     if GAUSSIAN:
+        plotTrajectoryOverlayGroundTruth(robots,0)
         robots[0].GP.updateGP(robots[0])
         robots[0].GP.plotGP(robots[0])
-        robots[2].GP.updateGP(robots[2])
-        robots[2].GP.plotGP(robots[2])
+        # robots[2].GP.updateGP(robots[2])
+        # robots[2].GP.plotGP(robots[2])
     
     print('Plotting Finished\n')
     
@@ -167,7 +175,7 @@ def update(currentTime, robots, teams, commPeriod):
             for r in team[0]:
                 robots[r-1].composeGraphs()
 
-    return currentTime
+    return round(currentTime,1)
 
 def updatePaths(robots):
     """Update procedure of intermittent communication"""
@@ -209,7 +217,7 @@ def updatePaths(robots):
             for r in range(0, len(robots)):       
                 
                 if distribution == 'uniform':
-                    # TODO: trying to get highest variance point by sampling several ones
+                    # TODO: trying to get highest variance point by sampling several ones or by checking the path utility
                     if OPTPATH:              
                         maxVariance = 0
                         vrand = np.array([0, 0])
@@ -253,7 +261,6 @@ def updatePaths(robots):
                 robots[r].addNode()
                 
             # finding out if vnew should be in goal set
-            # TODO should I really just start checking once we sample for meeting locations?
             if sample >= RANDOMSAMPLESMAX: 
                 calculateGoalSet(robots, COMMRANGE, TIMEINTERVAL)
             
@@ -368,7 +375,7 @@ if __name__ == "__main__":
     """Entry in Test Program"""
     
     """Setup"""
-    np.random.seed(1994)
+    np.random.seed(1809)
     
     clearPlots()
     
@@ -378,6 +385,9 @@ if __name__ == "__main__":
     GAUSSIAN = True #if GP should be calculated
     OPTPATH = True #if path optimization should be used, can not be true if optpoint is used
     OPTPOINT = False #if point optimization should be used, can not be true if optpath is used
+    
+    STATIONARY = True #if we are using time varying measurement data or not
+    STARTINGTIME = 0 #which starting time to use for the measurement data
     
     SENSINGRANGE = 0 # Sensing range of robots
     COMMRANGE = 3 # communication range for robots
@@ -391,7 +401,7 @@ if __name__ == "__main__":
     SENSORPERIOD = 0.1 #time between sensor measurement or between updates of data
     EIGENVECPERIOD = 0.04 #time between POD calculations
     
-    TOTALTIME = 50 #total execution time of program
+    TOTALTIME = 40 #total execution time of program
     
     UMAX = 50 # Max velocity, pixel/second
     EPSILON = DISCRETIZATION[0]/10 # Maximum step size of robots

@@ -35,10 +35,7 @@ def communicateToTeam(robots, GP=True):
     
     for r in range(0, len(robots)):
         robots[r].mapping = mapping
-#        if GP:
-#            robots[r].GP.updateGP(robots[r])
         
-    # TODO: copy models to robots of same teams
     if GP:
         robots[0].GP.updateGP(robots[0])
         if robots[0].optPath:

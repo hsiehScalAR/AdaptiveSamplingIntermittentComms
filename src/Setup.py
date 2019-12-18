@@ -9,7 +9,6 @@ Created on Wed Nov 20 10:21:38 2019
 #General imports
 import numpy as np
 import scipy.io as sio
-import matplotlib.pyplot as plt
 
 def setupMatlabFileMeasurementData(discetization, invert=True):
     mat = sio.loadmat('Data/FTLEDoubleGyre.mat')
@@ -19,9 +18,10 @@ def setupMatlabFileMeasurementData(discetization, invert=True):
     else:
         return data + 1
     
-def loadMeshFiles():
+def loadMeshFiles(totalTime, sensorPeriod):
     pathname_mesh = 'Data/meshfiles/600x600_mesh.mat'
     pathname_node = 'Data/meshfiles/600x600_node_soln_fine.mat'
+    pathname_times = 'Data/meshfiles/600x600_node_soln_fine_times.mat'
 
     mat_contents = sio.loadmat(pathname_mesh)
     meshNodes = mat_contents['MeshNodes']
@@ -30,15 +30,36 @@ def loadMeshFiles():
     mat_contents = sio.loadmat(pathname_node)
     nodeSoln = mat_contents['NodalSolution']
     
-    nodeSol1 = nodeSoln[:,1500]
-    data = np.zeros([600,600])
-    radius = 10    
-    for idx in range(0,meshNodes.shape[1]):
-        posx = np.int(meshNodes[:,idx][0])
-        posy = np.int(meshNodes[:,idx][1])
-        data[posx-radius:posx+radius,posy-radius:posy+radius] = nodeSol1[idx]
+    mat_contents = sio.loadmat(pathname_times)
+    timeValues = mat_contents['T'].T.tolist()[1:]
+    timeValues = np.around(np.array(timeValues).T,1)
+    
+    syncIdx = []
+    maxTime = min(np.int(totalTime),np.int(timeValues[0][-1]))
+    if maxTime != totalTime:
+        print('WARNING: Given Total Time is bigger than available data, reducing Total Time to given data time')
+    sampling = sensorPeriod
+    
+    for t in range(0,np.int(maxTime/sensorPeriod)):
+        idx = np.where(timeValues == sampling)
+        syncIdx.append(idx[1][0])
+        sampling = round(sampling+sensorPeriod,1)
         
-    return data/20
+    radius = 10
+    measurementGroundTruthList = []
+
+    for tIdx in syncIdx:
+        nodeSol = nodeSoln[:,tIdx]
+        data = np.zeros([600,600])
+        
+        for idx in range(0,meshNodes.shape[1]):
+            posx = np.int(meshNodes[:,idx][0])
+            posy = np.int(meshNodes[:,idx][1])
+            data[posx-radius:posx+radius,posy-radius:posy+radius] = nodeSol[idx]
+        data = data/20    
+        measurementGroundTruthList.append(data)
+
+    return measurementGroundTruthList, maxTime
     
 def getSetup(case):
     """returns the setup for the robot teams based on the case"""

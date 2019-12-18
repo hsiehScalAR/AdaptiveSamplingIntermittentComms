@@ -129,3 +129,18 @@ def plotMeetingPaths(robots, index, team, subplot=None, length=0):
     
     plt.legend()
     plt.show()
+    
+def plotTrajectoryOverlayGroundTruth(robots, index):
+    fig, ax = plt.subplots()
+    for r in range(0,len(robots)):
+        x,y = zip(*robots[r].trajectory)
+        ax.plot(y,x, '-', label='Robot %d'%r)
+    
+    data = robots[index].mappingGroundTruth
+        
+    im = ax.imshow(data, origin='lower', extent=[0, 600, 0, 600])
+    
+    ax.set_title('Ground Truth and Trajectories')       
+    fig.colorbar(im, ax=ax)
+    plt.legend()
+    plt.show()

@@ -13,7 +13,10 @@ import GPy
 import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal
 
-ITERATIONS = 100
+# Personal imports
+from Utilities.VisualizationUtilities import plotMeasurement
+                                              
+ITERATIONS = 1000
 
 class GaussianProcess:
     def __init__(self):
@@ -72,6 +75,7 @@ class GaussianProcess:
 #        self.model.optimize(optimizer= 'scg',messages=False,max_iters = ITERATIONS,ipython_notebook=False)       # Don't see difference, maybe slower       
         self.model.optimize(optimizer='lbfgsb',messages=False,max_f_eval = ITERATIONS,ipython_notebook=False)    # Works good
         print('GP Updated\n')
+
         
     def inferGP(self, robot, pos=None):
         """Calculates estimated measurement at location"""
@@ -94,6 +98,16 @@ class GaussianProcess:
         robot.expectedVariance = ys.reshape(robot.discretization)
         print('GP inferred\n')
         
+        # if robot.ID == 0:
+        #     # self.model.plot(title='Robot %d, time %.1f' %(robot.ID,robot.endTotalTime))
+        #     fig, ax = plt.subplots()
+        #     ax.set_title('Robot %d, time %.1f' %(robot.ID,robot.endTotalTime))     
+        #     plt.imshow(robot.expectedMeasurement, origin='lower');        
+        #     plt.colorbar()
+        #     plt.show()
+            
+        #     plotMeasurement(robot.mappingGroundTruth, 'Robot %d, time %.1f' %(robot.ID,robot.endTotalTime))
+        
     def plotGP(self, robot):
         """Plotting model of the GP"""
         # Input arguments:
@@ -103,12 +117,12 @@ class GaussianProcess:
         ym = robot.expectedMeasurement
 
         fig, ax = plt.subplots()
-        ax.set_title('Robot %d' %robot.ID)     
+        ax.set_title('Robot %d, End' %robot.ID)     
         plt.imshow(ym, origin='lower');        
         plt.colorbar()
         plt.show()
         
-        self.model.plot()
+        # self.model.plot(title='Robot %d, End' %(robot.ID))
 
         # slices = [100, 200, 300, 400, 500]
         # figure = GPy.plotting.plotting_library().figure(len(slices), 1)

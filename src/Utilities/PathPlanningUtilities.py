@@ -191,8 +191,6 @@ def rewireGraph(robots, timeInterval, debug):
         updateGoalSet(robots, timeInterval, debug)
             
 def cost(nearTime, nearPos, newPos, robot):
-    # TODO: add information gain cost to a utility quantity and leave travel time alone..
-
     """Calculate cost between two nodes"""
     # Input arguments
     # nearTime = time at current near node
@@ -364,7 +362,7 @@ def sampleVrand(discretization, rangeSamples, distribution = 'uniform'):
     
     inBoundary = False
     while inBoundary == False:
-        if distribution == 'uniform': #TODO check if we should use 0 for lower bound or something else
+        if distribution == 'uniform':
             vrand = np.random.uniform([0,0],rangeSamples)
         
         if distribution == 'gaussian':
@@ -375,22 +373,38 @@ def sampleVrand(discretization, rangeSamples, distribution = 'uniform'):
     return np.around(vrand)
 
 def getInformationGain(robot, pos):
-    # TODO: Check if better to calculate all positions or just new node positions
+    """Get expected variance from GP model, either by inferring or lookup"""
+    # Input Arguments
+    # robot = robot instance whose GP is to be looked at
+    # pos = position to check the expected variance for
+    
     if robot.optPath:
         ys = robot.expectedVariance[np.int(pos[0]),np.int(pos[1])]
     else:
         ym, ys = robot.GP.inferGP(robot,pos)
     return ys
 
+# TODO: This doesn't seem to do anything, maybe remove it..
 def getUtility(time, informationGain):
-    # TODO: write better utility function or use variance to choose new points
-    beta = 1
+    """Utility function which calgulates utility by dividing cost by variance with weight"""
+    # Input Arguments
+    # time = cost of node
+    # informationGain = gain of node
+
+    beta = 4
     if informationGain < 1/beta:
         informationGain = 1/beta
-    return time/(beta*informationGain) 
-#    return 0
+    # return time/(beta*informationGain) 
+    return 0
     
 def sampleNPoints(robot, discretization, rangeSamples, distribution = 'uniform'):
+    """Sample N new random positions and check for highest variance"""
+    # Input Arguments
+    # robot = robot instance to access GP
+    # discretization = grid space needed to check for boundary issues
+    # rangeSamples = defines uniform range boundaries or mean and std dev for gaussian
+    # distribution = which distribution to use
+        
     maxVariance = 0
     vrand = np.array([0, 0])
     for i in range(0,10):
@@ -402,6 +416,12 @@ def sampleNPoints(robot, discretization, rangeSamples, distribution = 'uniform')
     return vrand
 
 def getInformationGainAlongPath(robot, pos, nearestNodeIdx, epsilon):
+    """Calculate information gain along path for each sensor period"""
+    # Input Arguments
+    # robot = robot instance to access graph
+    # pos = vrand from sampling
+    # nearestNodeIdx = nearest node to vrand for steering
+    # epsilon = maximum step size
     
     positionNotReached = True    
     deltaT = robot.sensorPeriod
@@ -447,7 +467,6 @@ def getInformationGainAlongPath(robot, pos, nearestNodeIdx, epsilon):
             if measPos[1] < 0:
                 measPos[1] = 0
                 
-        # TODO: change if infer is not used in communication
         if robot.optPath:
             ys = robot.expectedVariance[np.int(measPos[0]),np.int(measPos[1])]
         else:
