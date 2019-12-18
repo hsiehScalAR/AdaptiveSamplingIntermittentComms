@@ -30,7 +30,10 @@ def main():
     """Create Measurement Data"""
 #    measurementGroundTruth = setupMatlabFileMeasurementData(DISCRETIZATION, invert=True)
     measurementGroundTruthList, maxTime = loadMeshFiles(TOTALTIME, SENSORPERIOD)
-    measurementGroundTruth = measurementGroundTruthList[STARTINGTIME]
+    if STATIONARY:
+        measurementGroundTruth = measurementGroundTruthList[np.int(STATIONARYTIME/SENSORPERIOD)]
+    else:
+        measurementGroundTruth = measurementGroundTruthList[0]
     # plotMeasurement(measurementGroundTruth, 'Ground truth measurement map')
            
     """create robot to team correspondence"""
@@ -116,8 +119,8 @@ def main():
         totalMap = robots[0].mapping
         plotMeasurement(totalMap, 'Measurements of robots after communication events')
 
-        if ANIMATION:
-            plotTrajectoryAnimation(robots)
+    if ANIMATION:
+        plotTrajectoryAnimation(robots)
         
     
     
@@ -134,7 +137,7 @@ def main():
 def update(currentTime, robots, teams, commPeriod):
     """Update procedure of intermittent communication"""
     # Input arguments:
-    # currentTime = current Time of the execution
+    # currentTime = current time of the execution
     # robots = instances of the robots that are to be moved
     # teams = teams of the robots
     # commPeriod = how many schedules there are
@@ -375,7 +378,7 @@ if __name__ == "__main__":
     """Entry in Test Program"""
     
     """Setup"""
-    np.random.seed(1809)
+    np.random.seed(1994)
     
     clearPlots()
     
@@ -387,7 +390,7 @@ if __name__ == "__main__":
     OPTPOINT = False #if point optimization should be used, can not be true if optpath is used
     
     STATIONARY = True #if we are using time varying measurement data or not
-    STARTINGTIME = 0 #which starting time to use for the measurement data
+    STATIONARYTIME = 10 #which starting time to use for the measurement data, if not STATIONARY, 0 is used for default
     
     SENSINGRANGE = 0 # Sensing range of robots
     COMMRANGE = 3 # communication range for robots
@@ -401,7 +404,7 @@ if __name__ == "__main__":
     SENSORPERIOD = 0.1 #time between sensor measurement or between updates of data
     EIGENVECPERIOD = 0.04 #time between POD calculations
     
-    TOTALTIME = 40 #total execution time of program
+    TOTALTIME = 60 #total execution time of program
     
     UMAX = 50 # Max velocity, pixel/second
     EPSILON = DISCRETIZATION[0]/10 # Maximum step size of robots

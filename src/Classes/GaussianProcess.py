@@ -117,8 +117,16 @@ class GaussianProcess:
         ym = robot.expectedMeasurement
 
         fig, ax = plt.subplots()
-        ax.set_title('Robot %d, End' %robot.ID)     
+        ax.set_title('Robot %d expected Measurement, End' %robot.ID)     
         plt.imshow(ym, origin='lower');        
+        plt.colorbar()
+        plt.show()
+
+        ys = robot.expectedVariance
+
+        fig, ax = plt.subplots()
+        ax.set_title('Robot %d expected Variance, End' %robot.ID)     
+        plt.imshow(ys, origin='lower');        
         plt.colorbar()
         plt.show()
         
