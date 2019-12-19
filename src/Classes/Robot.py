@@ -19,7 +19,7 @@ class Robot:
     
     objs = []  # Registrar keeps all attributes of class
 
-    def __init__(self, ID, teams, schedule, discretization, uMax, sensorPeriod, optPath):
+    def __init__(self, ID, teams, schedule, discretization, uMax, sensorPeriod, optPath, optPoint, spatiotemporal):
         """Initializer of robot class"""
         # Input arguments:
         # ID = robot number
@@ -33,7 +33,7 @@ class Robot:
         self.activeLocations = {}  # Store active location as indexed by (timeStart, timeEnd): locations
         self.sensorData = {}  # Store data as (timeStart, timeEnd): data
         self.eigenData = {}
-        self.mapping = np.zeros([discretization[0],discretization[1]])
+        self.mapping = np.zeros([discretization[0],discretization[1],2])
         self.mappingGroundTruth = np.zeros_like([discretization[0],discretization[1]])
         self.sensingRange = 0
         self.measurementRangeX = np.array([self.sensingRange, self.sensingRange])
@@ -42,9 +42,11 @@ class Robot:
         self.sensorPeriod = sensorPeriod
         
         self.optPath = optPath
+        self.optPoint = optPoint
 
         self.expectedMeasurement = np.zeros([discretization[0],discretization[1]])
         self.expectedVariance = np.ones([discretization[0],discretization[1]])
+        self.currentTime = 0
         
         #Path variables
         self.paths = []
@@ -82,7 +84,7 @@ class Robot:
         self.endNodeCounter = 0
         self.endLocation = np.array([0, 0])
         
-        self.GP = GaussianProcess()
+        self.GP = GaussianProcess(spatiotemporal)
         Robot.objs.append(self)
         Robot.discretization = discretization
         
@@ -104,7 +106,7 @@ class Robot:
             self.graph.add_edge(self.nearestNodeIdx,self.nodeCounter, weight = self.vnewCost)
         self.nodeCounter += 1
 
-    def createMap(self,newData,currentLocations):
+    def createMap(self,newData, newDataTime, currentLocations):
         """creates a measurement map in the grid space without time reference"""
         # Input arguments:
         # newData = new measurement for single robot
@@ -113,11 +115,14 @@ class Robot:
         x = np.int(self.currentLocation[0])
         y = np.int(self.currentLocation[1])
         if self.sensingRange < 1:
-            self.mapping[x, y] = newData
+            self.mapping[x, y, 0] = newData
+            self.mapping[x, y, 1] = newDataTime
     
         else:
             self.mapping[x-self.measurementRangeX[0]:x+self.measurementRangeX[1], 
-                         y-self.measurementRangeY[0]:y+self.measurementRangeY[1]] = newData
+                         y-self.measurementRangeY[0]:y+self.measurementRangeY[1], 0] = newData
+            self.mapping[x-self.measurementRangeX[0]:x+self.measurementRangeX[1], 
+                         y-self.measurementRangeY[0]:y+self.measurementRangeY[1], 1] = newDataTime
     
     # TODO: remove if sure about it
     

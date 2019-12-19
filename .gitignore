@@ -2,3 +2,5 @@ __pycache*
 *.mp4
 *.ipynb_*
 Results*
+.vscode*
+vsCode*

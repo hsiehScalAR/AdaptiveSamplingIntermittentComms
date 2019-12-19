@@ -19,25 +19,36 @@ from Utilities.VisualizationUtilities import plotMeasurement
 ITERATIONS = 1000
 
 class GaussianProcess:
-    def __init__(self):
+    def __init__(self, spatiotemporal):
         """Initialize kernel for the GPs"""
-        # No input
+        # Input arguments:
+        # spatiotemporal = bool if using time dependent kernel
         
-        self.kernel = GPy.kern.RBF(input_dim=2, variance=1., lengthscale=1.,ARD=True,useGPU=False)
-#        self.kernel = GPy.kern.RBF(input_dim=2, variance=1., lengthscale=1.)
+        self.spatiotemporal = spatiotemporal
+        
+        if spatiotemporal:
+            # self.kernel = (GPy.kern.RBF(input_dim=2, variance=1., lengthscale=1., active_dims=[0,1],ARD=False) 
+            #                + GPy.kern.RBF(input_dim=1, variance=1., lengthscale=1., active_dims=[2], ARD=False))
+            self.kernel = GPy.kern.RBF(input_dim=3, variance=1., lengthscale=[1.,1.,1.],ARD=True,useGPU=False)
+        else:
+            self.kernel = GPy.kern.RBF(input_dim=2, variance=1., lengthscale=1.)
     
     def initializeGP(self, robot):
         """Initialize model for the GPs"""
         # Input arguments:
         # robot = robot whose GP is to be initialized
         
-        r,c = np.where(robot.mapping != 0)
+        r,c = np.where(robot.mapping[:,:,0] != 0)
         
-        y = robot.mapping[r,c]
+        y = robot.mapping[r,c,0]
         y = y.reshape(-1,1)
-        
-        x = np.dstack((r,c))
-        x = x.reshape(-1,2)
+        if self.spatiotemporal:
+            t = robot.mapping[r,c,1]
+            x = np.dstack((r,c,t))
+            x = x.reshape(-1,3)
+        else:
+            x = np.dstack((r,c))
+            x = x.reshape(-1,2)
         
         self.model = GPy.models.GPRegression(x,y, self.kernel)                                 # Works good
 #        self.model = GPy.models.BayesianGPLVM(y,2,X=x,kernel = self.kernel)                    # Error
@@ -58,14 +69,20 @@ class GaussianProcess:
         # robot = robot whose GP is to be updated
         
         print('Updating GP for robot %d' %robot.ID)
-        print('Time: %.1f' %robot.endTotalTime)
-        r,c = np.where(robot.mapping > 0.05)
+        print('Time: %.1f' %robot.currentTime)
+        r,c = np.where(robot.mapping[:,:,0] > 0.05)
         
-        y = robot.mapping[r,c]
+        y = robot.mapping[r,c,0]
         y = y.reshape(-1,1)
-        
-        x = np.dstack((r,c))
-        x = x.reshape(-1,2)
+
+        if self.spatiotemporal:
+            t = robot.mapping[r,c,1]
+            x = np.dstack((r,c,t))
+            x = x.reshape(-1,3)
+        else:
+            x = np.dstack((r,c))
+            x = x.reshape(-1,2)
+
         print(y.shape)
         if y.shape[0] == 0:
             return
@@ -84,13 +101,24 @@ class GaussianProcess:
         # pos = if single position, else whole grid is calculated
         
         if isinstance(pos,np.ndarray):
-            z = pos.reshape(-1,2)
+            if self.spatiotemporal:
+                z = np.dstack((pos[0], pos[1], robot.currentTime))
+                z = z.reshape(-1,3)
+            else:
+                z = np.dstack((pos[0], pos[1]))
+                z = z.reshape(-1,2)
             ym, ys = self.model.predict(z)
             return ym, ys
         else:
             X, Y = np.mgrid[0:robot.discretization[0]:1, 0:robot.discretization[1]:1]
-            z = np.dstack((np.ravel(X),np.ravel(Y)))
-            z = z.reshape(-1,2)
+            if self.spatiotemporal:
+                T = np.ones(len(np.ravel(X)))*robot.currentTime
+                z = np.dstack((np.ravel(X),np.ravel(Y),np.ravel(T)))
+                z = z.reshape(-1,3)
+            else:
+                z = np.dstack((np.ravel(X),np.ravel(Y)))
+                z = z.reshape(-1,2)
+                
         print('Inferring GP')
         ym, ys = self.model.predict(z)
 
@@ -104,7 +132,7 @@ class GaussianProcess:
         #     ax.set_title('Robot %d, time %.1f' %(robot.ID,robot.endTotalTime))     
         #     plt.imshow(robot.expectedMeasurement, origin='lower');        
         #     plt.colorbar()
-        #     plt.show()
+        #     
             
         #     plotMeasurement(robot.mappingGroundTruth, 'Robot %d, time %.1f' %(robot.ID,robot.endTotalTime))
         
@@ -120,7 +148,7 @@ class GaussianProcess:
         ax.set_title('Robot %d expected Measurement, End' %robot.ID)     
         plt.imshow(ym, origin='lower');        
         plt.colorbar()
-        plt.show()
+        
 
         ys = robot.expectedVariance
 
@@ -128,7 +156,7 @@ class GaussianProcess:
         ax.set_title('Robot %d expected Variance, End' %robot.ID)     
         plt.imshow(ys, origin='lower');        
         plt.colorbar()
-        plt.show()
+        
         
         # self.model.plot(title='Robot %d, End' %(robot.ID))
 
@@ -158,7 +186,7 @@ class GaussianProcess:
         plt.figure()
         plt.contourf(X, Y, rv.pdf(pos)/scale)
         plt.colorbar()
-        plt.show()
+        
 
 
         posMeas = np.dstack((x,y))

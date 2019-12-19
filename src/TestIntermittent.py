@@ -8,6 +8,7 @@ Created on Mon Nov  4 10:48:29 2019
 
 #General imports
 import numpy as np
+import matplotlib.pyplot as plt
 
 #Personal imports
 from Classes.Scheduler import Schedule
@@ -34,7 +35,7 @@ def main():
         measurementGroundTruth = measurementGroundTruthList[np.int(STATIONARYTIME/SENSORPERIOD)]
     else:
         measurementGroundTruth = measurementGroundTruthList[0]
-    # plotMeasurement(measurementGroundTruth, 'Ground truth measurement map')
+
            
     """create robot to team correspondence"""
     numTeams, numRobots, robTeams, positions = getSetup(CASE)
@@ -58,13 +59,11 @@ def main():
         robots[r].currentLocation = locations[r]
         robots[r].totalTime = initialTime
         robots[r].sensingRange = SENSINGRANGE
-        
-        # TODO: This needs to be changed if different measurements are used like time series data
         robots[r].mappingGroundTruth = measurementGroundTruth
         
         """Initialize GPs"""
-        meas = measurement(robots[r])
-        robots[r].createMap(meas, robots[r].currentLocation)
+        meas, measTime = measurement(robots[r])
+        robots[r].createMap(meas, measTime, robots[r].currentLocation)
         if GAUSSIAN:
             robots[r].GP.initializeGP(robots[r])
     print('Environment Initialized\n')
@@ -106,6 +105,7 @@ def main():
     
     print('Starting Plotting')
     if DEBUG:
+        plotMeasurement(measurementGroundTruth, 'Ground truth measurement map')
         subplot = 1
         team = 0
         for r in teams:
@@ -133,6 +133,8 @@ def main():
     
     print('Plotting Finished\n')
     
+    """Display all images"""
+    plt.show()
 
 def update(currentTime, robots, teams, commPeriod):
     """Update procedure of intermittent communication"""
@@ -226,7 +228,7 @@ def updatePaths(robots):
                         vrand = np.array([0, 0])
                         nearNIdx = 0
                         
-                        for i in range(0,10):
+                        for _ in range(0,10):
                             point = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
                             #find nearest node to random sample
                             nearNIdx = findNearestNode(robots[r].graph,point)
@@ -298,11 +300,9 @@ def initializeRobots(numRobots, teams, schedule):
     for r in range(0, numRobots):
         belongsToTeam = []
         for t in range(0,len(teams)):    
-#            if r in teams[t]:
             if r+1 in teams[t]:
-#                print('Robot ', str(r), ' in team ', str(t))
                 belongsToTeam.append(t)
-        rob = Robot(r, np.asarray(belongsToTeam), schedule[r], DISCRETIZATION, UMAX, SENSORPERIOD, OPTPATH)
+        rob = Robot(r, np.asarray(belongsToTeam), schedule[r], DISCRETIZATION, UMAX, SENSORPERIOD, OPTPATH, OPTPOINT, SPATIOTEMPORAL)
         robots.append(rob)
     
     #Print test information
@@ -386,11 +386,12 @@ if __name__ == "__main__":
     DEBUG = False #debug to true shows prints
     ANIMATION = False #if animation should be done
     GAUSSIAN = True #if GP should be calculated
-    OPTPATH = True #if path optimization should be used, can not be true if optpoint is used
-    OPTPOINT = False #if point optimization should be used, can not be true if optpath is used
+    OPTPATH = GAUSSIAN == True #if path optimization should be used, can not be true if optpoint is used
+    OPTPOINT = GAUSSIAN != OPTPATH == True #if point optimization should be used, can not be true if optpath is used
     
+    SPATIOTEMPORAL = False
     STATIONARY = True #if we are using time varying measurement data or not
-    STATIONARYTIME = 10 #which starting time to use for the measurement data, if not STATIONARY, 0 is used for default
+    STATIONARYTIME = 5 #which starting time to use for the measurement data, if not STATIONARY, 0 is used for default
     
     SENSINGRANGE = 0 # Sensing range of robots
     COMMRANGE = 3 # communication range for robots
@@ -404,7 +405,7 @@ if __name__ == "__main__":
     SENSORPERIOD = 0.1 #time between sensor measurement or between updates of data
     EIGENVECPERIOD = 0.04 #time between POD calculations
     
-    TOTALTIME = 60 #total execution time of program
+    TOTALTIME = 30 #total execution time of program
     
     UMAX = 50 # Max velocity, pixel/second
     EPSILON = DISCRETIZATION[0]/10 # Maximum step size of robots

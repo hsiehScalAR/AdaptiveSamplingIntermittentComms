@@ -27,10 +27,10 @@ def communicateToTeam(robots, GP=True):
     # Input arguments
     # robots = robots of same team
     
-    mapping = np.zeros(robots[0].discretization)
+    mapping = np.zeros([robots[0].discretization[0],robots[0].discretization[0],2])
     
     for r in range(0, len(robots)):
-        pixels = np.where(robots[r].mapping != 0, True,False)
+        pixels = np.where(robots[r].mapping[:,:,0] != 0, True,False)
         mapping[pixels] = robots[r].mapping[pixels]
     
     for r in range(0, len(robots)):
@@ -53,6 +53,8 @@ def moveAlongPath(robot, deltaT):
     # Input arguments
     # robot = which robot we are moving
     # deltaT = sensor time step so that we move and take a measurement at each deltaT
+    
+    robot.currentTime += deltaT
     
     if robot.pathCounter >= len(robot.paths[robot.scheduleCounter]) or robot.atEndLocation:
         robot.pathCounter = 0
@@ -77,8 +79,8 @@ def moveAlongPath(robot, deltaT):
     
     robot.trajectory.append(robot.currentLocation)
     
-    singleMeasurement = measurement(robot)
-    robot.createMap(singleMeasurement, robot.currentLocation)  # Create Map
+    meas, measTime = measurement(robot)
+    robot.createMap(meas, measTime, robot.currentLocation)  # Create Map
     
     return False
     
@@ -99,7 +101,7 @@ def measurement(robot):
         newData = robot.mappingGroundTruth[x, y]
         newData = newData + sigma*np.random.randn() + mean
         
-        return newData
+        return newData, robot.currentTime
     robot.measurementRangeX = np.array([robot.sensingRange, robot.sensingRange +1])
     robot.measurementRangeY = np.array([robot.sensingRange, robot.sensingRange +1])
     
@@ -117,7 +119,7 @@ def measurement(robot):
     
     newData = newData + sigma*np.random.randn() + mean
         
-    return newData
+    return newData, robot.currentTime
 
 #def measurement(numRobots, sensorPeriod): 
 #    #TODO check how we measure stuff, if single value since each robot measure one place or measurement over time for all robots

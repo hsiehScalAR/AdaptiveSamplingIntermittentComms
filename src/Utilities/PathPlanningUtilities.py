@@ -380,8 +380,10 @@ def getInformationGain(robot, pos):
     
     if robot.optPath:
         ys = robot.expectedVariance[np.int(pos[0]),np.int(pos[1])]
-    else:
+    elif robot.optPoint:
         ym, ys = robot.GP.inferGP(robot,pos)
+    else:
+        return 0
     return ys
 
 # TODO: This doesn't seem to do anything, maybe remove it..

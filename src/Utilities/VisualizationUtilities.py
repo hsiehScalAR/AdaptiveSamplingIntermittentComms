@@ -15,6 +15,8 @@ import matplotlib.animation as animation
 
 from scipy.stats import multivariate_normal
 
+# plt.ion()
+
 def plotMultivariateNormal():
     x, y = np.mgrid[0:600:1, 0:600:1]
     pos = np.empty(x.shape + (2,))
@@ -70,7 +72,7 @@ def plotTrajectoryAnimation(robots):
     ani = animation.FuncAnimation(fig, animate, init_func=init,
                                   frames=len(robots[-1].trajectory), interval=200)
     plt.legend()
-    plt.show()
+    
     ani.save('basic_animation.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
     
 def plotTrajectory(robots):
@@ -79,17 +81,17 @@ def plotTrajectory(robots):
         x,y = zip(*robots[r].trajectory)
         plt.plot(y,x, '-', label='Robot %d'%r)
     plt.legend()
-    plt.show()
+    
 
 def plotMeasurement(data, title):
     
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
 
     ax.set_title(title)
-    plt.imshow(data, origin='lower');
+    plt.imshow(data, origin='lower')
     plt.colorbar()
 
-    plt.show()
+    
     
 def plotMeetingGraphs(robots, index, team, subplot=None, length=0):
 
@@ -108,7 +110,7 @@ def plotMeetingGraphs(robots, index, team, subplot=None, length=0):
                 node_color=node_color,node_size=100,with_labels = True,font_color='w',font_size=8)
     
     plt.legend()
-    plt.show()
+    
     
 
 def plotMeetingPaths(robots, index, team, subplot=None, length=0):
@@ -128,7 +130,7 @@ def plotMeetingPaths(robots, index, team, subplot=None, length=0):
                 node_color=node_color,node_size=100,with_labels = True,font_color='w',font_size=8)
     
     plt.legend()
-    plt.show()
+    
     
 def plotTrajectoryOverlayGroundTruth(robots, index):
     fig, ax = plt.subplots()
@@ -143,4 +145,4 @@ def plotTrajectoryOverlayGroundTruth(robots, index):
     ax.set_title('Ground Truth and Trajectories')       
     fig.colorbar(im, ax=ax)
     plt.legend()
-    plt.show()
+    
