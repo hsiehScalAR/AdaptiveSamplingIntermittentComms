@@ -42,7 +42,6 @@ def plotTrajectoryAnimation(robots):
     
     fig = plt.figure()
     ax1 = plt.axes(xlim=(0, 600), ylim=(0,600))
-    graph, = ax1.plot([], [], '.-')
     
     graphs = []
     for r in range(len(robots)):

@@ -27,9 +27,9 @@ class GaussianProcess:
         self.spatiotemporal = spatiotemporal
         
         if spatiotemporal:
-            # self.kernel = (GPy.kern.RBF(input_dim=2, variance=1., lengthscale=1., active_dims=[0,1],ARD=False) 
-            #                + GPy.kern.RBF(input_dim=1, variance=1., lengthscale=1., active_dims=[2], ARD=False))
-            self.kernel = GPy.kern.RBF(input_dim=3, variance=1., lengthscale=[1.,1.,1.],ARD=True,useGPU=False)
+            self.kernel = (GPy.kern.RBF(input_dim=2, variance=1., lengthscale=20., active_dims=[0,1],ARD=True) 
+                           * GPy.kern.RBF(input_dim=1, variance=0.5, lengthscale=2., active_dims=[2], ARD=False))
+            # self.kernel = GPy.kern.RBF(input_dim=3, variance=1., lengthscale=[1.,1.,1.],ARD=True,useGPU=False)
         else:
             self.kernel = GPy.kern.RBF(input_dim=2, variance=1., lengthscale=1.)
     
@@ -94,7 +94,7 @@ class GaussianProcess:
         print('GP Updated\n')
 
         
-    def inferGP(self, robot, pos=None):
+    def inferGP(self, robot, pos=None, time=None):
         """Calculates estimated measurement at location"""
         # Input arguments:
         # robot = robot whose GP should calculate estimate
@@ -112,7 +112,10 @@ class GaussianProcess:
         else:
             X, Y = np.mgrid[0:robot.discretization[0]:1, 0:robot.discretization[1]:1]
             if self.spatiotemporal:
-                T = np.ones(len(np.ravel(X)))*robot.currentTime
+                if time == None:
+                    T = np.ones(len(np.ravel(X)))*robot.currentTime
+                else:
+                    T = np.ones(len(np.ravel(X)))*time
                 z = np.dstack((np.ravel(X),np.ravel(Y),np.ravel(T)))
                 z = z.reshape(-1,3)
             else:
@@ -126,36 +129,48 @@ class GaussianProcess:
         robot.expectedVariance = ys.reshape(robot.discretization)
         print('GP inferred\n')
         
-        # if robot.ID == 0:
-        #     # self.model.plot(title='Robot %d, time %.1f' %(robot.ID,robot.endTotalTime))
-        #     fig, ax = plt.subplots()
-        #     ax.set_title('Robot %d, time %.1f' %(robot.ID,robot.endTotalTime))     
-        #     plt.imshow(robot.expectedMeasurement, origin='lower');        
-        #     plt.colorbar()
-        #     
-            
-        #     plotMeasurement(robot.mappingGroundTruth, 'Robot %d, time %.1f' %(robot.ID,robot.endTotalTime))
+        if robot.ID == 0:
+            fig, ax = plt.subplots(1,3,figsize=(18, 6))
+            fig.subplots_adjust(left=0.02, bottom=0.06, right=0.95, top=0.94, wspace=0.05)
+            if time == None:
+                dispTime = robot.currentTime
+            else:
+                dispTime = time
+
+            fig.suptitle('Robot %d, Time %.1f' %(robot.ID,dispTime))
+
+            ax[0].set_title('Expected Measurement')  
+            im = ax[0].imshow(robot.expectedMeasurement, origin='lower')
+            fig.colorbar(im,ax=ax[0])
+
+            ax[1].set_title('Expected Variance')  
+            im = ax[1].imshow(robot.expectedVariance, origin='lower')        
+            fig.colorbar(im,ax=ax[1])
+
+            ax[2].set_title('GroundTruth') 
+            im = ax[2].imshow(robot.mappingGroundTruth, origin='lower')
+            fig.colorbar(im,ax=ax[2])
         
     def plotGP(self, robot):
         """Plotting model of the GP"""
         # Input arguments:
         # robot = robot whose GP is to be plotted
-        
         self.inferGP(robot)
-        ym = robot.expectedMeasurement
+        self.inferGP(robot, time=50)
+        # ym = robot.expectedMeasurement
 
-        fig, ax = plt.subplots()
-        ax.set_title('Robot %d expected Measurement, End' %robot.ID)     
-        plt.imshow(ym, origin='lower');        
-        plt.colorbar()
+        # _, ax = plt.subplots()
+        # ax.set_title('Robot %d expected Measurement, End' %robot.ID)     
+        # plt.imshow(ym, origin='lower')        
+        # plt.colorbar()
         
 
-        ys = robot.expectedVariance
+        # ys = robot.expectedVariance
 
-        fig, ax = plt.subplots()
-        ax.set_title('Robot %d expected Variance, End' %robot.ID)     
-        plt.imshow(ys, origin='lower');        
-        plt.colorbar()
+        # _, ax = plt.subplots()
+        # ax.set_title('Robot %d expected Variance, End' %robot.ID)     
+        # plt.imshow(ys, origin='lower')    
+        # plt.colorbar()
         
         
         # self.model.plot(title='Robot %d, End' %(robot.ID))
@@ -202,7 +217,7 @@ class GaussianProcess:
         z = np.dstack((np.ravel(X),np.ravel(Y)))
         z = z.reshape(10000,2)
 
-        ym, ys = m.predict(z)         # predict test cases
+        ym, _ = m.predict(z)         # predict test cases
 
         plt.figure()
         plt.contourf(X, Y, ym.reshape(100,100))

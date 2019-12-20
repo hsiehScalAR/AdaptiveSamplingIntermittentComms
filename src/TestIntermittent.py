@@ -30,7 +30,7 @@ def main():
     
     """Create Measurement Data"""
 #    measurementGroundTruth = setupMatlabFileMeasurementData(DISCRETIZATION, invert=True)
-    measurementGroundTruthList, maxTime = loadMeshFiles(TOTALTIME, SENSORPERIOD)
+    measurementGroundTruthList = loadMeshFiles(TOTALTIME, SENSORPERIOD,CORRECTTIMESTEP)
     if STATIONARY:
         measurementGroundTruth = measurementGroundTruthList[np.int(STATIONARYTIME/SENSORPERIOD)]
     else:
@@ -71,18 +71,26 @@ def main():
     print('Initializing Paths')
     for period in range(0,schedule.shape[1]):
         teamsDone = np.zeros(len(teams))
-    
+
+        idx = 0
         #find out which team has a meeting event at period k=0
         for team in schedule[:, period]:
-            if teamsDone[team] or team < 0:
+            # TODO need to move robots around also when they are not scheduled to meet! Or change their initial time to something else so that it is possible to find meeting location
+            if team < 0:
+                robots[idx].nodeCounter += TOTALSAMPLES+1
+            # TODO END 
+            if teamsDone[team] or team < 0:                
+                idx += 1
                 continue
-            
+
             robs = []
             for r in teams[team][0]:
                 robs.append(robots[r-1])
-            
+
             updatePaths(robs)
             teamsDone[team] = True
+            
+            idx += 1
             
         for r in range(0,numRobots):
             robots[r].composeGraphs() 
@@ -93,8 +101,7 @@ def main():
     print('Starting ControlLoop')
     currentTime = initialTime
 
-    # while currentTime < TOTALTIME:
-    for t in range(0,np.int(maxTime/SENSORPERIOD)):
+    for t in range(0,len(measurementGroundTruthList)):
         if not STATIONARY:
             for r in range(0,numRobots):
                 robots[r].mappingGroundTruth = measurementGroundTruthList[t]
@@ -125,9 +132,9 @@ def main():
     
     
     if GAUSSIAN:
-        plotTrajectoryOverlayGroundTruth(robots,0)
         robots[0].GP.updateGP(robots[0])
         robots[0].GP.plotGP(robots[0])
+        plotTrajectoryOverlayGroundTruth(robots,0)
         # robots[2].GP.updateGP(robots[2])
         # robots[2].GP.plotGP(robots[2])
     
@@ -382,15 +389,18 @@ if __name__ == "__main__":
     
     clearPlots()
     
+    TOTALTIME = 40 #total execution time of program
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 4 robots 4 teams)
+    CORRECTTIMESTEP = True #If dye time steps should be matched to correct time steps or if each time step in dye corresponds to time step here
+    
     DEBUG = False #debug to true shows prints
     ANIMATION = False #if animation should be done
     GAUSSIAN = True #if GP should be calculated
     OPTPATH = GAUSSIAN == True #if path optimization should be used, can not be true if optpoint is used
     OPTPOINT = GAUSSIAN != OPTPATH == True #if point optimization should be used, can not be true if optpath is used
     
-    SPATIOTEMPORAL = False
-    STATIONARY = True #if we are using time varying measurement data or not
+    SPATIOTEMPORAL = True
+    STATIONARY = not SPATIOTEMPORAL #if we are using time varying measurement data or not
     STATIONARYTIME = 5 #which starting time to use for the measurement data, if not STATIONARY, 0 is used for default
     
     SENSINGRANGE = 0 # Sensing range of robots
@@ -404,9 +414,7 @@ if __name__ == "__main__":
 
     SENSORPERIOD = 0.1 #time between sensor measurement or between updates of data
     EIGENVECPERIOD = 0.04 #time between POD calculations
-    
-    TOTALTIME = 30 #total execution time of program
-    
+       
     UMAX = 50 # Max velocity, pixel/second
     EPSILON = DISCRETIZATION[0]/10 # Maximum step size of robots
     GAMMARRT = 100 # constant for rrt* algorithm, can it be calculated?
