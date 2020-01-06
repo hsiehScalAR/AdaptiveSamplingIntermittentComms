@@ -27,8 +27,15 @@ class GaussianProcess:
         self.spatiotemporal = spatiotemporal
         
         if spatiotemporal:
-            self.kernel = (GPy.kern.RBF(input_dim=2, variance=1., lengthscale=20., active_dims=[0,1],ARD=True) 
-                           * GPy.kern.RBF(input_dim=1, variance=0.5, lengthscale=2., active_dims=[2], ARD=False))
+            #TODO: lengthscale for time is very important!
+            # 1: very quick decay of estimate
+            # 2: maybe ok
+            # 10: good spatial but not predictive in time
+            # ARD True: good spatial but not predictive in time
+            # ARD False: very quick decay of estimate
+
+            self.kernel = (GPy.kern.RBF(input_dim=2, variance=1., lengthscale=10., active_dims=[0,1],ARD=True) 
+                           * GPy.kern.RBF(input_dim=1, variance=0.5, lengthscale=10., active_dims=[2], ARD=False))
             # self.kernel = GPy.kern.RBF(input_dim=3, variance=1., lengthscale=[1.,1.,1.],ARD=True,useGPU=False)
         else:
             self.kernel = GPy.kern.RBF(input_dim=2, variance=1., lengthscale=1.)
@@ -51,15 +58,7 @@ class GaussianProcess:
             x = x.reshape(-1,2)
         
         self.model = GPy.models.GPRegression(x,y, self.kernel)                                 # Works good
-#        self.model = GPy.models.BayesianGPLVM(y,2,X=x,kernel = self.kernel)                    # Error
-#        self.model = GPy.models.SparseGPLVM(y,2,X=x,kernel = self.kernel, num_inducing=100)    # Don't know how to induce correctly
         
-#        self.model = GPy.models.GPRegressionGrid(x, y, kernel=self.kernel)                     # Error       
-
-#        self.model = GPy.models.SparseGPRegression(x,y, kernel=self.kernel, num_inducing=100)  # Don't know how to induce correctly
-#        self.model.inference_method=GPy.inference.latent_function_inference.FITC()
-        
-#        self.model.optimize(optimizer= 'scg',messages=False,max_iters = ITERATIONS,ipython_notebook=False)       # Don't see difference, maybe slower
         self.model.optimize(optimizer='lbfgsb',messages=False,max_f_eval = ITERATIONS,ipython_notebook=False)    # Works good
 
         
@@ -129,7 +128,7 @@ class GaussianProcess:
         robot.expectedVariance = ys.reshape(robot.discretization)
         print('GP inferred\n')
         
-        if robot.ID == 0:
+        if robot.ID >= 0:
             fig, ax = plt.subplots(1,3,figsize=(18, 6))
             fig.subplots_adjust(left=0.02, bottom=0.06, right=0.95, top=0.94, wspace=0.05)
             if time == None:
@@ -137,7 +136,8 @@ class GaussianProcess:
             else:
                 dispTime = time
 
-            fig.suptitle('Robot %d, Time %.1f' %(robot.ID,dispTime))
+            title = 'Robot %d, Time %.1f' %(robot.ID,dispTime)
+            fig.suptitle(title)
 
             ax[0].set_title('Expected Measurement')  
             im = ax[0].imshow(robot.expectedMeasurement, origin='lower')
@@ -150,29 +150,16 @@ class GaussianProcess:
             ax[2].set_title('GroundTruth') 
             im = ax[2].imshow(robot.mappingGroundTruth, origin='lower')
             fig.colorbar(im,ax=ax[2])
+            fig.savefig('Results/Figures/Tmp/' + title + '.png')
         
-    def plotGP(self, robot):
+    def plotGP(self, robot, time=None):
         """Plotting model of the GP"""
         # Input arguments:
         # robot = robot whose GP is to be plotted
-        self.inferGP(robot)
-        self.inferGP(robot, time=50)
-        # ym = robot.expectedMeasurement
 
-        # _, ax = plt.subplots()
-        # ax.set_title('Robot %d expected Measurement, End' %robot.ID)     
-        # plt.imshow(ym, origin='lower')        
-        # plt.colorbar()
-        
-
-        # ys = robot.expectedVariance
-
-        # _, ax = plt.subplots()
-        # ax.set_title('Robot %d expected Variance, End' %robot.ID)     
-        # plt.imshow(ys, origin='lower')    
-        # plt.colorbar()
-        
-        
+        # self.inferGP(robot)
+        self.inferGP(robot, time=time)
+    
         # self.model.plot(title='Robot %d, End' %(robot.ID))
 
         # slices = [100, 200, 300, 400, 500]

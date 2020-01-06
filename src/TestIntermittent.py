@@ -9,6 +9,7 @@ Created on Mon Nov  4 10:48:29 2019
 #General imports
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 #Personal imports
 from Classes.Scheduler import Schedule
@@ -28,9 +29,28 @@ def main():
     """main test loop"""
     # no inputs 
     
+    """Remove Tmp results file"""
+
+    folder = '/home/hannes/MasterThesisCode/AdaptiveSamplingIntermittentComms/src/Results/Figures/Tmp'
+    for filename in os.listdir(folder):
+        file_path = os.path.join(folder, filename)
+        try:
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.unlink(file_path)
+        except Exception as e:
+            print('Failed to delete %s. Reason: %s' % (file_path, e))
+
     """Create Measurement Data"""
+    #TODO: remove next line
 #    measurementGroundTruth = setupMatlabFileMeasurementData(DISCRETIZATION, invert=True)
-    measurementGroundTruthList = loadMeshFiles(TOTALTIME, SENSORPERIOD,CORRECTTIMESTEP)
+    measurementGroundTruthList, maxTime = loadMeshFiles(SENSORPERIOD,CORRECTTIMESTEP)
+
+    if maxTime < TOTALTIME:
+        print('**********************************************************************\n')
+        print('WARNING: Given Total Time is bigger than available data (maxTime = %d), terminating application' %maxTime)
+        print('**********************************************************************\n')
+        exit()
+
     if STATIONARY:
         measurementGroundTruth = measurementGroundTruthList[np.int(STATIONARYTIME/SENSORPERIOD)]
     else:
@@ -101,12 +121,13 @@ def main():
     print('Starting ControlLoop')
     currentTime = initialTime
 
-    for t in range(0,len(measurementGroundTruthList)):
+    for t in range(0,np.int(TOTALTIME/SENSORPERIOD)):
         if not STATIONARY:
             for r in range(0,numRobots):
                 robots[r].mappingGroundTruth = measurementGroundTruthList[t]
             
         currentTime = update(currentTime, robots, teams, commPeriod)
+        
 
     print('ControlLoop Finished\n')
     
@@ -123,23 +144,23 @@ def main():
             team += 1
         
         plotTrajectory(robots)
-        totalMap = robots[0].mapping
+        totalMap = robots[0].mapping[:,:,0]
         plotMeasurement(totalMap, 'Measurements of robots after communication events')
 
     if ANIMATION:
         plotTrajectoryAnimation(robots)
-        
-    
     
     if GAUSSIAN:
-        robots[0].GP.updateGP(robots[0])
-        robots[0].GP.plotGP(robots[0])
+        for r in range(0,numRobots):
+            robots[r].GP.updateGP(robots[r])
+            robots[r].GP.plotGP(robots[r])
+            if PREDICTIVETIME != None:
+                robots[r].mappingGroundTruth = measurementGroundTruthList[np.int(PREDICTIVETIME/SENSORPERIOD)]
+                robots[r].GP.plotGP(robots[r], PREDICTIVETIME)
         plotTrajectoryOverlayGroundTruth(robots,0)
-        # robots[2].GP.updateGP(robots[2])
-        # robots[2].GP.plotGP(robots[2])
     
     print('Plotting Finished\n')
-    
+
     """Display all images"""
     plt.show()
 
@@ -158,20 +179,23 @@ def update(currentTime, robots, teams, commPeriod):
 
     currentTime += SENSORPERIOD
     
-    for team in teams:
+    for idx, team in enumerate(teams):
         
         if np.all(atEndPoint[team-1]):         
             
-            currentLocation = []
+            currentLocations = []
             for r in team[0]: 
-                currentLocation.append(robots[r-1].currentLocation)
-            currentLocation = np.asarray(currentLocation)
+                currentLocations.append(robots[r-1].currentLocation)
+            currentLocations = np.asarray(currentLocations)
             
-            if not checkMeetingLocation(currentLocation, COMMRANGE):
+            if not checkMeetingLocation(currentLocations, COMMRANGE):
                 continue
             
-            robs = []         
-            for r in team[0]:                
+            robs = []
+            i = 0         
+            for r in team[0]:   
+                robots[r-1].meetings.append([currentLocations[i], idx])
+                i += 1             
                 robots[r-1].scheduleCounter += 1
                 robots[r-1].atEndLocation = False
                 
@@ -229,7 +253,7 @@ def updatePaths(robots):
             for r in range(0, len(robots)):       
                 
                 if distribution == 'uniform':
-                    # TODO: trying to get highest variance point by sampling several ones or by checking the path utility
+                    #looking for either optimal position or path based on GP modeling
                     if OPTPATH:              
                         maxVariance = 0
                         vrand = np.array([0, 0])
@@ -389,7 +413,7 @@ if __name__ == "__main__":
     
     clearPlots()
     
-    TOTALTIME = 40 #total execution time of program
+    TOTALTIME = 30 #total execution time of program
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 4 robots 4 teams)
     CORRECTTIMESTEP = True #If dye time steps should be matched to correct time steps or if each time step in dye corresponds to time step here
     
@@ -402,7 +426,8 @@ if __name__ == "__main__":
     SPATIOTEMPORAL = True
     STATIONARY = not SPATIOTEMPORAL #if we are using time varying measurement data or not
     STATIONARYTIME = 5 #which starting time to use for the measurement data, if not STATIONARY, 0 is used for default
-    
+    PREDICTIVETIME = 55 #Time for which to make a prediction at the end, has to be bigger than total time
+
     SENSINGRANGE = 0 # Sensing range of robots
     COMMRANGE = 3 # communication range for robots
     TIMEINTERVAL = 1 # time interval for communication events

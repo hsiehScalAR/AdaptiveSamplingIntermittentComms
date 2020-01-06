@@ -142,7 +142,8 @@ def updateSuccessorNodes(robot, startNode):
             succTotalCost, succEdgeCost, information = cost(startTime,startPos,succPos,robot)
             
             robot.graph[key][v]['weight'] = succEdgeCost
-            robot.graph.nodes[v]['t'] = succTotalCost            
+            robot.graph.nodes[v]['t'] = succTotalCost
+            robot.graph.nodes[v]['informationGain'] = information             
 
 def rewireGraph(robots, timeInterval, debug):
     # TODO: Find out what this min t = max t means
@@ -409,7 +410,7 @@ def sampleNPoints(robot, discretization, rangeSamples, distribution = 'uniform')
         
     maxVariance = 0
     vrand = np.array([0, 0])
-    for i in range(0,10):
+    for _ in range(0,10):
         point = sampleVrand(discretization, rangeSamples, distribution)
         var = getInformationGain(robot, point)
         if var > maxVariance:

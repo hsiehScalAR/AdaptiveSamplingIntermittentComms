@@ -18,7 +18,7 @@ def setupMatlabFileMeasurementData(discetization, invert=True):
     else:
         return data + 1
     
-def loadMeshFiles(totalTime, sensorPeriod, correctTimeSteps = False):
+def loadMeshFiles(sensorPeriod, correctTimeSteps = False):
     pathname_mesh = 'Data/meshfiles/600x600_mesh.mat'
     pathname_node = 'Data/meshfiles/600x600_node_soln_fine.mat'
     pathname_times = 'Data/meshfiles/600x600_node_soln_fine_times.mat'
@@ -38,14 +38,9 @@ def loadMeshFiles(totalTime, sensorPeriod, correctTimeSteps = False):
     radius = 10
     measurementGroundTruthList = []
 
-
-
-
-
     if correctTimeSteps:
-        maxTime = min(np.int(totalTime),np.int(timeValues[0][-1]))
-        if maxTime != totalTime:
-            print('WARNING: Given Total Time is bigger than available data, reducing Total Time to given data time')
+        maxTime = np.int(timeValues[0][-1])
+        
         sampling = sensorPeriod
 
         for _ in range(0,np.int(maxTime/sensorPeriod)):
@@ -64,12 +59,11 @@ def loadMeshFiles(totalTime, sensorPeriod, correctTimeSteps = False):
             data = data/20    
             measurementGroundTruthList.append(data)
     else: 
-        maxTime = min(np.int(totalTime),timeValues.shape[1])
-        if maxTime != totalTime:
-            print('WARNING: Given Total Time is bigger than available data, reducing Total Time to given data time')
+        maxTime = timeValues.shape[1]
+        
         sampling = sensorPeriod
 
-        for tIdx in range(0,np.int(maxTime/sensorPeriod)):
+        for tIdx in range(0,np.int(maxTime)):
             nodeSol = nodeSoln[:,tIdx]
             data = np.zeros([600,600])
             
@@ -79,7 +73,7 @@ def loadMeshFiles(totalTime, sensorPeriod, correctTimeSteps = False):
                 data[posx-radius:posx+radius,posy-radius:posy+radius] = nodeSol[idx]
             data = data/20    
             measurementGroundTruthList.append(data)
-    return measurementGroundTruthList
+    return measurementGroundTruthList, maxTime
     
 def getSetup(case):
     """returns the setup for the robot teams based on the case"""

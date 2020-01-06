@@ -35,6 +35,8 @@ def plotMultivariateNormal():
     plt.contourf(x, y, totalrv)
     plt.colorbar()
 
+    plt.savefig('Results/Figures/Tmp/' + 'MultivariateNormal' + '.png')
+
 def clearPlots():
     plt.close('all')
 
@@ -72,7 +74,7 @@ def plotTrajectoryAnimation(robots):
                                   frames=len(robots[-1].trajectory), interval=200)
     plt.legend()
     
-    ani.save('basic_animation.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
+    ani.save('Results/Figures/Tmp/basic_animation.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
     
 def plotTrajectory(robots):
     plt.figure()
@@ -80,7 +82,7 @@ def plotTrajectory(robots):
         x,y = zip(*robots[r].trajectory)
         plt.plot(y,x, '-', label='Robot %d'%r)
     plt.legend()
-    
+    plt.savefig('Results/Figures/Tmp/' + 'Trajectory' + '.png')
 
 def plotMeasurement(data, title):
     
@@ -89,11 +91,10 @@ def plotMeasurement(data, title):
     ax.set_title(title)
     plt.imshow(data, origin='lower')
     plt.colorbar()
-
+    plt.savefig('Results/Figures/Tmp/' + 'Measurements' + '.png')
     
     
 def plotMeetingGraphs(robots, index, team, subplot=None, length=0):
-
     if subplot != None:
         plt.figure('RRT* Graphs')
         plt.subplot(np.ceil(length/2),2,subplot)
@@ -109,11 +110,12 @@ def plotMeetingGraphs(robots, index, team, subplot=None, length=0):
                 node_color=node_color,node_size=100,with_labels = True,font_color='w',font_size=8)
     
     plt.legend()
+    plt.savefig('Results/Figures/Tmp/' + 'RRT* Graphs' + '.png')
     
     
 
 def plotMeetingPaths(robots, index, team, subplot=None, length=0):
-
+    #TODO: add savefig in main loop
     if subplot != None:
         plt.figure('RRT* Paths')
         plt.subplot(np.ceil(length/2),2,subplot)
@@ -129,13 +131,19 @@ def plotMeetingPaths(robots, index, team, subplot=None, length=0):
                 node_color=node_color,node_size=100,with_labels = True,font_color='w',font_size=8)
     
     plt.legend()
-    
+    plt.savefig('Results/Figures/Tmp/' + 'RRT* Paths' + '.png')
+        
     
 def plotTrajectoryOverlayGroundTruth(robots, index):
     fig, ax = plt.subplots()
     for r in range(0,len(robots)):
         x,y = zip(*robots[r].trajectory)
         ax.plot(y,x, '-', label='Robot %d'%r)
+        
+        #TODO: fix posMeeting, something seems off, maybe check in main update loop if this is correct
+        posMeeting, team  = zip(*robots[r].meetings)
+        print(r, posMeeting, team)
+        ax.plot(posMeeting[1],posMeeting[0], 'x', color='r')
     
     data = robots[index].mappingGroundTruth
         
@@ -144,4 +152,5 @@ def plotTrajectoryOverlayGroundTruth(robots, index):
     ax.set_title('Ground Truth and Trajectories')       
     fig.colorbar(im, ax=ax)
     plt.legend()
+    plt.savefig('Results/Figures/Tmp/' + 'Ground Truth and Trajectories' + '.png')
     
