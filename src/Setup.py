@@ -36,6 +36,8 @@ def loadMeshFiles(sensorPeriod, correctTimeSteps = False):
     
     syncIdx = []
     radius = 10
+    scaling = 20
+    
     measurementGroundTruthList = []
 
     if correctTimeSteps:
@@ -56,7 +58,7 @@ def loadMeshFiles(sensorPeriod, correctTimeSteps = False):
                 posx = np.int(meshNodes[:,idx][0])
                 posy = np.int(meshNodes[:,idx][1])
                 data[posx-radius:posx+radius,posy-radius:posy+radius] = nodeSol[idx]
-            data = data/20    
+            data = data/scaling    
             measurementGroundTruthList.append(data)
     else: 
         maxTime = timeValues.shape[1]
@@ -71,7 +73,7 @@ def loadMeshFiles(sensorPeriod, correctTimeSteps = False):
                 posx = np.int(meshNodes[:,idx][0])
                 posy = np.int(meshNodes[:,idx][1])
                 data[posx-radius:posx+radius,posy-radius:posy+radius] = nodeSol[idx]
-            data = data/20    
+            data = data/scaling    
             measurementGroundTruthList.append(data)
     return measurementGroundTruthList, maxTime
     

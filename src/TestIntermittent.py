@@ -432,9 +432,13 @@ def randomStartingPositions(numRobots):
 
 def errorCalculation(robots,logFile):
     for robot in robots:
-        rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())
-        nrmse = 100 * rmse/(np.max(robot.mappingGroundTruth)-np.min(robot.mappingGroundTruth))
-        logFile.writeError(robot.ID,nrmse,robot.currentTime, endTime=True)
+        # rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())
+        # nrmse = 100 * rmse/(np.max(robot.mappingGroundTruth)-np.min(robot.mappingGroundTruth))
+        # logFile.writeError(robot.ID,nrmse,robot.currentTime, endTime=True)
+
+        rmse = np.sqrt(np.sum(np.square(robot.mappingGroundTruth - robot.expectedMeasurement)))
+        fnorm = rmse/(np.sqrt(np.sum(np.square(robot.mappingGroundTruth))))
+        logFile.writeError(robot.ID,fnorm,robot.currentTime, endTime=True)
 
 if __name__ == "__main__":
     """Entry in Test Program"""

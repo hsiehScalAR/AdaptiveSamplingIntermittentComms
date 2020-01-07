@@ -28,6 +28,7 @@ class GaussianProcess:
 
         self.spatiotemporal = spatiotemporal
         self.logFile = logFile
+        self.filterThreshold = 0.03 # was 0.05
 
         spatialLengthScale = 10.
         tempLengthScale = 10. 
@@ -39,6 +40,7 @@ class GaussianProcess:
 
         """Write parameters to logfile"""
         parameters = {
+                    'filterThreshold': self.filterThreshold,
                     'spatialLenScale': spatialLengthScale,
                     'tempLenScale   ': tempLengthScale,
                     'spatialVariance': spatialVariance,
@@ -93,7 +95,7 @@ class GaussianProcess:
         
         print('Updating GP for robot %d' %robot.ID)
         print('Time: %.1f' %robot.currentTime)
-        r,c = np.where(robot.mapping[:,:,0] > 0.03) # was 0.05
+        r,c = np.where(robot.mapping[:,:,0] > self.filterThreshold) # was 0.05
         
         y = robot.mapping[r,c,0]
         y = y.reshape(-1,1)
@@ -195,9 +197,13 @@ class GaussianProcess:
         #     self.model.plot(figure=figure, fixed_inputs=[(0,y)], row=(i+1), plot_data=False)
 
     def errorCalculation(self, robot):
-        rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())
-        nrmse = 100 * rmse/(np.max(robot.mappingGroundTruth)-np.min(robot.mappingGroundTruth))
-        self.logFile.writeError(robot.ID,nrmse,robot.currentTime)
+        # rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())
+        # nrmse = 100 * rmse/(np.max(robot.mappingGroundTruth)-np.min(robot.mappingGroundTruth))
+        # self.logFile.writeError(robot.ID,nrmse,robot.currentTime)
+
+        rmse = np.sqrt(np.sum(np.square(robot.mappingGroundTruth - robot.expectedMeasurement)))
+        fnorm = rmse/(np.sqrt(np.sum(np.square(robot.mappingGroundTruth))))
+        self.logFile.writeError(robot.ID,fnorm,robot.currentTime)
 
     def demoGPy(self):
         """Demo function to demonstrate GPy library"""
