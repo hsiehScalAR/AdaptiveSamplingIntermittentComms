@@ -17,7 +17,7 @@ class Robot:
     
     objs = []  # Registrar keeps all attributes of class
 
-    def __init__(self, ID, teams, schedule, discretization, uMax, sensorPeriod, optPath, optPoint, spatiotemporal):
+    def __init__(self, ID, teams, schedule, discretization, uMax, sensorPeriod, optPath, optPoint, spatiotemporal, logFile):
         """Initializer of robot class"""
         # Input arguments:
         # ID = robot number
@@ -83,7 +83,7 @@ class Robot:
         self.endNodeCounter = 0
         self.endLocation = np.array([0, 0])
         
-        self.GP = GaussianProcess(spatiotemporal)
+        self.GP = GaussianProcess(spatiotemporal,logFile)
         Robot.objs.append(self)
         Robot.discretization = discretization
         

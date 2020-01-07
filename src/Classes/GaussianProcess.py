@@ -17,28 +17,52 @@ from scipy.stats import multivariate_normal
 from Utilities.VisualizationUtilities import plotMeasurement
                                               
 ITERATIONS = 1000
+PATH = 'Results/Tmp/'
 
 class GaussianProcess:
-    def __init__(self, spatiotemporal):
+    def __init__(self, spatiotemporal,logFile):
         """Initialize kernel for the GPs"""
         # Input arguments:
         # spatiotemporal = bool if using time dependent kernel
-        
+        # logFile = logFile class which allows to write to file
+
         self.spatiotemporal = spatiotemporal
-        
+        self.logFile = logFile
+
+        spatialLengthScale = 10.
+        tempLengthScale = 10. 
+        spatialVariance = 1. 
+        tempVariance = 0.5
+        spatialARD = True
+        tempARD = False
+
+
+        """Write parameters to logfile"""
+        parameters = {
+                    'spatialLenScale': spatialLengthScale,
+                    'tempLenScale   ': tempLengthScale,
+                    'spatialVariance': spatialVariance,
+                    'tempVariance   ': tempVariance,
+                    'spatialARD     ': spatialARD,
+                    'tempARD        ': tempARD,
+                    }
+        self.logFile.writeParameters(**parameters)
+
         if spatiotemporal:
             #TODO: lengthscale for time is very important!
+            # reducing the filterconstant resulted in better results for lengthscale of 1
             # 1: very quick decay of estimate
             # 2: maybe ok
             # 10: good spatial but not predictive in time
             # ARD True: good spatial but not predictive in time
-            # ARD False: very quick decay of estimate
+            # ARD False: very quick decay of estimate unless l=10
 
-            self.kernel = (GPy.kern.RBF(input_dim=2, variance=1., lengthscale=10., active_dims=[0,1],ARD=True) 
-                           * GPy.kern.RBF(input_dim=1, variance=0.5, lengthscale=10., active_dims=[2], ARD=False))
+            self.kernel = (GPy.kern.RBF(input_dim=2, variance=spatialVariance, lengthscale=spatialLengthScale, active_dims=[0,1],ARD=spatialARD) 
+                           * GPy.kern.RBF(input_dim=1, variance=tempVariance, lengthscale=tempLengthScale, active_dims=[2], ARD=tempARD))
+            
             # self.kernel = GPy.kern.RBF(input_dim=3, variance=1., lengthscale=[1.,1.,1.],ARD=True,useGPU=False)
         else:
-            self.kernel = GPy.kern.RBF(input_dim=2, variance=1., lengthscale=1.)
+            self.kernel = GPy.kern.RBF(input_dim=2, variance=spatialVariance, lengthscale=spatialLengthScale,ARD=spatialARD)
     
     def initializeGP(self, robot):
         """Initialize model for the GPs"""
@@ -69,7 +93,7 @@ class GaussianProcess:
         
         print('Updating GP for robot %d' %robot.ID)
         print('Time: %.1f' %robot.currentTime)
-        r,c = np.where(robot.mapping[:,:,0] > 0.05)
+        r,c = np.where(robot.mapping[:,:,0] > 0.03) # was 0.05
         
         y = robot.mapping[r,c,0]
         y = y.reshape(-1,1)
@@ -130,7 +154,7 @@ class GaussianProcess:
         
         if robot.ID >= 0:
             fig, ax = plt.subplots(1,3,figsize=(18, 6))
-            fig.subplots_adjust(left=0.02, bottom=0.06, right=0.95, top=0.94, wspace=0.05)
+            fig.subplots_adjust(left=0.02, bottom=0.06, right=0.8, top=0.94, wspace=0.12,hspace=0.1)
             if time == None:
                 dispTime = robot.currentTime
             else:
@@ -141,17 +165,20 @@ class GaussianProcess:
 
             ax[0].set_title('Expected Measurement')  
             im = ax[0].imshow(robot.expectedMeasurement, origin='lower')
-            fig.colorbar(im,ax=ax[0])
 
             ax[1].set_title('Expected Variance')  
             im = ax[1].imshow(robot.expectedVariance, origin='lower')        
-            fig.colorbar(im,ax=ax[1])
 
             ax[2].set_title('GroundTruth') 
             im = ax[2].imshow(robot.mappingGroundTruth, origin='lower')
-            fig.colorbar(im,ax=ax[2])
-            fig.savefig('Results/Figures/Tmp/' + title + '.png')
-        
+
+            cbar_ax = fig.add_axes([0.83, 0.1, 0.01, 0.8])
+            fig.colorbar(im, cax=cbar_ax)
+            im.set_clim(-2, 15)
+            fig.savefig(PATH + title + '.png')
+
+            self.errorCalculation(robot)
+
     def plotGP(self, robot, time=None):
         """Plotting model of the GP"""
         # Input arguments:
@@ -166,7 +193,12 @@ class GaussianProcess:
         # figure = GPy.plotting.plotting_library().figure(len(slices), 1)
         # for i, y in zip(range(len(slices)), slices):
         #     self.model.plot(figure=figure, fixed_inputs=[(0,y)], row=(i+1), plot_data=False)
-        
+
+    def errorCalculation(self, robot):
+        rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())
+        nrmse = 100 * rmse/(np.max(robot.mappingGroundTruth)-np.min(robot.mappingGroundTruth))
+        self.logFile.writeError(robot.ID,nrmse,robot.currentTime)
+
     def demoGPy(self):
         """Demo function to demonstrate GPy library"""
         # No input

@@ -24,25 +24,42 @@ from Utilities.PathPlanningUtilities import (sampleVrand, findNearestNode, steer
                                              extendGraph, rewireGraph, calculateGoalSet, 
                                              checkGoalSet, leastCostGoalSet, getPath, 
                                              getInformationGainAlongPath, sampleNPoints)
+from Utilities.LogUtilities import LogFile
 
 def main():
     """main test loop"""
     # no inputs 
     
-    """Remove Tmp results file"""
-
-    folder = '/home/hannes/MasterThesisCode/AdaptiveSamplingIntermittentComms/src/Results/Figures/Tmp'
-    for filename in os.listdir(folder):
-        file_path = os.path.join(folder, filename)
+    """Remove Tmp results file"""  
+    for filename in os.listdir(FOLDER):
+        file_path = os.path.join(FOLDER, filename)
         try:
             if os.path.isfile(file_path) or os.path.islink(file_path):
                 os.unlink(file_path)
         except Exception as e:
             print('Failed to delete %s. Reason: %s' % (file_path, e))
 
+    """Write parameters to new logfile"""
+    parameters = {
+                'TOTALTIME      ': TOTALTIME,
+                'CASE           ': CASE,
+                'CORRECTTIMESTEP': CORRECTTIMESTEP,
+                'GAUSSIAN       ': GAUSSIAN,
+                'OPTPATH        ': OPTPATH,
+                'OPTPOINT       ': OPTPOINT,
+                'SPATIOTEMPORAL ': SPATIOTEMPORAL,
+                'STATIONARY     ': STATIONARY,
+                'STATIONARYTIME ': STATIONARYTIME,
+                'PREDICTIVETIME ': PREDICTIVETIME,
+                'SENSINGRANGE   ': SENSINGRANGE,
+                'COMMRANGE      ': COMMRANGE,
+                'TIMEINTERVAL   ': TIMEINTERVAL,
+                'SENSORPERIOD   ': SENSORPERIOD
+                }
+    logFile = LogFile(LOGFILE,FOLDER +'/')
+    logFile.writeParameters(**parameters)
+
     """Create Measurement Data"""
-    #TODO: remove next line
-#    measurementGroundTruth = setupMatlabFileMeasurementData(DISCRETIZATION, invert=True)
     measurementGroundTruthList, maxTime = loadMeshFiles(SENSORPERIOD,CORRECTTIMESTEP)
 
     if maxTime < TOTALTIME:
@@ -53,6 +70,8 @@ def main():
 
     if STATIONARY:
         measurementGroundTruth = measurementGroundTruthList[np.int(STATIONARYTIME/SENSORPERIOD)]
+        #TODO: remove next line
+        # measurementGroundTruth = setupMatlabFileMeasurementData(DISCRETIZATION, invert=True)
     else:
         measurementGroundTruth = measurementGroundTruthList[0]
 
@@ -68,7 +87,7 @@ def main():
 
     """Initialize schedules and robots"""
     schedule, teams, commPeriod = initializeScheduler(numRobots, numTeams, robTeams)
-    robots = initializeRobots(numRobots, teams, schedule)
+    robots = initializeRobots(numRobots, teams, schedule, logFile)
 
     """create the initial plans for all periods"""
     initialTime = 0
@@ -155,14 +174,20 @@ def main():
             robots[r].GP.updateGP(robots[r])
             robots[r].GP.plotGP(robots[r])
             if PREDICTIVETIME != None:
-                robots[r].mappingGroundTruth = measurementGroundTruthList[np.int(PREDICTIVETIME/SENSORPERIOD)]
-                robots[r].GP.plotGP(robots[r], PREDICTIVETIME)
+                if PREDICTIVETIME >= maxTime:
+                    predictiveTime = -1
+                else:
+                    predictiveTime = np.int(PREDICTIVETIME/SENSORPERIOD)
+                robots[r].mappingGroundTruth = measurementGroundTruthList[predictiveTime]
+                robots[r].GP.plotGP(robots[r], predictiveTime)
         plotTrajectoryOverlayGroundTruth(robots,0)
     
     print('Plotting Finished\n')
 
-    """Display all images"""
-    plt.show()
+    errorCalculation(robots, logFile)
+
+    # """Display all images"""
+    # plt.show()
 
 def update(currentTime, robots, teams, commPeriod):
     """Update procedure of intermittent communication"""
@@ -320,7 +345,7 @@ def updatePaths(robots):
         counter += 1
     print('Needed %d retry(-ies) for path planning' %(counter-1))
     
-def initializeRobots(numRobots, teams, schedule):
+def initializeRobots(numRobots, teams, schedule, logFile):
     """initialize the robot class"""
     # Input arguments:
     # numRobots = how many robots
@@ -333,7 +358,7 @@ def initializeRobots(numRobots, teams, schedule):
         for t in range(0,len(teams)):    
             if r+1 in teams[t]:
                 belongsToTeam.append(t)
-        rob = Robot(r, np.asarray(belongsToTeam), schedule[r], DISCRETIZATION, UMAX, SENSORPERIOD, OPTPATH, OPTPOINT, SPATIOTEMPORAL)
+        rob = Robot(r, np.asarray(belongsToTeam), schedule[r], DISCRETIZATION, UMAX, SENSORPERIOD, OPTPATH, OPTPOINT, SPATIOTEMPORAL, logFile)
         robots.append(rob)
     
     #Print test information
@@ -405,6 +430,12 @@ def randomStartingPositions(numRobots):
         
     return locations.astype(int)
 
+def errorCalculation(robots,logFile):
+    for robot in robots:
+        rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())
+        nrmse = 100 * rmse/(np.max(robot.mappingGroundTruth)-np.min(robot.mappingGroundTruth))
+        logFile.writeError(robot.ID,nrmse,robot.currentTime, endTime=True)
+
 if __name__ == "__main__":
     """Entry in Test Program"""
     
@@ -413,7 +444,7 @@ if __name__ == "__main__":
     
     clearPlots()
     
-    TOTALTIME = 30 #total execution time of program
+    TOTALTIME = 50 #total execution time of program
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 4 robots 4 teams)
     CORRECTTIMESTEP = True #If dye time steps should be matched to correct time steps or if each time step in dye corresponds to time step here
     
@@ -426,7 +457,7 @@ if __name__ == "__main__":
     SPATIOTEMPORAL = True
     STATIONARY = not SPATIOTEMPORAL #if we are using time varying measurement data or not
     STATIONARYTIME = 5 #which starting time to use for the measurement data, if not STATIONARY, 0 is used for default
-    PREDICTIVETIME = 55 #Time for which to make a prediction at the end, has to be bigger than total time
+    PREDICTIVETIME = None #Time for which to make a prediction at the end, has to be bigger than total time
 
     SENSINGRANGE = 0 # Sensing range of robots
     COMMRANGE = 3 # communication range for robots
@@ -443,5 +474,8 @@ if __name__ == "__main__":
     UMAX = 50 # Max velocity, pixel/second
     EPSILON = DISCRETIZATION[0]/10 # Maximum step size of robots
     GAMMARRT = 100 # constant for rrt* algorithm, can it be calculated?
+    
+    FOLDER = 'Results/Tmp'
+    LOGFILE = 'logFile'
     
     main()
