@@ -170,24 +170,26 @@ def main():
         plotTrajectoryAnimation(robots)
     
     if GAUSSIAN:
+
+        plotTrajectoryOverlayGroundTruth(robots,0)
+
         for r in range(0,numRobots):
             robots[r].GP.updateGP(robots[r])
             robots[r].GP.plotGP(robots[r])
             if PREDICTIVETIME != None:
+                
                 if PREDICTIVETIME >= maxTime:
-                    predictiveTime = -1
+                    predictiveTime = maxTime-SENSORPERIOD
                 else:
                     predictiveTime = np.int(PREDICTIVETIME/SENSORPERIOD)
+                robots[r].currentTime = predictiveTime*SENSORPERIOD
                 robots[r].mappingGroundTruth = measurementGroundTruthList[predictiveTime]
-                robots[r].GP.plotGP(robots[r], predictiveTime)
-        plotTrajectoryOverlayGroundTruth(robots,0)
+                robots[r].GP.plotGP(robots[r], robots[r].currentTime)
+     
     
     print('Plotting Finished\n')
 
     errorCalculation(robots, logFile)
-
-    # """Display all images"""
-    # plt.show()
 
 def update(currentTime, robots, teams, commPeriod):
     """Update procedure of intermittent communication"""
@@ -410,13 +412,13 @@ def randomStartingPositions(numRobots):
     # numRobots = how many robots
     
     locations = np.zeros([numRobots, 2])
-    pos = np.random.randint(0, COMMRANGE, size=2)
+    pos = np.random.randint(0,2*COMMRANGE, size=2)
     locations[0] = pos
     
     for i in range(1,numRobots):
         equal = True
         while equal:
-            pos = np.random.randint(0, numRobots, size=2)
+            pos = np.random.randint(0, 2*COMMRANGE, size=2)
             equal = False
             for l in range(0, i):
                 if np.array_equal(pos,locations[l]):
@@ -461,7 +463,7 @@ if __name__ == "__main__":
     SPATIOTEMPORAL = True
     STATIONARY = not SPATIOTEMPORAL #if we are using time varying measurement data or not
     STATIONARYTIME = 5 #which starting time to use for the measurement data, if not STATIONARY, 0 is used for default
-    PREDICTIVETIME = None #Time for which to make a prediction at the end, has to be bigger than total time
+    PREDICTIVETIME = 59 #Time for which to make a prediction at the end, has to be bigger than total time
 
     SENSINGRANGE = 0 # Sensing range of robots
     COMMRANGE = 3 # communication range for robots

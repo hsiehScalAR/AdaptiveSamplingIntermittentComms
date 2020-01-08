@@ -31,7 +31,7 @@ class GaussianProcess:
         self.filterThreshold = 0.03 # was 0.05
 
         spatialLengthScale = 10.
-        tempLengthScale = 10. 
+        tempLengthScale = 10.  
         spatialVariance = 1. 
         tempVariance = 0.5
         spatialARD = True
@@ -151,6 +151,11 @@ class GaussianProcess:
         ym, ys = self.model.predict(z)
 
         robot.expectedMeasurement = ym.reshape(robot.discretization)
+
+        #TODO: remove filtering
+        # indexSmaller = robot.expectedMeasurement < 5
+        # robot.expectedMeasurement[indexSmaller] = 0
+        scaling = 1
         robot.expectedVariance = ys.reshape(robot.discretization)
         print('GP inferred\n')
         
@@ -166,17 +171,17 @@ class GaussianProcess:
             fig.suptitle(title)
 
             ax[0].set_title('Expected Measurement')  
-            im = ax[0].imshow(robot.expectedMeasurement, origin='lower')
+            im = ax[0].imshow(robot.expectedMeasurement, origin='lower', vmin=-1, vmax=15*scaling)
 
             ax[1].set_title('Expected Variance')  
-            im = ax[1].imshow(robot.expectedVariance, origin='lower')        
+            im = ax[1].imshow(robot.expectedVariance, origin='lower', vmin=-1, vmax=15*scaling)        
 
             ax[2].set_title('GroundTruth') 
-            im = ax[2].imshow(robot.mappingGroundTruth, origin='lower')
+            im = ax[2].imshow(robot.mappingGroundTruth, origin='lower', vmin=-1, vmax=15*scaling)
 
             cbar_ax = fig.add_axes([0.83, 0.1, 0.01, 0.8])
             fig.colorbar(im, cax=cbar_ax)
-            im.set_clim(-2, 15)
+            im.set_clim(-1, 15*scaling)
             fig.savefig(PATH + title + '.png')
 
             self.errorCalculation(robot)
