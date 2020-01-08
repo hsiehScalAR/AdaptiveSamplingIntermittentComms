@@ -21,9 +21,9 @@ from Utilities.VisualizationUtilities import (plotMeasurement, plotMeetingGraphs
                                               clearPlots, plotTrajectory, plotTrajectoryAnimation,
                                               plotTrajectoryOverlayGroundTruth)
 from Utilities.PathPlanningUtilities import (sampleVrand, findNearestNode, steer, buildSetVnear, 
-                                             extendGraph, rewireGraph, calculateGoalSet, 
-                                             checkGoalSet, leastCostGoalSet, getPath, 
-                                             getInformationGainAlongPath, sampleNPoints)
+                                             extendGraph, rewireGraph, getPath, 
+                                             getInformationGainAlongPath, sampleNPoints,
+                                             calculateGeometricCenter)
 from Utilities.LogUtilities import LogFile
 
 def main():
@@ -53,7 +53,6 @@ def main():
                 'PREDICTIVETIME ': PREDICTIVETIME,
                 'SENSINGRANGE   ': SENSINGRANGE,
                 'COMMRANGE      ': COMMRANGE,
-                'TIMEINTERVAL   ': TIMEINTERVAL,
                 'SENSORPERIOD   ': SENSORPERIOD
                 }
     logFile = LogFile(LOGFILE,FOLDER +'/')
@@ -70,14 +69,12 @@ def main():
 
     if STATIONARY:
         measurementGroundTruth = measurementGroundTruthList[np.int(STATIONARYTIME/SENSORPERIOD)]
-        #TODO: remove next line
-        # measurementGroundTruth = setupMatlabFileMeasurementData(DISCRETIZATION, invert=True)
     else:
         measurementGroundTruth = measurementGroundTruthList[0]
 
            
     """create robot to team correspondence"""
-    numTeams, numRobots, robTeams, positions = getSetup(CASE)
+    numRobots, positions = getSetup(CASE)
     
     """Variables"""
     if isinstance(positions, np.ndarray):
@@ -85,54 +82,44 @@ def main():
     else:
         locations = randomStartingPositions(numRobots) #locations or robots
 
-    """Initialize schedules and robots"""
-    schedule, teams, commPeriod = initializeScheduler(numRobots, numTeams, robTeams)
-    robots = initializeRobots(numRobots, teams, schedule, logFile)
-
+    """Initialize robots"""
+    robots = initializeRobots(numRobots, logFile)
+    virtualRobot = Robot(numRobots, DISCRETIZATION, UMAX, SENSORPERIOD, OPTPATH, OPTPOINT, SPATIOTEMPORAL, logFile)
+    
     """create the initial plans for all periods"""
     initialTime = 0
     
     print('Initializing Environment')
+    
+    geoCenter = calculateGeometricCenter(locations, numRobots)
+
     for r in range(0,numRobots):
         robots[r].vnew = locations[r]
         robots[r].currentLocation = locations[r]
         robots[r].totalTime = initialTime
         robots[r].sensingRange = SENSINGRANGE
         robots[r].mappingGroundTruth = measurementGroundTruth
-        
-        """Initialize GPs"""
+        robots[r].distGeoCenter = geoCenter - locations[r]
+
+    virtualRobot.vnew = geoCenter
+    virtualRobot.currentLocation = geoCenter
+    virtualRobot.totalTime = initialTime 
+
+    """Initialize GP"""
+    for r in range(0,numRobots):
         meas, measTime = measurement(robots[r])
-        robots[r].createMap(meas, measTime, robots[r].currentLocation)
-        if GAUSSIAN:
-            robots[r].GP.initializeGP(robots[r])
+        virtualRobot.createMap(meas, measTime, robots[r].currentLocation)
+    if GAUSSIAN:
+        virtualRobot.GP.initializeGP(virtualRobot)
+    
+    robots.append(virtualRobot)
+
     print('Environment Initialized\n')
     
     print('Initializing Paths')
-    for period in range(0,schedule.shape[1]):
-        teamsDone = np.zeros(len(teams))
 
-        idx = 0
-        #find out which team has a meeting event at period k=0
-        for team in schedule[:, period]:
-            # TODO need to move robots around also when they are not scheduled to meet! Or change their initial time to something else so that it is possible to find meeting location
-            if team < 0:
-                robots[idx].nodeCounter += TOTALSAMPLES+1
-            # TODO END 
-            if teamsDone[team] or team < 0:                
-                idx += 1
-                continue
-
-            robs = []
-            for r in teams[team][0]:
-                robs.append(robots[r-1])
-
-            updatePaths(robs)
-            teamsDone[team] = True
-            
-            idx += 1
-            
-        for r in range(0,numRobots):
-            robots[r].composeGraphs() 
+    updatePaths(robots)
+        
     print('Paths Initialized\n')    
     
     """Control loop"""
@@ -145,53 +132,44 @@ def main():
             for r in range(0,numRobots):
                 robots[r].mappingGroundTruth = measurementGroundTruthList[t]
             
-        currentTime = update(currentTime, robots, teams, commPeriod)
+        # currentTime = update(currentTime, robots)
         
 
-    print('ControlLoop Finished\n')
+    # print('ControlLoop Finished\n')
     
-    print('Starting Plotting')
-    if DEBUG:
-        plotMeasurement(measurementGroundTruth, 'Ground truth measurement map')
-        subplot = 1
-        team = 0
-        for r in teams:
-            r = np.asarray(r[0]) -1
-            plotMeetingGraphs(robots, r, team, subplot, len(teams))
-            plotMeetingPaths(robots, r, team, subplot, len(teams))
-            subplot += 1
-            team += 1
-        
-        plotTrajectory(robots)
-        totalMap = robots[0].mapping[:,:,0]
-        plotMeasurement(totalMap, 'Measurements of robots after communication events')
+    # print('Starting Plotting')
+    # if DEBUG:
+    #     plotMeasurement(measurementGroundTruth, 'Ground truth measurement map')
+    #     plotTrajectory(robots)
+    #     totalMap = robots[0].mapping[:,:,0]
+    #     plotMeasurement(totalMap, 'Measurements of robots after communication events')
 
-    if ANIMATION:
-        plotTrajectoryAnimation(robots)
+    # if ANIMATION:
+    #     plotTrajectoryAnimation(robots)
     
-    if GAUSSIAN:
+    # if GAUSSIAN:
 
-        plotTrajectoryOverlayGroundTruth(robots,0)
+    #     plotTrajectoryOverlayGroundTruth(robots,0)
 
-        for r in range(0,numRobots):
-            robots[r].GP.updateGP(robots[r])
-            robots[r].GP.plotGP(robots[r])
-            if PREDICTIVETIME != None:
+    #     for r in range(0,numRobots):
+    #         robots[r].GP.updateGP(robots[r])
+    #         robots[r].GP.plotGP(robots[r])
+    #         if PREDICTIVETIME != None:
                 
-                if PREDICTIVETIME >= maxTime:
-                    predictiveTime = maxTime-SENSORPERIOD
-                else:
-                    predictiveTime = np.int(PREDICTIVETIME/SENSORPERIOD)
-                robots[r].currentTime = predictiveTime*SENSORPERIOD
-                robots[r].mappingGroundTruth = measurementGroundTruthList[predictiveTime]
-                robots[r].GP.plotGP(robots[r], robots[r].currentTime)
+    #             if PREDICTIVETIME >= maxTime:
+    #                 predictiveTime = maxTime-SENSORPERIOD
+    #             else:
+    #                 predictiveTime = np.int(PREDICTIVETIME/SENSORPERIOD)
+    #             robots[r].currentTime = predictiveTime*SENSORPERIOD
+    #             robots[r].mappingGroundTruth = measurementGroundTruthList[predictiveTime]
+    #             robots[r].GP.plotGP(robots[r], robots[r].currentTime)
      
     
-    print('Plotting Finished\n')
+    # print('Plotting Finished\n')
 
-    errorCalculation(robots, logFile)
+    # errorCalculation(robots, logFile)
 
-def update(currentTime, robots, teams, commPeriod):
+def update(currentTime, robots):
     """Update procedure of intermittent communication"""
     # Input arguments:
     # currentTime = current time of the execution
@@ -245,166 +223,104 @@ def updatePaths(robots):
     # Input arguments:
     # robots = instances of the robots that are to be moved
     
-    #add node v0 to list of nodes for each robot       
-    for r in range(0, len(robots)):        
-        #make last node equal to the first of new period
-        if robots[r].nodeCounter > 0:
-            robots[r].nodeCounter -= 1
-
-        robots[r].startNodeCounter = robots[r].nodeCounter
-        robots[r].startLocation = robots[r].vnew
-        robots[r].startTotalTime = robots[r].endTotalTime 
-        robots[r].nearestNodeIdx = robots[r].endNodeCounter
-        
-        robots[r].initializeGraph()
-        robots[r].addNode(firstTime = True)
-             
-    connected = False
-    counter = 0
-    while not connected:    
-        #sample new nodes and create path
-        distribution = 'uniform'
-        rangeSamples = DISCRETIZATION
-        
-        for sample in range(0,TOTALSAMPLES):
-            if sample == RANDOMSAMPLESMAX-1:
-                mean = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
-                stdDev = 4*COMMRANGE*COMMRANGE*np.identity(DIMENSION)
-                distribution = 'gaussian'
-                rangeSamples = [mean,stdDev]
-            
-            if sample >= RANDOMSAMPLESMAX:
-                vrand = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
-            
-            #find which robot is in team and get nearest nodes and new random samples for them
-            for r in range(0, len(robots)):       
-                
-                if distribution == 'uniform':
-                    #looking for either optimal position or path based on GP modeling
-                    if OPTPATH:              
-                        maxVariance = 0
-                        vrand = np.array([0, 0])
-                        nearNIdx = 0
-                        
-                        for _ in range(0,10):
-                            point = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
-                            #find nearest node to random sample
-                            nearNIdx = findNearestNode(robots[r].graph,point)
-                            var = getInformationGainAlongPath(robots[r], point, nearNIdx, EPSILON)
-                            
-                            if var >= maxVariance:
-                                maxVariance = var
-                                vrand = point                                                          
-                    elif OPTPOINT:
-                        vrand = sampleNPoints(robots[r], DISCRETIZATION, rangeSamples, distribution)
-                    else: 
-                        vrand = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
-                        
-                    robots[r].vrand = vrand
-                    nearestNodeIdx = findNearestNode(robots[r].graph,vrand)
-                            
-                    robots[r].nearestNodeIdx = nearestNodeIdx
-                    
-                else:
-                    robots[r].vrand = vrand
-                    
-                    #find nearest node to random sample
-                    nearestNodeIdx = findNearestNode(robots[r].graph,vrand)
-                    robots[r].nearestNodeIdx = nearestNodeIdx
-            
-            #find new node towards max distance to random sample and incorporate time delay, that is why it is outside of previous loop since we need all the nearest nodes from the other robots
-            steer(robots, EPSILON)
-            
-            for r in range(0, len(robots)): 
-                # get all nodes close to new node
-                buildSetVnear(robots[r], EPSILON, GAMMARRT)
-                
-                extendGraph(robots[r])
-                
-                robots[r].addNode()
-                
-            # finding out if vnew should be in goal set
-            if sample >= RANDOMSAMPLESMAX: 
-                calculateGoalSet(robots, COMMRANGE, TIMEINTERVAL)
-            
-            rewireGraph(robots, TIMEINTERVAL, DEBUG)
-            
-        # check if we have a path
-        for r in range(0, len(robots)):  
-            connected = checkGoalSet(robots[r].graph)
-            
-            if not connected:
-                robots[r].nodeCounter = robots[r].startNodeCounter
-                robots[r].vnew = robots[r].startLocation
-                robots[r].totalTime = robots[r].startTotalTime
-                robots[r].initializeGraph()
-                robots[r].addNode(firstTime = True)
-            else:
-                leastCostGoalSet(robots[r], DEBUG)
-                robots[r].vnew = robots[r].endLocation
-                robots[r].totalTime = robots[r].endTotalTime
-                getPath(robots[r])
-        counter += 1
-    print('Needed %d retry(-ies) for path planning' %(counter-1))
+    #add node v0 to list of nodes for each robot             
     
-def initializeRobots(numRobots, teams, schedule, logFile):
+    #make last node equal to the first of new period
+    if robots[-1].nodeCounter > 0:
+        robots[-1].nodeCounter -= 1
+
+    robots[-1].startNodeCounter = robots[-1].nodeCounter
+    robots[-1].startLocation = robots[-1].vnew
+    robots[-1].startTotalTime = robots[-1].endTotalTime 
+    robots[-1].nearestNodeIdx = robots[-1].endNodeCounter
+    
+    robots[-1].initializeGraph()
+    robots[-1].addNode(firstTime = True)
+            
+    #sample new nodes and create path
+    distribution = 'uniform'
+    rangeSamples = DISCRETIZATION
+    
+    for sample in range(0,TOTALSAMPLES):
+        if sample == RANDOMSAMPLESMAX-1:
+            mean = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
+            stdDev = 4*COMMRANGE*COMMRANGE*np.identity(DIMENSION)
+            distribution = 'gaussian'
+            rangeSamples = [mean,stdDev]
+        
+        if sample >= RANDOMSAMPLESMAX:
+            vrand = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
+                
+        if distribution == 'uniform':
+            #looking for either optimal position or path based on GP modeling
+            if OPTPATH:              
+                maxVariance = 0
+                vrand = np.array([0, 0])
+                nearNIdx = 0
+                
+                for _ in range(0,10):
+                    point = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
+                    #find nearest node to random sample
+                    nearNIdx = findNearestNode(robots[-1].graph,point)
+                    var = getInformationGainAlongPath(robots[-1], point, nearNIdx, EPSILON)
+                    
+                    if var >= maxVariance:
+                        maxVariance = var
+                        vrand = point                                                          
+            elif OPTPOINT:
+                vrand = sampleNPoints(robots[-1], DISCRETIZATION, rangeSamples, distribution)
+            else: 
+                vrand = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
+                
+            robots[-1].vrand = vrand
+            nearestNodeIdx = findNearestNode(robots[-1].graph,vrand)
+                    
+            robots[-1].nearestNodeIdx = nearestNodeIdx
+            
+        else:
+            robots[-1].vrand = vrand
+            
+            #find nearest node to random sample
+            nearestNodeIdx = findNearestNode(robots[-1].graph,vrand)
+            robots[-1].nearestNodeIdx = nearestNodeIdx
+        
+        #find new node towards max distance to random sample and incorporate time delay, that is why it is outside of previous loop since we need all the nearest nodes from the other robots
+        steer(robots[-1], EPSILON, COMMRANGE)
+
+        # get all nodes close to new node
+        buildSetVnear(robots[-1], EPSILON, GAMMARRT)
+        
+        extendGraph(robots[-1])
+        for r in range(0,len(robots)):
+            robots[r].vnew = np.around(robots[-1].vnew - robots[r].distGeoCenter)
+            robots[r].totalTime = robots[-1].totalTime
+            robots[r].vnewInformation = robots[-1].vnewInformation
+            robots[r].vnewCost = robots[-1].vnewCost
+            robots[r].addNode()
+        
+        rewireGraph(robots[-1])
+        print(robots[-1].vnew) 
+
+    # Get the path
+    for r in range(0, len(robots)):  
+        getPath(robots[r])
+    
+def initializeRobots(numRobots, logFile):
     """initialize the robot class"""
     # Input arguments:
     # numRobots = how many robots
-    # teams = team assignments
-    # schedule = schedule for meeting events
 
     robots = []
     for r in range(0, numRobots):
-        belongsToTeam = []
-        for t in range(0,len(teams)):    
-            if r+1 in teams[t]:
-                belongsToTeam.append(t)
-        rob = Robot(r, np.asarray(belongsToTeam), schedule[r], DISCRETIZATION, UMAX, SENSORPERIOD, OPTPATH, OPTPOINT, SPATIOTEMPORAL, logFile)
+        rob = Robot(r, DISCRETIZATION, UMAX, SENSORPERIOD, OPTPATH, OPTPOINT, SPATIOTEMPORAL, logFile)
         robots.append(rob)
     
     #Print test information
     if DEBUG:
         print('Robot 0 ID')
         print(robots[0].ID)
-        
-        print('Robot 0 schedule')
-        print(robots[0].schedule)
-        
-        print('Robot 0 teams')
-        print(robots[0].teams)
     
     return robots
-
-def initializeScheduler(numRobots, numTeams, robTeams):
-    """initialize schedule and create teams and schedule"""  
-    # Input arguments:
-    # numRobots = how many robots
-    # numTeams = how many teams
-    # robTeams = which robots are in which teams, comes from initial graph design; robot i belongs to team j in matrix
-    
-    #initializer
-    scheduleClass = Schedule(numRobots, numTeams, robTeams)
-    
-    #Assigns robot numbers to teams
-    T = scheduleClass.createTeams()
-    #creates schedule
-    S = scheduleClass.createSchedule()
-    #communication period is equall to number of robots
-    communicationPeriod = np.shape(S)[1]  # Communication schedule repeats infinitely often
-
-    #Print test information
-    if DEBUG:
-        print('Teams')
-        print(*T)
-        
-        print('Schedule')
-        print(S)
-        
-        print('Period')
-        print(communicationPeriod)
-    
-    return S, T, communicationPeriod
 
 def randomStartingPositions(numRobots):
     """Ensures that the starting position are exclusive within communication radius"""
@@ -467,7 +383,6 @@ if __name__ == "__main__":
 
     SENSINGRANGE = 0 # Sensing range of robots
     COMMRANGE = 3 # communication range for robots
-    TIMEINTERVAL = 1 # time interval for communication events
     
     DISCRETIZATION = np.array([600, 600]) #grid space
     DIMENSION = 2 #dimension of robot space
@@ -475,7 +390,6 @@ if __name__ == "__main__":
     TOTALSAMPLES = 50 #how many samples in total
 
     SENSORPERIOD = 0.1 #time between sensor measurement or between updates of data
-    EIGENVECPERIOD = 0.04 #time between POD calculations
        
     UMAX = 50 # Max velocity, pixel/second
     EPSILON = DISCRETIZATION[0]/10 # Maximum step size of robots

@@ -17,7 +17,7 @@ class Robot:
     
     objs = []  # Registrar keeps all attributes of class
 
-    def __init__(self, ID, teams, schedule, discretization, uMax, sensorPeriod, optPath, optPoint, spatiotemporal, logFile):
+    def __init__(self, ID, discretization, uMax, sensorPeriod, optPath, optPoint, spatiotemporal, logFile):
         """Initializer of robot class"""
         # Input arguments:
         # ID = robot number
@@ -26,11 +26,6 @@ class Robot:
         # discretization = grid space 
         
         self.ID = ID
-        self.teams = teams
-        self.schedule = schedule
-        self.activeLocations = {}  # Store active location as indexed by (timeStart, timeEnd): locations
-        self.sensorData = {}  # Store data as (timeStart, timeEnd): data
-        self.eigenData = {}
         self.mapping = np.zeros([discretization[0],discretization[1],2])
         self.mappingGroundTruth = np.zeros_like([discretization[0],discretization[1]])
         self.sensingRange = 0
@@ -45,10 +40,11 @@ class Robot:
         self.expectedMeasurement = np.zeros([discretization[0],discretization[1]])
         self.expectedVariance = np.ones([discretization[0],discretization[1]])
         self.currentTime = 0
+
+        self.distGeoCenter = 0
         
         #Path variables
         self.paths = []
-        self.scheduleCounter = 0
         self.atEndLocation = False
         self.currentLocation = np.array([0,0])
         self.pathCounter = 0

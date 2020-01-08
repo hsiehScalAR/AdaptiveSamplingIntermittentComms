@@ -89,7 +89,6 @@ def measurement(robot):
     # Input arguments
     # robot = robot with currentlocation and ground truth measurement map
     
-#    singleMeasurement = np.random.uniform(0,1)
     x = np.int(robot.currentLocation[0])
     y = np.int(robot.currentLocation[1])
 
@@ -120,14 +119,3 @@ def measurement(robot):
     newData = newData + sigma*np.random.randn() + mean
         
     return newData, robot.currentTime
-
-#def measurement(numRobots, sensorPeriod): 
-#    #TODO check how we measure stuff, if single value since each robot measure one place or measurement over time for all robots
-#    """Simulates a measurement for all robots over time and for a single robot at one time instance"""
-#    # Input Arguments
-#    # numRobots = how many robots
-#    # sensorPeriod = period of sensing in ms
-#    
-#    allMeasurementsOverTime = np.random.uniform(0,1,(numRobots, sensorPeriod))
-#    singleMeasurement = np.random.uniform(0,1)
-#    return allMeasurementsOverTime, singleMeasurement

@@ -89,16 +89,16 @@ def getSetup(case):
     #robot i belongs to team j
     positions = None
     if case == 1:
-        numTeams = 8
+        # numTeams = 8
         numRobots = 8
-        robTeams = np.array([[1, 1, 0, 0, 0, 0, 0, 0], 
-                             [0, 1, 1, 0, 0, 0, 0, 0], 
-                             [0, 0, 1, 1, 0, 0, 0, 0], 
-                             [0, 0, 0, 1, 1, 0, 0, 0], 
-                             [0, 0, 0, 0, 1, 1, 0, 0], 
-                             [0, 0, 0, 0, 0, 1, 1, 0],
-                             [0, 0, 0, 0, 0, 0, 1, 1], 
-                             [1, 0, 0, 0, 0, 0, 0, 1],])
+        # robTeams = np.array([[1, 1, 0, 0, 0, 0, 0, 0], 
+        #                      [0, 1, 1, 0, 0, 0, 0, 0], 
+        #                      [0, 0, 1, 1, 0, 0, 0, 0], 
+        #                      [0, 0, 0, 1, 1, 0, 0, 0], 
+        #                      [0, 0, 0, 0, 1, 1, 0, 0], 
+        #                      [0, 0, 0, 0, 0, 1, 1, 0],
+        #                      [0, 0, 0, 0, 0, 0, 1, 1], 
+        #                      [1, 0, 0, 0, 0, 0, 0, 1],])
         
         positions = np.array([[0, 0],
                               [0,300],
@@ -110,16 +110,16 @@ def getSetup(case):
                               [300, 0],])
     
     elif case == 2:
-        numTeams = 5
+        # numTeams = 5
         numRobots = 8
-        robTeams = np.array([[1, 1, 0, 0, 0], 
-                             [1, 0, 0, 1, 0], 
-                             [1, 0, 0, 0, 1], 
-                             [0, 1, 1, 0, 0], 
-                             [0, 1, 0, 0, 1], 
-                             [0, 0, 1, 1, 0],
-                             [0, 0, 1, 0, 1], 
-                             [0, 0, 0, 1, 1],])
+        # robTeams = np.array([[1, 1, 0, 0, 0], 
+        #                      [1, 0, 0, 1, 0], 
+        #                      [1, 0, 0, 0, 1], 
+        #                      [0, 1, 1, 0, 0], 
+        #                      [0, 1, 0, 0, 1], 
+        #                      [0, 0, 1, 1, 0],
+        #                      [0, 0, 1, 0, 1], 
+        #                      [0, 0, 0, 1, 1],])
         
         positions = np.array([[0, 0],
                               [0,300],
@@ -130,19 +130,20 @@ def getSetup(case):
                               [599, 0],
                               [300, 0],])
     elif case == 3:
-        numTeams = 4
+        # numTeams = 4
         numRobots = 4
-        robTeams = np.array([[1, 0, 0, 1],
-                             [1, 1, 0, 0],
-                             [0, 1, 1, 0],
-                             [0, 0, 1, 1],])
+        # robTeams = np.array([[1, 0, 0, 1],
+        #                      [1, 1, 0, 0],
+        #                      [0, 1, 1, 0],
+        #                      [0, 0, 1, 1],])
     
         positions = np.array([[0, 0],
-                             [0, 599],
-                             [599, 0],
-                             [599, 599],])
+                             [0, 6],
+                             [6, 0],
+                             [6, 6],])
     
     else:
         exit()
         
-    return numTeams, numRobots, robTeams, positions
+    # return numTeams, numRobots, robTeams, positions
+    return numRobots, positions
