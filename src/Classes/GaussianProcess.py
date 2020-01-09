@@ -30,7 +30,7 @@ class GaussianProcess:
         self.logFile = logFile
         self.filterThreshold = 0.04 # was 0.05
 
-        spatialLengthScale = 5.
+        spatialLengthScale =5.
         tempLengthScale = 10.  
         spatialVariance = 1.
         tempVariance = 0.5
@@ -152,9 +152,6 @@ class GaussianProcess:
 
         robot.expectedMeasurement = ym.reshape(robot.discretization)
 
-        #TODO: remove filtering
-        # indexSmaller = robot.expectedMeasurement < 5
-        # robot.expectedMeasurement[indexSmaller] = 0
         scaling = 1
         robot.expectedVariance = ys.reshape(robot.discretization)
         print('GP inferred\n')
@@ -177,11 +174,16 @@ class GaussianProcess:
             im = ax[1].imshow(robot.expectedVariance, origin='lower', vmin=-1, vmax=15*scaling)        
 
             ax[2].set_title('GroundTruth') 
+
+            x,y = zip(*robot.trajectory)
+            ax[2].plot(y,x, '-', label='Robot %d'%robot.ID)
+            ax[2].legend()
             im = ax[2].imshow(robot.mappingGroundTruth, origin='lower', vmin=-1, vmax=15*scaling)
 
             cbar_ax = fig.add_axes([0.83, 0.1, 0.01, 0.8])
             fig.colorbar(im, cax=cbar_ax)
             im.set_clim(-1, 15*scaling)
+            
             fig.savefig(PATH + title + '.png')
 
             self.errorCalculation(robot)

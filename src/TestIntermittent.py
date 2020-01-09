@@ -183,9 +183,11 @@ def update(currentTime, robots):
     
     atEndPoint = np.zeros(len(robots)-1)
     robots[-1].currentTime += SENSORPERIOD
+    robots[-1].trajectory.append(robots[0].currentLocation)
+
     for i, rob in enumerate(robots[0:len(robots)-1]):
         atEndPoint[i] = moveAlongPath(rob, robots[-1], SENSORPERIOD)
-
+    
     currentTime += SENSORPERIOD
         
     if np.all(atEndPoint):                
@@ -195,6 +197,7 @@ def update(currentTime, robots):
             
             robots[r].endTotalTime  = currentTime
         robots[-1].meetings.append(robots[0].currentLocation)
+        
 
         communicateToTeam(robots[-1], GAUSSIAN)
         
@@ -361,7 +364,7 @@ if __name__ == "__main__":
     
     clearPlots()
     
-    TOTALTIME = 60 #total execution time of program
+    TOTALTIME = 20 #total execution time of program
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 4 robots 4 teams)
     CORRECTTIMESTEP = True #If dye time steps should be matched to correct time steps or if each time step in dye corresponds to time step here
     
