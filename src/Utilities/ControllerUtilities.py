@@ -9,44 +9,17 @@ Created on Wed Nov 20 09:54:18 2019
 #General imports
 import numpy as np
 
-def checkMeetingLocation(positions, commRadius):
-    """check if the robots are at the same location since robots from different teams could be waiting to communicate"""
-    # Input arguments
-    # positions = current positions of the robots
-    # commRadius = communication radius of robots
-    
-    normDist = np.sqrt(np.sum((positions[0] - positions)**2, axis=1))
-
-    if all(x <= commRadius for x in normDist):
-        return True
-    else:
-        return False
-
-def communicateToTeam(robots, GP=True):
+def communicateToTeam(virtualRobot, GP=True):
     """communicate sensor measurements between robots of same team at meeting location"""
     # Input arguments
     # robots = robots of same team
-    
-    mapping = np.zeros([robots[0].discretization[0],robots[0].discretization[0],2])
-    
-    for r in range(0, len(robots)):
-        pixels = np.where(robots[r].mapping[:,:,0] != 0, True,False)
-        mapping[pixels] = robots[r].mapping[pixels]
-    
-    for r in range(0, len(robots)):
-        robots[r].mapping = mapping
         
     if GP:
-        robots[0].GP.updateGP(robots[0])
-        if robots[0].optPath:
-            robots[0].GP.inferGP(robots[0])
-        for r in range(1,len(robots)):
-            robots[r].GP.model = robots[0].GP.model.copy()
-            if robots[0].optPath:
-                robots[r].expectedMeasurement = robots[0].expectedMeasurement
-                robots[r].expectedVariance = robots[0].expectedVariance
+        virtualRobot.GP.updateGP(virtualRobot)
+        if virtualRobot.optPath:
+            virtualRobot.GP.inferGP(virtualRobot)
 
-def moveAlongPath(robot, deltaT):
+def moveAlongPath(robot, virtualRobot, deltaT):
     # TODO: Add different motion model
     
     """move the robot along the planned path and take measurements on the way"""
@@ -56,13 +29,14 @@ def moveAlongPath(robot, deltaT):
     
     robot.currentTime += deltaT
     
-    if robot.pathCounter >= len(robot.paths[robot.scheduleCounter]) or robot.atEndLocation:
+    if robot.pathCounter >= len(robot.path) or robot.atEndLocation:
         robot.pathCounter = 0
         robot.atEndLocation = True
         robot.trajectory.append(robot.currentLocation)
         return True
     
-    currentNode = robot.paths[robot.scheduleCounter][robot.pathCounter]
+    currentNode = robot.paths[-1][robot.pathCounter]
+
     goalPos = robot.totalGraph.nodes[currentNode]['pos']
 
     distance = goalPos - robot.currentLocation
@@ -80,7 +54,7 @@ def moveAlongPath(robot, deltaT):
     robot.trajectory.append(robot.currentLocation)
     
     meas, measTime = measurement(robot)
-    robot.createMap(meas, measTime, robot.currentLocation)  # Create Map
+    virtualRobot.createMap(meas, measTime, robot.currentLocation, robot)  # Create Map
     
     return False
     

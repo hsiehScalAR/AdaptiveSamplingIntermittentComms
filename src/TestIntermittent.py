@@ -10,13 +10,14 @@ Created on Mon Nov  4 10:48:29 2019
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import networkx as nx
 
 #Personal imports
 from Classes.Scheduler import Schedule
 from Classes.Robot import Robot
 from Setup import getSetup, setupMatlabFileMeasurementData, loadMeshFiles
 
-from Utilities.ControllerUtilities import moveAlongPath, communicateToTeam, checkMeetingLocation, measurement
+from Utilities.ControllerUtilities import moveAlongPath, communicateToTeam, measurement
 from Utilities.VisualizationUtilities import (plotMeasurement, plotMeetingGraphs, plotMeetingPaths, 
                                               clearPlots, plotTrajectory, plotTrajectoryAnimation,
                                               plotTrajectoryOverlayGroundTruth)
@@ -41,6 +42,7 @@ def main():
 
     """Write parameters to new logfile"""
     parameters = {
+                'Connectivity   ': 'all-time',  
                 'TOTALTIME      ': TOTALTIME,
                 'CASE           ': CASE,
                 'CORRECTTIMESTEP': CORRECTTIMESTEP,
@@ -74,7 +76,7 @@ def main():
 
            
     """create robot to team correspondence"""
-    numRobots, positions = getSetup(CASE)
+    numRobots, positions = getSetup(CASE, COMMRANGE)
     
     """Variables"""
     if isinstance(positions, np.ndarray):
@@ -104,11 +106,12 @@ def main():
     virtualRobot.vnew = geoCenter
     virtualRobot.currentLocation = geoCenter
     virtualRobot.totalTime = initialTime 
-
+    virtualRobot.mappingGroundTruth = measurementGroundTruth
+    virtualRobot.sensingRange = SENSINGRANGE
     """Initialize GP"""
     for r in range(0,numRobots):
         meas, measTime = measurement(robots[r])
-        virtualRobot.createMap(meas, measTime, robots[r].currentLocation)
+        virtualRobot.createMap(meas, measTime, robots[r].currentLocation, robots[r])
     if GAUSSIAN:
         virtualRobot.GP.initializeGP(virtualRobot)
     
@@ -119,7 +122,10 @@ def main():
     print('Initializing Paths')
 
     updatePaths(robots)
-        
+
+    for r in range(0,numRobots+1):
+        robots[r].composeGraphs() 
+
     print('Paths Initialized\n')    
     
     """Control loop"""
@@ -129,45 +135,43 @@ def main():
 
     for t in range(0,np.int(TOTALTIME/SENSORPERIOD)):
         if not STATIONARY:
-            for r in range(0,numRobots):
+            for r in range(0,numRobots+1):
                 robots[r].mappingGroundTruth = measurementGroundTruthList[t]
             
-        # currentTime = update(currentTime, robots)
+        currentTime = update(currentTime, robots)
         
 
-    # print('ControlLoop Finished\n')
+    print('ControlLoop Finished\n')
     
-    # print('Starting Plotting')
-    # if DEBUG:
-    #     plotMeasurement(measurementGroundTruth, 'Ground truth measurement map')
-    #     plotTrajectory(robots)
-    #     totalMap = robots[0].mapping[:,:,0]
-    #     plotMeasurement(totalMap, 'Measurements of robots after communication events')
-
-    # if ANIMATION:
-    #     plotTrajectoryAnimation(robots)
+    print('Starting Plotting')
+    if DEBUG:
+        plotMeasurement(measurementGroundTruth, 'Ground truth measurement map')
+        plotTrajectory(robots[0:numRobots])
+        totalMap = robots[-1].mapping[:,:,0]
+        plotMeasurement(totalMap, 'Measurements of robots after communication events')
+    if ANIMATION:
+        plotTrajectoryAnimation(robots)
     
-    # if GAUSSIAN:
+    if GAUSSIAN:
 
-    #     plotTrajectoryOverlayGroundTruth(robots,0)
+        plotTrajectoryOverlayGroundTruth(robots,0)
 
-    #     for r in range(0,numRobots):
-    #         robots[r].GP.updateGP(robots[r])
-    #         robots[r].GP.plotGP(robots[r])
-    #         if PREDICTIVETIME != None:
-                
-    #             if PREDICTIVETIME >= maxTime:
-    #                 predictiveTime = maxTime-SENSORPERIOD
-    #             else:
-    #                 predictiveTime = np.int(PREDICTIVETIME/SENSORPERIOD)
-    #             robots[r].currentTime = predictiveTime*SENSORPERIOD
-    #             robots[r].mappingGroundTruth = measurementGroundTruthList[predictiveTime]
-    #             robots[r].GP.plotGP(robots[r], robots[r].currentTime)
+        robots[-1].GP.updateGP(robots[-1])
+        robots[-1].GP.plotGP(robots[-1])
+        if PREDICTIVETIME != None:
+            
+            if PREDICTIVETIME >= maxTime:
+                predictiveTime = maxTime-SENSORPERIOD
+            else:
+                predictiveTime = np.int(PREDICTIVETIME/SENSORPERIOD)
+            robots[-1].currentTime = predictiveTime*SENSORPERIOD
+            robots[-1].mappingGroundTruth = measurementGroundTruthList[predictiveTime]
+            robots[-1].GP.plotGP(robots[-1], robots[-1].currentTime)
      
     
-    # print('Plotting Finished\n')
+    print('Plotting Finished\n')
 
-    # errorCalculation(robots, logFile)
+    errorCalculation(robots, logFile)
 
 def update(currentTime, robots):
     """Update procedure of intermittent communication"""
@@ -177,44 +181,29 @@ def update(currentTime, robots):
     # teams = teams of the robots
     # commPeriod = how many schedules there are
     
-    atEndPoint = np.zeros(len(robots))
-    
-    for i, rob in enumerate(robots):
-        atEndPoint[i] = moveAlongPath(rob, SENSORPERIOD)
+    atEndPoint = np.zeros(len(robots)-1)
+    robots[-1].currentTime += SENSORPERIOD
+    for i, rob in enumerate(robots[0:len(robots)-1]):
+        atEndPoint[i] = moveAlongPath(rob, robots[-1], SENSORPERIOD)
 
     currentTime += SENSORPERIOD
-    
-    for idx, team in enumerate(teams):
         
-        if np.all(atEndPoint[team-1]):         
+    if np.all(atEndPoint):                
+        for r in range(0,len(robots)-1):   
+            robots[r].meetings.append(robots[r].currentLocation)         
+            robots[r].atEndLocation = False
             
-            currentLocations = []
-            for r in team[0]: 
-                currentLocations.append(robots[r-1].currentLocation)
-            currentLocations = np.asarray(currentLocations)
-            
-            if not checkMeetingLocation(currentLocations, COMMRANGE):
-                continue
-            
-            robs = []
-            i = 0         
-            for r in team[0]:   
-                robots[r-1].meetings.append([currentLocations[i], idx])
-                i += 1             
-                robots[r-1].scheduleCounter += 1
-                robots[r-1].atEndLocation = False
-                
-                robots[r-1].endTotalTime  = currentTime
-                robs.append(robots[r-1])
-            
-            communicateToTeam(robs, GAUSSIAN)
-            
-            print('Updating Paths')
-            updatePaths(robs)
-            print('Paths Updated\n')
-            
-            for r in team[0]:
-                robots[r-1].composeGraphs()
+            robots[r].endTotalTime  = currentTime
+        robots[-1].meetings.append(robots[0].currentLocation)
+
+        communicateToTeam(robots[-1], GAUSSIAN)
+        
+        print('Updating Paths')
+        updatePaths(robots)
+        print('Paths Updated\n')
+        
+        for rob in robots:
+            rob.composeGraphs()
 
     return round(currentTime,1)
 
@@ -226,16 +215,18 @@ def updatePaths(robots):
     #add node v0 to list of nodes for each robot             
     
     #make last node equal to the first of new period
-    if robots[-1].nodeCounter > 0:
-        robots[-1].nodeCounter -= 1
+    for rob in robots:
+        if rob.nodeCounter > 0:
+            rob.nodeCounter -= 1
 
-    robots[-1].startNodeCounter = robots[-1].nodeCounter
-    robots[-1].startLocation = robots[-1].vnew
-    robots[-1].startTotalTime = robots[-1].endTotalTime 
-    robots[-1].nearestNodeIdx = robots[-1].endNodeCounter
-    
-    robots[-1].initializeGraph()
-    robots[-1].addNode(firstTime = True)
+        rob.startNodeCounter = rob.nodeCounter
+        rob.startLocation = rob.vnew
+        rob.startTotalTime = rob.endTotalTime 
+        rob.nearestNodeIdx = rob.endNodeCounter
+        
+        rob.initializeGraph()
+
+        rob.addNode(firstTime = True)
             
     #sample new nodes and create path
     distribution = 'uniform'
@@ -291,19 +282,23 @@ def updatePaths(robots):
         buildSetVnear(robots[-1], EPSILON, GAMMARRT)
         
         extendGraph(robots[-1])
-        for r in range(0,len(robots)):
+        for r in range(0,len(robots)-1):
             robots[r].vnew = np.around(robots[-1].vnew - robots[r].distGeoCenter)
             robots[r].totalTime = robots[-1].totalTime
             robots[r].vnewInformation = robots[-1].vnewInformation
+            robots[r].nearestNodeIdx = robots[-1].nearestNodeIdx
             robots[r].vnewCost = robots[-1].vnewCost
             robots[r].addNode()
-        
+        robots[-1].addNode()
         rewireGraph(robots[-1])
-        print(robots[-1].vnew) 
 
     # Get the path
-    for r in range(0, len(robots)):  
-        getPath(robots[r])
+    getPath(robots[-1])
+    for r in range(0,len(robots)-1):
+        robots[r].path = robots[-1].path
+        robots[r].paths = robots[-1].paths
+    # for r in range(0, len(robots)):  
+    #     getPath(robots[r])
     
 def initializeRobots(numRobots, logFile):
     """initialize the robot class"""
@@ -366,7 +361,7 @@ if __name__ == "__main__":
     
     clearPlots()
     
-    TOTALTIME = 50 #total execution time of program
+    TOTALTIME = 60 #total execution time of program
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 4 robots 4 teams)
     CORRECTTIMESTEP = True #If dye time steps should be matched to correct time steps or if each time step in dye corresponds to time step here
     
@@ -376,13 +371,13 @@ if __name__ == "__main__":
     OPTPATH = GAUSSIAN == True #if path optimization should be used, can not be true if optpoint is used
     OPTPOINT = GAUSSIAN != OPTPATH == True #if point optimization should be used, can not be true if optpath is used
     
-    SPATIOTEMPORAL = True
+    SPATIOTEMPORAL = False
     STATIONARY = not SPATIOTEMPORAL #if we are using time varying measurement data or not
     STATIONARYTIME = 5 #which starting time to use for the measurement data, if not STATIONARY, 0 is used for default
-    PREDICTIVETIME = 59 #Time for which to make a prediction at the end, has to be bigger than total time
+    PREDICTIVETIME = None #Time for which to make a prediction at the end, has to be bigger than total time
 
     SENSINGRANGE = 0 # Sensing range of robots
-    COMMRANGE = 3 # communication range for robots
+    COMMRANGE = 6 # communication range for robots
     
     DISCRETIZATION = np.array([600, 600]) #grid space
     DIMENSION = 2 #dimension of robot space

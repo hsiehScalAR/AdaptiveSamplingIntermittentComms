@@ -95,21 +95,17 @@ def plotMeasurement(data, title):
     plt.savefig(PATH + 'Measurements' + '.png')
     
     
-def plotMeetingGraphs(robots, index, team, subplot=None, length=0):
+def plotMeetingGraphs(robots, index, subplot=None, length=0):
     if subplot != None:
         plt.figure('RRT* Graphs')
         plt.subplot(np.ceil(length/2),2,subplot)
     else:
         plt.figure()
    
-    plt.title('Team %.d' %team)
-    cmap = plt.get_cmap('hsv')
-    for i in range(0,len(index)):
-        graph = robots[index[i]].totalGraph
-        node_color = colors.to_hex(cmap(i/len(index)))
-        nx.draw(graph, label='robot %.d' %(index[i]), pos=nx.get_node_attributes(graph, 'pos'),
-                node_color=node_color,node_size=100,with_labels = True,font_color='w',font_size=8)
-    
+    graph = robots[index].totalGraph
+    nx.draw(graph, label='robot %.d' %(index), pos=nx.get_node_attributes(graph, 'pos'),
+            node_size=100,with_labels = True,font_color='w',font_size=8)
+
     plt.legend()
     plt.savefig(PATH + 'RRT* Graphs' + '.png')
     
@@ -137,17 +133,16 @@ def plotMeetingPaths(robots, index, team, subplot=None, length=0):
     
 def plotTrajectoryOverlayGroundTruth(robots, index):
     fig, ax = plt.subplots()
-    meetingList = []
-    for r in range(0,len(robots)):
+
+    for r in range(0,len(robots)-1):
         x,y = zip(*robots[r].trajectory)
         ax.plot(y,x, '-', label='Robot %d'%r)
         
-        posMeeting, _  = zip(*robots[r].meetings)
-        posMeeting = np.array(posMeeting)
-        meetingList.append(posMeeting)
+    posMeeting  = robots[-1].meetings
 
-    meetingList = np.vstack(meetingList)
-    ax.plot(meetingList[:, 1],meetingList[:, 0], 'o', color='r',label='Meetings',markersize=6)
+    posMeeting = np.array(posMeeting)
+
+    ax.plot(posMeeting[:, 1],posMeeting[:, 0], 'o', color='r',label='Meetings',markersize=6)
     
     data = robots[index].mappingGroundTruth
         

@@ -81,7 +81,7 @@ def loadMeshFiles(sensorPeriod, correctTimeSteps = False):
         maxTime = np.int(timeValues.shape[1]/2)*sensorPeriod
     return measurementGroundTruthList, maxTime
     
-def getSetup(case):
+def getSetup(case, commRange):
     """returns the setup for the robot teams based on the case"""
     #Input arguments
     # case = which case we are treating
@@ -137,11 +137,16 @@ def getSetup(case):
         #                      [0, 1, 1, 0],
         #                      [0, 0, 1, 1],])
     
-        positions = np.array([[0, 0],
-                             [0, 6],
-                             [6, 0],
-                             [6, 6],])
-    
+        # positions = np.array([[0, 0],
+        #                      [0, 6],
+        #                      [6, 0],
+        #                      [6, 6],])
+        center = np.array([300,300])
+        positions = np.array([[center[0]-commRange/2, center[1]-commRange/2],
+                             [center[0]-commRange/2, center[1]+commRange/2],
+                             [center[0]+commRange/2, center[1]-commRange/2],
+                             [center[0]+commRange/2, center[1]+commRange/2],])
+        positions = np.around(positions,decimals=1)
     else:
         exit()
         

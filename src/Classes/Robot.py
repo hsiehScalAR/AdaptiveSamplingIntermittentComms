@@ -44,7 +44,6 @@ class Robot:
         self.distGeoCenter = 0
         
         #Path variables
-        self.paths = []
         self.atEndLocation = False
         self.currentLocation = np.array([0,0])
         self.pathCounter = 0
@@ -56,6 +55,7 @@ class Robot:
         self.totalGraph = nx.DiGraph()
         
         self.path = nx.DiGraph()
+        self.paths = []
         self.totalPath = nx.DiGraph()
         
         self.nodeCounter = 0
@@ -101,23 +101,23 @@ class Robot:
             self.graph.add_edge(self.nearestNodeIdx,self.nodeCounter, weight = self.vnewCost)
         self.nodeCounter += 1
 
-    def createMap(self,newData, newDataTime, currentLocations):
+    def createMap(self,newData, newDataTime, currentLocations, robot):
         """creates a measurement map in the grid space without time reference"""
         # Input arguments:
         # newData = new measurement for single robot
         # currentLocations = sensing location of single robot
         
-        x = np.int(self.currentLocation[0])
-        y = np.int(self.currentLocation[1])
+        x = np.int(currentLocations[0])
+        y = np.int(currentLocations[1])
         if self.sensingRange < 1:
             self.mapping[x, y, 0] = newData
             self.mapping[x, y, 1] = newDataTime
     
         else:
-            self.mapping[x-self.measurementRangeX[0]:x+self.measurementRangeX[1], 
-                         y-self.measurementRangeY[0]:y+self.measurementRangeY[1], 0] = newData
-            self.mapping[x-self.measurementRangeX[0]:x+self.measurementRangeX[1], 
-                         y-self.measurementRangeY[0]:y+self.measurementRangeY[1], 1] = newDataTime
+            self.mapping[x-robot.measurementRangeX[0]:x+robot.measurementRangeX[1], 
+                         y-robot.measurementRangeY[0]:y+robot.measurementRangeY[1], 0] = newData
+            self.mapping[x-robot.measurementRangeX[0]:x+robot.measurementRangeX[1], 
+                         y-robot.measurementRangeY[0]:y+robot.measurementRangeY[1], 1] = newDataTime
 
 
 

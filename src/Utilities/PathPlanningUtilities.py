@@ -11,7 +11,7 @@ import numpy as np
 import networkx as nx
 
 def calculateGeometricCenter(locations, numRobots):
-    geoCenter = np.array([0,0])
+    geoCenter = np.array([0.,0.])
     for r in range(0,numRobots):
         geoCenter += locations[r]
     geoCenter = geoCenter/numRobots
@@ -267,7 +267,7 @@ def getInformationGain(robot, pos):
     if robot.optPath:
         ys = robot.expectedVariance[np.int(pos[0]),np.int(pos[1])]
     elif robot.optPoint:
-        ym, ys = robot.GP.inferGP(robot,pos)
+        _, ys = robot.GP.inferGP(robot,pos)
     else:
         return 0
     return ys
@@ -357,10 +357,11 @@ def getInformationGainAlongPath(robot, pos, nearestNodeIdx, epsilon):
                 
         if robot.optPath:
             ys = robot.expectedVariance[np.int(measPos[0]),np.int(measPos[1])]
+            ym = robot.expectedMeasurement[np.int(measPos[0]),np.int(measPos[1])]
         else:
             ym, ys = robot.GP.inferGP(robot,measPos)
         
-        var += ys    
+        var += ys+ym    
     
     return var
 
