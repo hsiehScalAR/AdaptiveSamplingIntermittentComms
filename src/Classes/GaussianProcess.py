@@ -28,9 +28,9 @@ class GaussianProcess:
 
         self.spatiotemporal = spatiotemporal
         self.logFile = logFile
-        self.filterThreshold = 0.03 # was 0.05
+        self.filterThreshold = 0.05 # was 0.05
 
-        spatialLengthScale = 10.
+        spatialLengthScale = 10
         tempLengthScale = 10.  
         spatialVariance = 1. 
         tempVariance = 0.5
@@ -177,6 +177,11 @@ class GaussianProcess:
             im = ax[1].imshow(robot.expectedVariance, origin='lower', vmin=-1, vmax=15*scaling)        
 
             ax[2].set_title('GroundTruth') 
+
+            x,y = zip(*robot.trajectory)
+            ax[2].plot(y,x, '-', label='Robot %d'%robot.ID)
+            ax[2].legend()
+
             im = ax[2].imshow(robot.mappingGroundTruth, origin='lower', vmin=-1, vmax=15*scaling)
 
             cbar_ax = fig.add_axes([0.83, 0.1, 0.01, 0.8])
