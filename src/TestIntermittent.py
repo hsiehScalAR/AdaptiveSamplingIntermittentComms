@@ -10,7 +10,7 @@ Created on Mon Nov  4 10:48:29 2019
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-import networkx as nx
+from skimage.measure import compare_ssim as ssim
 
 #Personal imports
 from Classes.Scheduler import Schedule
@@ -63,6 +63,10 @@ def main():
     """Create Measurement Data"""
     measurementGroundTruthList, maxTime = loadMeshFiles(SENSORPERIOD,CORRECTTIMESTEP)
 
+    print('**********************************************************************\n')
+    print('Max allowed time is: %.1f length of data: %.1f\n' %(maxTime,len(measurementGroundTruthList)))
+    print('**********************************************************************\n')
+    
     if maxTime < TOTALTIME:
         print('**********************************************************************\n')
         print('WARNING: Given Total Time is bigger than available data (maxTime = %d), terminating application' %maxTime)
@@ -348,25 +352,28 @@ def randomStartingPositions(numRobots):
 
 def errorCalculation(robots,logFile):
     for robot in robots:
-        # rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())
+        rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())
         # nrmse = 100 * rmse/(np.max(robot.mappingGroundTruth)-np.min(robot.mappingGroundTruth))
-        # logFile.writeError(robot.ID,nrmse,robot.currentTime, endTime=True)
+        logFile.writeError(robot.ID,rmse,robot.currentTime, endTime=True)
 
-        rmse = np.sqrt(np.sum(np.square(robot.mappingGroundTruth - robot.expectedMeasurement)))
-        fnorm = rmse/(np.sqrt(np.sum(np.square(robot.mappingGroundTruth))))
-        logFile.writeError(robot.ID,fnorm,robot.currentTime, endTime=True)
+        # rmse = np.sqrt(np.sum(np.square(robot.mappingGroundTruth - robot.expectedMeasurement)))
+        # fnorm = rmse/(np.sqrt(np.sum(np.square(robot.mappingGroundTruth))))
+
+        # similarity = ssim(robot.mappingGroundTruth,robot.expectedMeasurement, gaussian_weights=True)
+
+        # logFile.writeError(robot.ID,similarity,robot.currentTime, endTime=True)
 
 if __name__ == "__main__":
     """Entry in Test Program"""
     
     """Setup"""
-    np.random.seed(1994)
+    np.random.seed(1908)
     
     clearPlots()
     
-    TOTALTIME = 20 #total execution time of program
+    TOTALTIME = 100 #total execution time of program
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 4 robots 4 teams)
-    CORRECTTIMESTEP = True #If dye time steps should be matched to correct time steps or if each time step in dye corresponds to time step here
+    CORRECTTIMESTEP = False #If dye time steps should be matched to correct time steps or if each time step in dye corresponds to time step here
     
     DEBUG = False #debug to true shows prints
     ANIMATION = False #if animation should be done
@@ -389,7 +396,7 @@ if __name__ == "__main__":
 
     SENSORPERIOD = 0.1 #time between sensor measurement or between updates of data
        
-    UMAX = 50 # Max velocity, pixel/second
+    UMAX = 80 # Max velocity, pixel/second
     EPSILON = DISCRETIZATION[0]/10 # Maximum step size of robots
     GAMMARRT = 100 # constant for rrt* algorithm, can it be calculated?
     
