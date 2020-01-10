@@ -9,9 +9,9 @@ Created on Wed Dec  4 11:22:42 2019
 #General imports
 import numpy as np
 import GPy
-
 import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal
+from skimage.measure import compare_ssim as ssim
 
 # Personal imports
 from Utilities.VisualizationUtilities import plotMeasurement
@@ -29,12 +29,12 @@ class GaussianProcess:
         self.spatiotemporal = spatiotemporal
         self.logFile = logFile
         self.filterThreshold = 0.05 # was 0.05
-        self.timeFilter = 50 # was 0.05
+        self.timeFilter = 50 # was 50
 
         spatialLengthScale = 10.
         tempLengthScale = 2.  
-        spatialVariance = 1. 
-        tempVariance = 0.5
+        spatialVariance = 4. 
+        tempVariance = 2.
         spatialARD = True
         tempARD = False
 
@@ -98,24 +98,19 @@ class GaussianProcess:
         print('Updating GP for robot %d' %robot.ID)
         print('Time: %.1f' %robot.currentTime)
 
-        if self.spatiotemporal:
-            if self.timeFilter != None:
-                r,c = np.where((robot.mapping[:,:,0] > self.filterThreshold) & (robot.mapping[:,:,1] > (robot.currentTime-self.timeFilter))) # was 0.05
-            else:
-                r,c = np.where(robot.mapping[:,:,0] > self.filterThreshold) # was 0.05
+        if self.timeFilter != None:
+            r,c = np.where((robot.mapping[:,:,0] > self.filterThreshold) & (robot.mapping[:,:,1] > (robot.currentTime-self.timeFilter))) # was 0.05
+        else:
+            r,c = np.where(robot.mapping[:,:,0] > self.filterThreshold) # was 0.05
         
-            y = robot.mapping[r,c,0]
-            y = y.reshape(-1,1)
+        y = robot.mapping[r,c,0]
+        y = y.reshape(-1,1)
 
+        if self.spatiotemporal:
             t = robot.mapping[r,c,1]
             x = np.dstack((r,c,t))
             x = x.reshape(-1,3)
         else:
-            r,c = np.where(robot.mapping[:,:,0] > self.filterThreshold) # was 0.05
-        
-            y = robot.mapping[r,c,0]
-            y = y.reshape(-1,1)
-
             x = np.dstack((r,c))
             x = x.reshape(-1,2)
 
@@ -217,13 +212,15 @@ class GaussianProcess:
         #     self.model.plot(figure=figure, fixed_inputs=[(0,y)], row=(i+1), plot_data=False)
 
     def errorCalculation(self, robot):
-        # rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())
+        rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())
         # nrmse = 100 * rmse/(np.max(robot.mappingGroundTruth)-np.min(robot.mappingGroundTruth))
-        # self.logFile.writeError(robot.ID,nrmse,robot.currentTime)
+        self.logFile.writeError(robot.ID,rmse,robot.currentTime)
 
-        rmse = np.sqrt(np.sum(np.square(robot.mappingGroundTruth - robot.expectedMeasurement)))
-        fnorm = rmse/(np.sqrt(np.sum(np.square(robot.mappingGroundTruth))))
-        self.logFile.writeError(robot.ID,fnorm,robot.currentTime)
+        # rmse = np.sqrt(np.sum(np.square(robot.mappingGroundTruth - robot.expectedMeasurement)))
+        # fnorm = rmse/(np.sqrt(np.sum(np.square(robot.mappingGroundTruth))))
+
+        # similarity = ssim(robot.mappingGroundTruth,robot.expectedMeasurement, gaussian_weights=True)
+        # self.logFile.writeError(robot.ID,similarity,robot.currentTime)
 
     def demoGPy(self):
         """Demo function to demonstrate GPy library"""

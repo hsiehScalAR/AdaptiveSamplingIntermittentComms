@@ -10,6 +10,7 @@ Created on Mon Nov  4 10:48:29 2019
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+from skimage.measure import compare_ssim as ssim
 
 #Personal imports
 from Classes.Scheduler import Schedule
@@ -109,7 +110,13 @@ def main():
         if GAUSSIAN:
             robots[r].GP.initializeGP(robots[r])
     print('Environment Initialized\n')
-    
+    # plotMeasurement(robots[0].mappingGroundTruth,'initialGroundTruth')
+    # print(ssim(robots[0].mappingGroundTruth,robots[0].expectedMeasurement, gaussian_weights=True))
+    # print(ssim(robots[0].mappingGroundTruth,robots[0].mappingGroundTruth, gaussian_weights=True))
+
+    # print(np.sqrt(np.square(robots[0].mappingGroundTruth - robots[0].expectedMeasurement).mean()))
+    # print(np.sqrt(np.square(robots[0].mappingGroundTruth - robots[0].mappingGroundTruth).mean()))
+
     print('Initializing Paths')
     for period in range(0,schedule.shape[1]):
         teamsDone = np.zeros(len(teams))
@@ -437,13 +444,16 @@ def randomStartingPositions(numRobots):
 
 def errorCalculation(robots,logFile):
     for robot in robots:
-        # rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())
+        rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())
         # nrmse = 100 * rmse/(np.max(robot.mappingGroundTruth)-np.min(robot.mappingGroundTruth))
-        # logFile.writeError(robot.ID,nrmse,robot.currentTime, endTime=True)
+        logFile.writeError(robot.ID,rmse,robot.currentTime, endTime=True)
 
-        rmse = np.sqrt(np.sum(np.square(robot.mappingGroundTruth - robot.expectedMeasurement)))
-        fnorm = rmse/(np.sqrt(np.sum(np.square(robot.mappingGroundTruth))))
-        logFile.writeError(robot.ID,fnorm,robot.currentTime, endTime=True)
+        # rmse = np.sqrt(np.sum(np.square(robot.mappingGroundTruth - robot.expectedMeasurement)))
+        # fnorm = rmse/(np.sqrt(np.sum(np.square(robot.mappingGroundTruth))))
+
+        # similarity = ssim(robot.mappingGroundTruth,robot.expectedMeasurement, gaussian_weights=True)
+
+        # logFile.writeError(robot.ID,similarity,robot.currentTime, endTime=True)
 
 if __name__ == "__main__":
     """Entry in Test Program"""
