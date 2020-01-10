@@ -37,6 +37,7 @@ def plotMultivariateNormal():
     plt.colorbar()
 
     plt.savefig(PATH + 'MultivariateNormal' + '.png')
+    plt.close()
 
 def clearPlots():
     plt.close('all')
@@ -84,6 +85,7 @@ def plotTrajectory(robots):
         plt.plot(y,x, '-', label='Robot %d'%r)
     plt.legend()
     plt.savefig(PATH + 'Trajectory' + '.png')
+    plt.close()
 
 def plotMeasurement(data, title):
     
@@ -93,6 +95,7 @@ def plotMeasurement(data, title):
     plt.imshow(data, origin='lower')
     plt.colorbar()
     plt.savefig(PATH + 'Measurements' + '.png')
+    plt.close()
     
     
 def plotMeetingGraphs(robots, index, team, subplot=None, length=0):
@@ -112,7 +115,7 @@ def plotMeetingGraphs(robots, index, team, subplot=None, length=0):
     
     plt.legend()
     plt.savefig(PATH + 'RRT* Graphs' + '.png')
-    
+    plt.close()
     
 
 def plotMeetingPaths(robots, index, team, subplot=None, length=0):
@@ -133,6 +136,7 @@ def plotMeetingPaths(robots, index, team, subplot=None, length=0):
     
     plt.legend()
     plt.savefig(PATH + 'RRT* Paths' + '.png')
+    plt.close()
         
     
 def plotTrajectoryOverlayGroundTruth(robots, index):
@@ -157,4 +161,5 @@ def plotTrajectoryOverlayGroundTruth(robots, index):
     fig.colorbar(im, ax=ax)
     plt.legend()
     plt.savefig(PATH + 'Ground Truth and Trajectories' + '.png')
+    plt.close(fig)
     

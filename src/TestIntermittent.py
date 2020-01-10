@@ -61,6 +61,9 @@ def main():
 
     """Create Measurement Data"""
     measurementGroundTruthList, maxTime = loadMeshFiles(SENSORPERIOD,CORRECTTIMESTEP)
+    print('**********************************************************************\n')
+    print('Max allowed time is: %.1f length of data: %.1f\n' %(maxTime,len(measurementGroundTruthList)))
+    print('**********************************************************************\n')
 
     if maxTime < TOTALTIME:
         print('**********************************************************************\n')
@@ -446,13 +449,13 @@ if __name__ == "__main__":
     """Entry in Test Program"""
     
     """Setup"""
-    # np.random.seed(1994)
+    np.random.seed(1908)
     
     clearPlots()
     
-    TOTALTIME = 50 #total execution time of program
+    TOTALTIME = 100 #total execution time of program
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 4 robots 4 teams)
-    CORRECTTIMESTEP = True #If dye time steps should be matched to correct time steps or if each time step in dye corresponds to time step here
+    CORRECTTIMESTEP = False #If dye time steps should be matched to correct time steps or if each time step in dye corresponds to time step here
     
     DEBUG = False #debug to true shows prints
     ANIMATION = False #if animation should be done
@@ -463,7 +466,7 @@ if __name__ == "__main__":
     SPATIOTEMPORAL = True
     STATIONARY = not SPATIOTEMPORAL #if we are using time varying measurement data or not
     STATIONARYTIME = 5 #which starting time to use for the measurement data, if not STATIONARY, 0 is used for default
-    PREDICTIVETIME = 59 #Time for which to make a prediction at the end, has to be bigger than total time
+    PREDICTIVETIME = None #Time for which to make a prediction at the end, has to be bigger than total time
 
     SENSINGRANGE = 0 # Sensing range of robots
     COMMRANGE = 3 # communication range for robots

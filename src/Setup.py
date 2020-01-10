@@ -61,12 +61,14 @@ def loadMeshFiles(sensorPeriod, correctTimeSteps = False):
             data = data/scaling    
             # data = (data - np.min(data)) / (np.max(data) - np.min(data))
             measurementGroundTruthList.append(data)
-    else: 
+    else:
+        lag = 3
+        skip = 2
         maxTime = timeValues.shape[1]
         
         sampling = sensorPeriod
 
-        for tIdx in range(0,np.int(maxTime),2):
+        for tIdx in range(0,np.int(maxTime),skip):
             nodeSol = nodeSoln[:,tIdx]
             data = np.zeros([600,600])
             
@@ -76,9 +78,11 @@ def loadMeshFiles(sensorPeriod, correctTimeSteps = False):
                 data[posx-radius:posx+radius,posy-radius:posy+radius] = nodeSol[idx]
             data = data/scaling    
             # data = (data - np.min(data)) / (np.max(data) - np.min(data))
-            measurementGroundTruthList.append(data)
+            for _ in range(0,lag):
+                measurementGroundTruthList.append(data)
+
             
-        maxTime = np.int(timeValues.shape[1]/2)*sensorPeriod
+        maxTime = np.int(timeValues.shape[1]/skip)*sensorPeriod*lag
     return measurementGroundTruthList, maxTime
     
 def getSetup(case):

@@ -29,9 +29,10 @@ class GaussianProcess:
         self.spatiotemporal = spatiotemporal
         self.logFile = logFile
         self.filterThreshold = 0.05 # was 0.05
+        self.timeFilter = 50 # was 0.05
 
-        spatialLengthScale = 10
-        tempLengthScale = 10.  
+        spatialLengthScale = 10.
+        tempLengthScale = 2.  
         spatialVariance = 1. 
         tempVariance = 0.5
         spatialARD = True
@@ -40,6 +41,7 @@ class GaussianProcess:
 
         """Write parameters to logfile"""
         parameters = {
+                    'timeFilter     ': self.timeFilter,
                     'filterThreshold': self.filterThreshold,
                     'spatialLenScale': spatialLengthScale,
                     'tempLenScale   ': tempLengthScale,
@@ -95,16 +97,25 @@ class GaussianProcess:
         
         print('Updating GP for robot %d' %robot.ID)
         print('Time: %.1f' %robot.currentTime)
-        r,c = np.where(robot.mapping[:,:,0] > self.filterThreshold) # was 0.05
-        
-        y = robot.mapping[r,c,0]
-        y = y.reshape(-1,1)
 
         if self.spatiotemporal:
+            if self.timeFilter != None:
+                r,c = np.where((robot.mapping[:,:,0] > self.filterThreshold) & (robot.mapping[:,:,1] > (robot.currentTime-self.timeFilter))) # was 0.05
+            else:
+                r,c = np.where(robot.mapping[:,:,0] > self.filterThreshold) # was 0.05
+        
+            y = robot.mapping[r,c,0]
+            y = y.reshape(-1,1)
+
             t = robot.mapping[r,c,1]
             x = np.dstack((r,c,t))
             x = x.reshape(-1,3)
         else:
+            r,c = np.where(robot.mapping[:,:,0] > self.filterThreshold) # was 0.05
+        
+            y = robot.mapping[r,c,0]
+            y = y.reshape(-1,1)
+
             x = np.dstack((r,c))
             x = x.reshape(-1,2)
 
@@ -152,9 +163,6 @@ class GaussianProcess:
 
         robot.expectedMeasurement = ym.reshape(robot.discretization)
 
-        #TODO: remove filtering
-        # indexSmaller = robot.expectedMeasurement < 5
-        # robot.expectedMeasurement[indexSmaller] = 0
         scaling = 1
         robot.expectedVariance = ys.reshape(robot.discretization)
         print('GP inferred\n')
@@ -188,6 +196,8 @@ class GaussianProcess:
             fig.colorbar(im, cax=cbar_ax)
             im.set_clim(-1, 15*scaling)
             fig.savefig(PATH + title + '.png')
+            
+            plt.close(fig)
 
             self.errorCalculation(robot)
 
