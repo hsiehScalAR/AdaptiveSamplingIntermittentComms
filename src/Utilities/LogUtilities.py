@@ -39,15 +39,15 @@ class LogFile:
                     writer.write(key + '\t\t' + str(value) + '\n')
                 self.firstTimeParam += 1
 
-    def writeError(self, robotID, error, time, endTime=False):
+    def writeError(self, robotID, error, time, errorName, endTime=False):
 
         with open(self.name,'a') as writer:
             if self.firstTimeInter:
-                writer.write('\n# Intermediate Error Results:\n\n')
+                writer.write('\n# Intermediate Error Results for %s:\n\n'%errorName)
                 writer.write('ID:\t\tError:\t\tTime:\n\n')
                 self.firstTimeInter = False
             elif endTime and self.firstTimeEnd:
-                writer.write('\n# Final Error Results:\n\n')
+                writer.write('\n# Final Error Results for %s:\n\n'%errorName)
                 writer.write('ID:\t\tError:\t\tTime:\n\n')
                 self.firstTimeEnd = False
                 

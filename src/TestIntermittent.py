@@ -177,7 +177,7 @@ def main():
         plotMeasurement(totalMap, 'Measurements of robots after communication events')
 
     if ANIMATION:
-        plotTrajectoryAnimation(robots)
+        plotTrajectoryAnimation(robots, measurementGroundTruthList)
     
     if GAUSSIAN:
 
@@ -446,7 +446,7 @@ def errorCalculation(robots,logFile):
     for robot in robots:
         rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())
         # nrmse = 100 * rmse/(np.max(robot.mappingGroundTruth)-np.min(robot.mappingGroundTruth))
-        logFile.writeError(robot.ID,rmse,robot.currentTime, endTime=True)
+        logFile.writeError(robot.ID,rmse,robot.currentTime, 'RSME', endTime=True)
 
         # rmse = np.sqrt(np.sum(np.square(robot.mappingGroundTruth - robot.expectedMeasurement)))
         # fnorm = rmse/(np.sqrt(np.sum(np.square(robot.mappingGroundTruth))))

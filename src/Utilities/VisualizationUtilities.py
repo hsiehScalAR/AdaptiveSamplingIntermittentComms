@@ -42,7 +42,7 @@ def plotMultivariateNormal():
 def clearPlots():
     plt.close('all')
 
-def plotTrajectoryAnimation(robots):
+def plotTrajectoryAnimation(robots, measurementGroundTruthList):
     
     fig = plt.figure()
     ax1 = plt.axes(xlim=(0, 600), ylim=(0,600))
@@ -69,7 +69,8 @@ def plotTrajectoryAnimation(robots):
 
         for gnum,graph in enumerate(graphs):
             
-            graph.set_data(ylist[gnum], xlist[gnum]) # set data for each line separately.     
+            graph.set_data(ylist[gnum], xlist[gnum]) # set data for each line separately. 
+        ax1.imshow(measurementGroundTruthList[i], origin='lower')
         return graphs
 
     ani = animation.FuncAnimation(fig, animate, init_func=init,

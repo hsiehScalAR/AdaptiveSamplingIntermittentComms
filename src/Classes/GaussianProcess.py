@@ -214,7 +214,7 @@ class GaussianProcess:
     def errorCalculation(self, robot):
         rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())
         # nrmse = 100 * rmse/(np.max(robot.mappingGroundTruth)-np.min(robot.mappingGroundTruth))
-        self.logFile.writeError(robot.ID,rmse,robot.currentTime)
+        self.logFile.writeError(robot.ID,rmse,robot.currentTime, 'RMSE')
 
         # rmse = np.sqrt(np.sum(np.square(robot.mappingGroundTruth - robot.expectedMeasurement)))
         # fnorm = rmse/(np.sqrt(np.sum(np.square(robot.mappingGroundTruth))))
