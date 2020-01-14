@@ -11,6 +11,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from skimage.measure import compare_ssim as ssim
+from scipy.spatial import procrustes
+
 
 #Personal imports
 from Classes.Scheduler import Schedule
@@ -444,16 +446,21 @@ def randomStartingPositions(numRobots):
 
 def errorCalculation(robots,logFile):
     for robot in robots:
-        rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())
-        # nrmse = 100 * rmse/(np.max(robot.mappingGroundTruth)-np.min(robot.mappingGroundTruth))
-        logFile.writeError(robot.ID,rmse,robot.currentTime, 'RSME', endTime=True)
+        # rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())
+        # logFile.writeError(robot.ID,rmse,robot.currentTime, 'RMSE', endTime=True)
 
+        # nrmse = 100 * rmse/(np.max(robot.mappingGroundTruth)-np.min(robot.mappingGroundTruth))
+        # logFile.writeError(robot.ID,nrmse,robot.currentTime, 'NRMSE', endTime=True)
+        
         # rmse = np.sqrt(np.sum(np.square(robot.mappingGroundTruth - robot.expectedMeasurement)))
         # fnorm = rmse/(np.sqrt(np.sum(np.square(robot.mappingGroundTruth))))
+        # logFile.writeError(robot.ID,fnorm,robot.currentTime, 'FNORM', endTime=True)
 
-        # similarity = ssim(robot.mappingGroundTruth,robot.expectedMeasurement, gaussian_weights=True)
+        # similarity = ssim(robot.mappingGroundTruth,robot.expectedMeasurement, gaussian_weights=False, win_size=101)
+        # logFile.writeError(robot.ID,similarity,robot.currentTime, 'SSIM', endTime=True)
 
-        # logFile.writeError(robot.ID,similarity,robot.currentTime, endTime=True)
+        mat1,mat2,procru = procrustes(robot.mappingGroundTruth,robot.expectedMeasurement)
+        logFile.writeError(robot.ID,procru,robot.currentTime, 'procrustes')
 
 if __name__ == "__main__":
     """Entry in Test Program"""

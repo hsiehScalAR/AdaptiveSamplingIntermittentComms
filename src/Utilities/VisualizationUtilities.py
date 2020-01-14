@@ -164,3 +164,29 @@ def plotTrajectoryOverlayGroundTruth(robots, index):
     plt.savefig(PATH + 'Ground Truth and Trajectories' + '.png')
     plt.close(fig)
     
+def plot3Images(robot, image3, image4):
+
+    fig, ax = plt.subplots(1,4,figsize=(18, 6))
+    # fig.subplots_adjust(left=0.02, bottom=0.06, right=0.8, top=0.94, wspace=0.12,hspace=0.1)
+
+    dispTime = robot.currentTime
+
+    title = 'Procrustes: Robot %d, Time %.1f' %(robot.ID,dispTime)
+    fig.suptitle(title)
+
+    ax[0].set_title('Expected Measurement')  
+    im = ax[0].imshow(robot.expectedMeasurement, origin='lower')
+
+    ax[1].set_title('Procrustes1')  
+    im = ax[1].imshow(image3, origin='lower')   
+
+    ax[2].set_title('Procrustes2')  
+    im = ax[2].imshow(image4, origin='lower')      
+
+    ax[3].set_title('GroundTruth') 
+
+    im = ax[3].imshow(robot.mappingGroundTruth, origin='lower')
+
+    fig.savefig(PATH + title + '.png')
+    
+    plt.close(fig)

@@ -38,6 +38,7 @@ def communicateToTeam(robots, GP=True):
         
     if GP:
         robots[0].GP.updateGP(robots[0])
+        # TODO: maybe always infer so that we have more datapoints for error analysis
         if robots[0].optPath:
             robots[0].GP.inferGP(robots[0])
         for r in range(1,len(robots)):

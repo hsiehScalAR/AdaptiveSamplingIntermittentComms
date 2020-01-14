@@ -12,9 +12,10 @@ import GPy
 import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal
 from skimage.measure import compare_ssim as ssim
+from scipy.spatial import procrustes
 
 # Personal imports
-from Utilities.VisualizationUtilities import plotMeasurement
+from Utilities.VisualizationUtilities import plotMeasurement, plotProcrustes
                                               
 ITERATIONS = 1000
 PATH = 'Results/Tmp/'
@@ -212,15 +213,23 @@ class GaussianProcess:
         #     self.model.plot(figure=figure, fixed_inputs=[(0,y)], row=(i+1), plot_data=False)
 
     def errorCalculation(self, robot):
-        rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())
-        # nrmse = 100 * rmse/(np.max(robot.mappingGroundTruth)-np.min(robot.mappingGroundTruth))
-        self.logFile.writeError(robot.ID,rmse,robot.currentTime, 'RMSE')
+        # rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())
+        # self.logFile.writeError(robot.ID,rmse,robot.currentTime, 'RMSE')
 
+        # nrmse = 100 * rmse/(np.max(robot.mappingGroundTruth)-np.min(robot.mappingGroundTruth))
+        # self.logFile.writeError(robot.ID,nrmse,robot.currentTime, 'NRMSE')
+        
         # rmse = np.sqrt(np.sum(np.square(robot.mappingGroundTruth - robot.expectedMeasurement)))
         # fnorm = rmse/(np.sqrt(np.sum(np.square(robot.mappingGroundTruth))))
+        # self.logFile.writeError(robot.ID,fnorm,robot.currentTime, 'FNORM')
 
-        # similarity = ssim(robot.mappingGroundTruth,robot.expectedMeasurement, gaussian_weights=True)
-        # self.logFile.writeError(robot.ID,similarity,robot.currentTime)
+        # similarity = ssim(robot.mappingGroundTruth,robot.expectedMeasurement, gaussian_weights=False, win_size=101)
+        # self.logFile.writeError(robot.ID,similarity,robot.currentTime, 'SSIM')
+
+        mat1,mat2,procru = procrustes(robot.mappingGroundTruth,robot.expectedMeasurement)
+        self.logFile.writeError(robot.ID,procru,robot.currentTime, 'procrustes')
+
+        # plotProcrustes(robot, mat1,mat2)
 
     def demoGPy(self):
         """Demo function to demonstrate GPy library"""

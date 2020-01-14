@@ -475,8 +475,8 @@ def getInformationGainAlongPath(robot, pos, nearestNodeIdx, epsilon):
             ym = robot.expectedMeasurement[np.int(measPos[0]),np.int(measPos[1])]
         else:
             ym, ys = robot.GP.inferGP(robot,measPos)
-        # TODO: was just ys, tried ys+ym as well and also ym * ys
-        var += ys #+ ym   
+        # TODO: was just ys, tried ys+ym as well and also ym * ys, plus doesn't work to well
+        var += ys #* ym   
     
     return var
 
