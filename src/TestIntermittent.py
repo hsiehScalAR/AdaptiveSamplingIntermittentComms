@@ -76,6 +76,7 @@ def main():
 
     if STATIONARY:
         measurementGroundTruth = measurementGroundTruthList[np.int(STATIONARYTIME/SENSORPERIOD)]
+        # measurementGroundTruth = measurementGroundTruthList[np.random.randint(1,len(measurementGroundTruthList))]
         #TODO: remove next line
         # measurementGroundTruth = setupMatlabFileMeasurementData(DISCRETIZATION, invert=True)
     else:
@@ -446,8 +447,8 @@ def randomStartingPositions(numRobots):
 
 def errorCalculation(robots,logFile):
     for robot in robots:
-        # rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())
-        # logFile.writeError(robot.ID,rmse,robot.currentTime, 'RMSE', endTime=True)
+        rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())
+        logFile.writeError(robot.ID,rmse,robot.currentTime, 'RMSE', endTime=True)
 
         # nrmse = 100 * rmse/(np.max(robot.mappingGroundTruth)-np.min(robot.mappingGroundTruth))
         # logFile.writeError(robot.ID,nrmse,robot.currentTime, 'NRMSE', endTime=True)
@@ -456,21 +457,19 @@ def errorCalculation(robots,logFile):
         # fnorm = rmse/(np.sqrt(np.sum(np.square(robot.mappingGroundTruth))))
         # logFile.writeError(robot.ID,fnorm,robot.currentTime, 'FNORM', endTime=True)
 
-        # similarity = ssim(robot.mappingGroundTruth,robot.expectedMeasurement, gaussian_weights=False, win_size=101)
-        # logFile.writeError(robot.ID,similarity,robot.currentTime, 'SSIM', endTime=True)
+        similarity = ssim(robot.mappingGroundTruth,robot.expectedMeasurement, gaussian_weights=False)
+        logFile.writeError(robot.ID,similarity,robot.currentTime, 'SSIM', endTime=True)
 
         mat1,mat2,procru = procrustes(robot.mappingGroundTruth,robot.expectedMeasurement)
-        logFile.writeError(robot.ID,procru,robot.currentTime, 'procrustes')
+        logFile.writeError(robot.ID,procru,robot.currentTime, 'Dissim')
 
 if __name__ == "__main__":
     """Entry in Test Program"""
     
     """Setup"""
-    np.random.seed(1908)
+    # np.random.seed(1908)
     
-    clearPlots()
-    
-    TOTALTIME = 100 #total execution time of program
+    TOTALTIME = 50 #total execution time of program
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 4 robots 4 teams)
     CORRECTTIMESTEP = False #If dye time steps should be matched to correct time steps or if each time step in dye corresponds to time step here
     
@@ -480,7 +479,7 @@ if __name__ == "__main__":
     OPTPATH = GAUSSIAN == True #if path optimization should be used, can not be true if optpoint is used
     OPTPOINT = GAUSSIAN != OPTPATH == True #if point optimization should be used, can not be true if optpath is used
     
-    SPATIOTEMPORAL = True
+    SPATIOTEMPORAL = False
     STATIONARY = not SPATIOTEMPORAL #if we are using time varying measurement data or not
     STATIONARYTIME = 5 #which starting time to use for the measurement data, if not STATIONARY, 0 is used for default
     PREDICTIVETIME = None #Time for which to make a prediction at the end, has to be bigger than total time

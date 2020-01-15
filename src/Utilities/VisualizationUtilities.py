@@ -164,10 +164,9 @@ def plotTrajectoryOverlayGroundTruth(robots, index):
     plt.savefig(PATH + 'Ground Truth and Trajectories' + '.png')
     plt.close(fig)
     
-def plot3Images(robot, image3, image4):
+def plotProcrustes(robot, image3, image4):
 
     fig, ax = plt.subplots(1,4,figsize=(18, 6))
-    # fig.subplots_adjust(left=0.02, bottom=0.06, right=0.8, top=0.94, wspace=0.12,hspace=0.1)
 
     dispTime = robot.currentTime
 

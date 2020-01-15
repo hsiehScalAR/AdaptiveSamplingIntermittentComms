@@ -30,9 +30,9 @@ class GaussianProcess:
         self.spatiotemporal = spatiotemporal
         self.logFile = logFile
         self.filterThreshold = 0.05 # was 0.05
-        self.timeFilter = 50 # was 50
+        self.timeFilter = 40 # was 50
 
-        spatialLengthScale = 10.
+        spatialLengthScale = 20.
         tempLengthScale = 2.  
         spatialVariance = 4. 
         tempVariance = 2.
@@ -86,8 +86,15 @@ class GaussianProcess:
             x = np.dstack((r,c))
             x = x.reshape(-1,2)
         
-        self.model = GPy.models.GPRegression(x,y, self.kernel)                                 # Works good
-        
+        self.model = GPy.models.GPRegression(x,y, self.kernel)     # Works good
+
+        self.model.constrain_bounded(0.5,300)
+        self.model.Gaussian_noise.variance.unconstrain()
+
+        if self.spatiotemporal:             
+            self.model.mul.rbf_1.lengthscale.unconstrain()
+            print(self.model[''])
+
         self.model.optimize(optimizer='lbfgsb',messages=False,max_f_eval = ITERATIONS,ipython_notebook=False)    # Works good
 
         
@@ -98,9 +105,9 @@ class GaussianProcess:
         
         print('Updating GP for robot %d' %robot.ID)
         print('Time: %.1f' %robot.currentTime)
-
-        if self.timeFilter != None:
-            r,c = np.where((robot.mapping[:,:,0] > self.filterThreshold) & (robot.mapping[:,:,1] > (robot.currentTime-self.timeFilter))) # was 0.05
+        if self.spatiotemporal:
+            if self.timeFilter != None:
+                r,c = np.where((robot.mapping[:,:,0] > self.filterThreshold) & (robot.mapping[:,:,1] > (robot.currentTime-self.timeFilter))) # was 0.05
         else:
             r,c = np.where(robot.mapping[:,:,0] > self.filterThreshold) # was 0.05
         
@@ -163,6 +170,8 @@ class GaussianProcess:
         robot.expectedVariance = ys.reshape(robot.discretization)
         print('GP inferred\n')
         
+        dissimilarity = self.errorCalculation(robot)
+
         if robot.ID >= 0:
             fig, ax = plt.subplots(1,3,figsize=(18, 6))
             fig.subplots_adjust(left=0.02, bottom=0.06, right=0.8, top=0.94, wspace=0.12,hspace=0.1)
@@ -171,7 +180,7 @@ class GaussianProcess:
             else:
                 dispTime = time
 
-            title = 'Robot %d, Time %.1f' %(robot.ID,dispTime)
+            title = 'Robot %d, Time %.1f, Dissimilarity: %.2f' %(robot.ID,dispTime,dissimilarity)
             fig.suptitle(title)
 
             ax[0].set_title('Expected Measurement')  
@@ -195,8 +204,6 @@ class GaussianProcess:
             
             plt.close(fig)
 
-            self.errorCalculation(robot)
-
     def plotGP(self, robot, time=None):
         """Plotting model of the GP"""
         # Input arguments:
@@ -204,7 +211,7 @@ class GaussianProcess:
 
         # self.inferGP(robot)
         self.inferGP(robot, time=time)
-    
+        print(self.model[''])
         # self.model.plot(title='Robot %d, End' %(robot.ID))
 
         # slices = [100, 200, 300, 400, 500]
@@ -213,8 +220,8 @@ class GaussianProcess:
         #     self.model.plot(figure=figure, fixed_inputs=[(0,y)], row=(i+1), plot_data=False)
 
     def errorCalculation(self, robot):
-        # rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())
-        # self.logFile.writeError(robot.ID,rmse,robot.currentTime, 'RMSE')
+        rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())
+        self.logFile.writeError(robot.ID,rmse,robot.currentTime, 'RMSE')
 
         # nrmse = 100 * rmse/(np.max(robot.mappingGroundTruth)-np.min(robot.mappingGroundTruth))
         # self.logFile.writeError(robot.ID,nrmse,robot.currentTime, 'NRMSE')
@@ -223,13 +230,14 @@ class GaussianProcess:
         # fnorm = rmse/(np.sqrt(np.sum(np.square(robot.mappingGroundTruth))))
         # self.logFile.writeError(robot.ID,fnorm,robot.currentTime, 'FNORM')
 
-        # similarity = ssim(robot.mappingGroundTruth,robot.expectedMeasurement, gaussian_weights=False, win_size=101)
-        # self.logFile.writeError(robot.ID,similarity,robot.currentTime, 'SSIM')
+        similarity = ssim(robot.mappingGroundTruth,robot.expectedMeasurement, gaussian_weights=False)
+        self.logFile.writeError(robot.ID,similarity,robot.currentTime, 'SSIM')
 
         mat1,mat2,procru = procrustes(robot.mappingGroundTruth,robot.expectedMeasurement)
-        self.logFile.writeError(robot.ID,procru,robot.currentTime, 'procrustes')
+        self.logFile.writeError(robot.ID,procru,robot.currentTime, 'Dissim')
 
         # plotProcrustes(robot, mat1,mat2)
+        return procru
 
     def demoGPy(self):
         """Demo function to demonstrate GPy library"""
