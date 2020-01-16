@@ -22,7 +22,7 @@ from Setup import getSetup, setupMatlabFileMeasurementData, loadMeshFiles
 from Utilities.ControllerUtilities import moveAlongPath, communicateToTeam, checkMeetingLocation, measurement
 from Utilities.VisualizationUtilities import (plotMeasurement, plotMeetingGraphs, plotMeetingPaths, 
                                               clearPlots, plotTrajectory, plotTrajectoryAnimation,
-                                              plotTrajectoryOverlayGroundTruth)
+                                              plotTrajectoryOverlayGroundTruth, plotDye)
 from Utilities.PathPlanningUtilities import (sampleVrand, findNearestNode, steer, buildSetVnear, 
                                              extendGraph, rewireGraph, calculateGoalSet, 
                                              checkGoalSet, leastCostGoalSet, getPath, 
@@ -64,6 +64,9 @@ def main():
 
     """Create Measurement Data"""
     measurementGroundTruthList, maxTime = loadMeshFiles(SENSORPERIOD,CORRECTTIMESTEP)
+    
+    # plotDye(measurementGroundTruthList[50],measurementGroundTruthList[1000],measurementGroundTruthList[-1])
+    
     print('**********************************************************************\n')
     print('Max allowed time is: %.1f length of data: %.1f\n' %(maxTime,len(measurementGroundTruthList)))
     print('**********************************************************************\n')
@@ -446,6 +449,8 @@ def randomStartingPositions(numRobots):
     return locations.astype(int)
 
 def errorCalculation(robots,logFile):
+
+    #TODO: use nrmse next time or fnorm
     for robot in robots:
         rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())
         logFile.writeError(robot.ID,rmse,robot.currentTime, 'RMSE', endTime=True)

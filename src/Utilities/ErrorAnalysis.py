@@ -33,7 +33,7 @@ def readAllFiles(path):
                                 continue
                             else:
                                 columns = line.split()
-                                if columns[1] == '0':
+                                if int(columns[1]) == ROBOTID:
                                     if columns[0] == 'RMSE':
                                         rmse.append([float(columns[2]), float(columns[3])])
                                     elif columns[0] == 'SSIM':
@@ -61,19 +61,75 @@ def plotError(data, metric, saveLoc, testrun=None):
         
         plt.figure()
         error, t = zip(*data[testrun][idx])
-        plt.plot(t,error, '-', label=metric)
+        plt.plot(t,error, '-', label=metric + '_run_%d' %testrun)
         plt.ylim([bottom, top])
         plt.legend()
         plt.savefig(saveLoc + metric + '_Testrun_%d'%testrun + '.png' )
         plt.close()
+    else:
+        plt.figure()
+        plt.title(metric + '_All_' + CASE)
+        for i in range(0,np.shape(data)[0]):
+            error, t = zip(*data[i][idx])
+            plt.plot(t,error, '-', label=metric + '_run_%d' %i)
+        plt.ylim([bottom, top])
+        # plt.legend()
+        plt.savefig(saveLoc + metric + '_All_' + CASE + '.png' )
+        plt.close()
+
+def statistics(totalData, saveLoc, stp):
+    fig, ax = plt.subplots()
+
+    if stp == 0:
+        name = 'Stationary Results (n=10)'
+    else:
+        name = 'Spatiotemporal Results (n=10)'
+    ax.set_title(name)
+
+    mean = np.zeros([10,6])
+    std = np.zeros([10,6])
+
+    for idx, data in enumerate(totalData):
+        for i in range(0,10):
+            for e in range(0,3):
+                error,_ = zip(*data[i][e])
+                error = np.array(error)
+                mean[i,e + 3*idx] = np.mean(error)
+                std[i,e + 3*idx] = np.std(error)
+        
+    bp1 = ax.boxplot([mean[:,0],mean[:,2]],positions=[1,3], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C0"))
+    bp2 = ax.boxplot([mean[:,3],mean[:,5]], positions=[2,4], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C2"))
+    ax.set_ylim(0,2.5)
+    ax.legend([bp1["boxes"][0], bp2["boxes"][0]], ['Intermittent', 'Full'], loc='upper right')
+
+    plt.xticks([1.5, 3.5], ['RMSE', 'DISSIM'])
+    plt.savefig(saveLoc + 'Boxplot_' + SETUP[stp] + '.png' )
+    plt.close()
 
 
 if __name__ == "__main__":
-
-    path = '/home/hannes/MasterThesisCode/AdaptiveSamplingIntermittentComms/src/Results/Tests/IntermediateResults/SpatioTemporal/'
+    basePath = '/home/hannes/MasterThesisCode/AdaptiveSamplingIntermittentComms/src/Results/Tests/IntermediateResults/'
     saveLoc = '/home/hannes/MasterThesisCode/AdaptiveSamplingIntermittentComms/src/Results/Tests/IntermediateResults/Figures/'
-    data = readAllFiles(path)
+    CASE = ['Intermittent','Full']
+
+    SETUP = ['Spatial','SpatioTemporal']
+    # CASE = 'Intermittent'
+    # CASE = 'Full'
     
-    plotError(data,'DISSIM',saveLoc,0)
+    
+    for stp, _ in enumerate(SETUP):
+        totalData = []
+        for idx,_ in enumerate(CASE):
+            if CASE[idx] == 'Intermittent':
+                path = basePath + SETUP[stp] + '/IntermittentCommunication'
+                ROBOTID = 0
+            elif CASE[idx] == 'Full':
+                path = basePath + SETUP[stp] + '/AllTimeCommunication'
+                ROBOTID = 4
+        
+            data = readAllFiles(path)
+            totalData.append(data)
+        statistics(totalData, saveLoc, stp)
+        # plotError(data,'DISSIM',saveLoc)
 
 

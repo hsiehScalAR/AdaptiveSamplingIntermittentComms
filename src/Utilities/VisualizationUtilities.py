@@ -189,3 +189,23 @@ def plotProcrustes(robot, image3, image4):
     fig.savefig(PATH + title + '.png')
     
     plt.close(fig)
+
+def plotDye(image1, image2, image3):
+
+    fig, ax = plt.subplots(1,3,figsize=(18, 6))
+
+    title = 'DyePlot'
+    # fig.suptitle(title)
+
+    # ax[0].set_title('Expected Measurement')  
+    im = ax[0].imshow(image1, origin='lower')
+
+    # ax[1].set_title('Procrustes1')  
+    im = ax[1].imshow(image2, origin='lower')   
+
+    # ax[2].set_title('Procrustes2')  
+    im = ax[2].imshow(image3, origin='lower')      
+
+    fig.savefig(PATH + title + '.png')
+    
+    plt.close(fig)

@@ -220,6 +220,9 @@ class GaussianProcess:
         #     self.model.plot(figure=figure, fixed_inputs=[(0,y)], row=(i+1), plot_data=False)
 
     def errorCalculation(self, robot):
+
+        #TODO: use nrmse next time or fnorm
+
         rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())
         self.logFile.writeError(robot.ID,rmse,robot.currentTime, 'RMSE')
 
