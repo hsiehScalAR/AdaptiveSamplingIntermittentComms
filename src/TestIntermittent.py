@@ -11,6 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from skimage.measure import compare_ssim as ssim
+from scipy.spatial import procrustes
 
 #Personal imports
 from Classes.Scheduler import Schedule
@@ -351,23 +352,28 @@ def randomStartingPositions(numRobots):
     return locations.astype(int)
 
 def errorCalculation(robots,logFile):
-    for robot in robots:
-        rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())
-        # nrmse = 100 * rmse/(np.max(robot.mappingGroundTruth)-np.min(robot.mappingGroundTruth))
-        logFile.writeError(robot.ID,rmse,robot.currentTime, endTime=True)
+    robot = robots[-1]
+    rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())
+    logFile.writeError(robot.ID,rmse,robot.currentTime, 'RMSE', endTime=True)
 
-        # rmse = np.sqrt(np.sum(np.square(robot.mappingGroundTruth - robot.expectedMeasurement)))
-        # fnorm = rmse/(np.sqrt(np.sum(np.square(robot.mappingGroundTruth))))
+    # nrmse = 100 * rmse/(np.max(robot.mappingGroundTruth)-np.min(robot.mappingGroundTruth))
+    # logFile.writeError(robot.ID,nrmse,robot.currentTime, 'NRMSE', endTime=True)
 
-        # similarity = ssim(robot.mappingGroundTruth,robot.expectedMeasurement, gaussian_weights=True)
+    # rmse = np.sqrt(np.sum(np.square(robot.mappingGroundTruth - robot.expectedMeasurement)))
+    # fnorm = rmse/(np.sqrt(np.sum(np.square(robot.mappingGroundTruth))))
+    # logFile.writeError(robot.ID,fnorm,robot.currentTime, 'FNORM', endTime=True)
 
-        # logFile.writeError(robot.ID,similarity,robot.currentTime, endTime=True)
+    similarity = ssim(robot.mappingGroundTruth,robot.expectedMeasurement, gaussian_weights=False)
+    logFile.writeError(robot.ID,similarity,robot.currentTime, 'SSIM', endTime=True)
+
+    mat1,mat2,procru = procrustes(robot.mappingGroundTruth,robot.expectedMeasurement)
+    logFile.writeError(robot.ID,procru,robot.currentTime, 'Dissim')
 
 if __name__ == "__main__":
     """Entry in Test Program"""
     
     """Setup"""
-    np.random.seed(1908)
+    # np.random.seed(1908)
     
     clearPlots()
     
@@ -381,7 +387,7 @@ if __name__ == "__main__":
     OPTPATH = GAUSSIAN == True #if path optimization should be used, can not be true if optpoint is used
     OPTPOINT = GAUSSIAN != OPTPATH == True #if point optimization should be used, can not be true if optpath is used
     
-    SPATIOTEMPORAL = False
+    SPATIOTEMPORAL = True
     STATIONARY = not SPATIOTEMPORAL #if we are using time varying measurement data or not
     STATIONARYTIME = 5 #which starting time to use for the measurement data, if not STATIONARY, 0 is used for default
     PREDICTIVETIME = None #Time for which to make a prediction at the end, has to be bigger than total time

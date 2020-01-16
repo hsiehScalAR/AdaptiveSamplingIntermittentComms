@@ -39,19 +39,19 @@ class LogFile:
                     writer.write(key + '\t\t' + str(value) + '\n')
                 self.firstTimeParam += 1
 
-    def writeError(self, robotID, error, time, endTime=False):
+    def writeError(self, robotID, error, time, errorName, endTime=False):
 
         with open(self.name,'a') as writer:
             if self.firstTimeInter:
                 writer.write('\n# Intermediate Error Results:\n\n')
-                writer.write('ID:\t\tError:\t\tTime:\n\n')
+                writer.write('Metric:\t\tID:\t\tError:\t\tTime:\n\n')
                 self.firstTimeInter = False
             elif endTime and self.firstTimeEnd:
                 writer.write('\n# Final Error Results:\n\n')
-                writer.write('ID:\t\tError:\t\tTime:\n\n')
+                writer.write('Metric:\t\tID:\t\tError:\t\tTime:\n\n')
                 self.firstTimeEnd = False
                 
-            writer.write('{:3d}\t\t{:6.2f}\t\t{:6.1f} \n'.format(robotID,error,time))
+            writer.write('{:7s}\t\t{:3d}\t\t{:6.2f}\t\t{:6.1f} \n'.format(errorName,robotID,error,time))
 
 
             
