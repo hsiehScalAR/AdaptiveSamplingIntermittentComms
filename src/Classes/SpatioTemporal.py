@@ -30,48 +30,59 @@ class SpatioTemporal(Kern):
         pass
     
     def K(self,X,X2):
-        if X2 is None: X2 = X
-        x = np.array(X[0,0:2]).reshape((-1,2))
-        x2 = np.array(X2[0,0:2]).reshape((-1,2))
-        t = np.array(X[0,2]).reshape((-1,1))
-        t2 = np.array(X2[0,2]).reshape((-1,1))
-
-        first = self.variance**2*np.exp(-self.b**2*(x+x2)*(x+x2).transpose()-self.a**2*(t+t2)*(t+t2).transpose())
-        second = self.variance**2*np.exp(-self.b**2*(x-x2)*(x-x2).transpose()-self.a**2*(t-t2)*(t-t2).transpose())
-        third = -2*(self.variance**2*np.exp(-self.b**2*(x)*x.transpose()-self.a**2*(t)*t.transpose()) + self.variance**2*np.exp(-self.b**2*(x2)*x2.transpose()-self.a**2*(t2)*t.transpose())-self.variance**2)
+        if X2 is None: 
+            print('X2 is None')
+            X2 = X
+        x = np.array(X[:,0:2]).reshape((-1,2))
+        x2 = np.array(X2[:,0:2]).reshape((-1,2))
+        t = np.array(X[:,2]).reshape((-1,1))
+        t2 = np.array(X2[:,2]).reshape((-1,1))
+        
+        # print((x+x2))
+        # print(np.dot(x,x2.T))
+        
+        # TODO: Problem when inferring because X and X2 have completly different shapes.
+        #  Maybe look at example from linear with dot product
+        #  It seems like X2 is always None unless we infer
+        
+        first = self.variance**2*np.exp(-self.b**2*np.dot((x+x2),(x+x2).transpose())-self.a**2*np.dot((t+t2),(t+t2).transpose()))
+        second = self.variance**2*np.exp(-self.b**2*np.dot((x-x2),(x-x2).transpose())-self.a**2*np.dot((t-t2),(t-t2).transpose()))
+        third = -2*(self.variance**2*np.exp(-self.b**2*np.dot(x,x.transpose())-self.a**2*np.dot(t,t.transpose())) + self.variance**2*np.exp(-self.b**2*np.dot(x2,x2.transpose())-self.a**2*np.dot(t2,t2.transpose()))-self.variance**2)
+        
         cov = first + second + third
 
-        print(cov)
         return cov
 
     def Kdiag(self,X):
-        x = np.array(X[0,0:2]).reshape((-1,2))
+        x = np.array(X[:,0:2]).reshape((-1,2))
         x2 = x
-        t = np.array(X[0,2]).reshape((-1,1))
+        t = np.array(X[:,2]).reshape((-1,1))
         t2 = t
         
-        first = self.variance**2*np.exp(-self.b**2*(x+x2)*(x+x2).transpose()-self.a**2*(t+t2)*(t+t2).transpose())
-        second = self.variance**2*np.exp(-self.b**2*(x-x2)*(x-x2).transpose()-self.a**2*(t-t2)*(t-t2).transpose())
-        third = -2*(self.variance**2*np.exp(-self.b**2*(x)*x.transpose()-self.a**2*(t)*t.transpose()) + self.variance**2*np.exp(-self.b**2*(x2)*x2.transpose()-self.a**2*(t2)*t.transpose())-self.variance**2)
+        first = self.variance**2*np.exp(-self.b**2*np.dot((x+x2),(x+x2).transpose())-self.a**2*np.dot((t+t2),(t+t2).transpose()))
+        second = self.variance**2*np.exp(-self.b**2*np.dot((x-x2),(x-x2).transpose())-self.a**2*np.dot((t-t2),(t-t2).transpose()))
+        third = -2*(self.variance**2*np.exp(-self.b**2*np.dot(x,x.transpose())-self.a**2*np.dot(t,t.transpose())) + self.variance**2*np.exp(-self.b**2*np.dot(x2,x2.transpose())-self.a**2*np.dot(t2,t2.transpose()))-self.variance**2)
+        
+        cov = first + second + third
 
-        return np.diag(first + second + third)
+        return np.diag(cov)
     
     def update_gradients_full(self, dL_dK, X, X2):
         if X2 is None: X2 = X
 
-        x = np.array(X[0,0:2]).reshape((-1,2))
-        x2 = np.array(X2[0,0:2]).reshape((-1,2))
-        t = np.array(X[0,2]).reshape((-1,1))
-        t2 = np.array(X2[0,2]).reshape((-1,1))
+        x = np.array(X[:,0:2]).reshape((-1,2))
+        x2 = np.array(X2[:,0:2]).reshape((-1,2))
+        t = np.array(X[:,2]).reshape((-1,1))
+        t2 = np.array(X2[:,2]).reshape((-1,1))
 
-        first = np.exp(-self.b**2*(x+x2)*(x+x2).transpose()-self.a**2*(t+t2)*(t+t2).transpose())
-        second = np.exp(-self.b**2*(x-x2)*(x-x2).transpose()-self.a**2*(t-t2)*(t-t2).transpose())
-        third1 = np.exp(-self.b**2*(x)*x.transpose()-self.a**2*(t)*t.transpose())
-        third2 = np.exp(-self.b**2*(x2)*x2.transpose()-self.a**2*(t2)*t.transpose())
+        first = np.exp(-self.b**2*np.dot((x+x2),(x+x2).transpose())-self.a**2*np.dot((t+t2),(t+t2).transpose()))
+        second = np.exp(-self.b**2*np.dot((x-x2),(x-x2).transpose())-self.a**2*np.dot((t-t2),(t-t2).transpose()))
+        third1 = np.exp(-self.b**2*np.dot(x,x.transpose())-self.a**2*np.dot(t,t.transpose()))
+        third2 = np.exp(-self.b**2*np.dot(x2,x2.transpose())-self.a**2*np.dot(t2,t2.transpose()))
 
         dvar = 2*self.variance*(first + second -2*(third1 + third2 - 1)) 
-        da = -2*self.a*self.variance**2*(first + second) +4*self.a*self.variance**2(third1 + third2) 
-        db = -2*self.b*self.variance**2*(first + second) +4*self.b*self.variance**2(third1 + third2)
+        da = -2*self.a*self.variance**2*(first + second) +4*self.a*self.variance**2*(third1 + third2) 
+        db = -2*self.b*self.variance**2*(first + second) +4*self.b*self.variance**2*(third1 + third2)
         
         self.variance.gradient = np.sum(dvar*dL_dK)
         self.a.gradient = np.sum(da*dL_dK)

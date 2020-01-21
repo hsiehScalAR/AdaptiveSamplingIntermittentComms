@@ -54,18 +54,14 @@ class GaussianProcess:
         self.logFile.writeParameters(**parameters)
 
         if spatiotemporal:
-            #TODO: lengthscale for time is very important!
-            # reducing the filterconstant resulted in better results for lengthscale of 1
-            # 1: very quick decay of estimate
-            # 2: maybe ok
-            # 10: good spatial but not predictive in time
-            # ARD True: good spatial but not predictive in time
-            # ARD False: very quick decay of estimate unless l=10
+            
             self.kernel = GPy.kern.SpatioTemporal()
+            self.specialKernel = True
+            
             # self.kernel = (GPy.kern.RBF(input_dim=2, variance=spatialVariance, lengthscale=spatialLengthScale, active_dims=[0,1],ARD=spatialARD) 
             #                * GPy.kern.RBF(input_dim=1, variance=tempVariance, lengthscale=tempLengthScale, active_dims=[2], ARD=tempARD))
-            
-            # self.kernel = GPy.kern.RBF(input_dim=3, variance=1., lengthscale=[1.,1.,1.],ARD=True,useGPU=False)
+            # self.specialKernel = False
+
         else:
             self.kernel = GPy.kern.RBF(input_dim=2, variance=spatialVariance, lengthscale=spatialLengthScale,ARD=spatialARD)
     
@@ -91,7 +87,7 @@ class GaussianProcess:
         self.model.constrain_bounded(0.5,300)
         self.model.Gaussian_noise.variance.unconstrain()
 
-        if self.spatiotemporal:             
+        if self.spatiotemporal and not self.specialKernel:             
             self.model.mul.rbf_1.lengthscale.unconstrain()
             print(self.model[''])
 
@@ -128,7 +124,6 @@ class GaussianProcess:
 
         self.model.set_XY(x,y)
         
-#        self.model.optimize(optimizer= 'scg',messages=False,max_iters = ITERATIONS,ipython_notebook=False)       # Don't see difference, maybe slower       
         self.model.optimize(optimizer='lbfgsb',messages=False,max_f_eval = ITERATIONS,ipython_notebook=False)    # Works good
         print('GP Updated\n')
 
