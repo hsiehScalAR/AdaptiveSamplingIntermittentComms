@@ -61,9 +61,9 @@ class GaussianProcess:
             # 10: good spatial but not predictive in time
             # ARD True: good spatial but not predictive in time
             # ARD False: very quick decay of estimate unless l=10
-
-            self.kernel = (GPy.kern.RBF(input_dim=2, variance=spatialVariance, lengthscale=spatialLengthScale, active_dims=[0,1],ARD=spatialARD) 
-                           * GPy.kern.RBF(input_dim=1, variance=tempVariance, lengthscale=tempLengthScale, active_dims=[2], ARD=tempARD))
+            self.kernel = GPy.kern.SpatioTemporal()
+            # self.kernel = (GPy.kern.RBF(input_dim=2, variance=spatialVariance, lengthscale=spatialLengthScale, active_dims=[0,1],ARD=spatialARD) 
+            #                * GPy.kern.RBF(input_dim=1, variance=tempVariance, lengthscale=tempLengthScale, active_dims=[2], ARD=tempARD))
             
             # self.kernel = GPy.kern.RBF(input_dim=3, variance=1., lengthscale=[1.,1.,1.],ARD=True,useGPU=False)
         else:
@@ -85,7 +85,7 @@ class GaussianProcess:
         else:
             x = np.dstack((r,c))
             x = x.reshape(-1,2)
-        
+    
         self.model = GPy.models.GPRegression(x,y, self.kernel)     # Works good
 
         self.model.constrain_bounded(0.5,300)
