@@ -126,14 +126,15 @@ def main():
     print('Initializing Paths')
     for period in range(0,schedule.shape[1]):
         teamsDone = np.zeros(len(teams))
-
+        print('Period: %d'%period)
         idx = 0
         #find out which team has a meeting event at period k=0
+        robNoMeeting = []
         for team in schedule[:, period]:
-            # TODO need to move robots around also when they are not scheduled to meet! Or change their initial time to something else so that it is possible to find meeting location
             if team < 0:
-                robots[idx].nodeCounter += TOTALSAMPLES+1
-            # TODO END 
+                print('robot without meeting event')
+                robNoMeeting.append(robots[idx])
+                
             if teamsDone[team] or team < 0:                
                 idx += 1
                 continue
@@ -146,11 +147,18 @@ def main():
             teamsDone[team] = True
             
             idx += 1
-            
+
+        if len(robNoMeeting) != 0:
+            updatePaths(robNoMeeting)
+            newTeam = []
+            for _, mRob in enumerate(robNoMeeting):
+                newTeam.append(mRob.ID+1)
+            teams.append(np.asarray([newTeam]))
+
         for r in range(0,numRobots):
             robots[r].composeGraphs() 
     print('Paths Initialized\n')    
-    
+
     """Control loop"""
     
     print('Starting ControlLoop')
@@ -201,11 +209,12 @@ def main():
                 robots[r].currentTime = predictiveTime*SENSORPERIOD
                 robots[r].mappingGroundTruth = measurementGroundTruthList[predictiveTime]
                 robots[r].GP.plotGP(robots[r], robots[r].currentTime)
-     
+        
+        errorCalculation(robots, logFile)
     
     print('Plotting Finished\n')
 
-    errorCalculation(robots, logFile)
+    
 
 def update(currentTime, robots, teams, commPeriod):
     """Update procedure of intermittent communication"""
@@ -223,7 +232,7 @@ def update(currentTime, robots, teams, commPeriod):
     currentTime += SENSORPERIOD
     
     for idx, team in enumerate(teams):
-        
+
         if np.all(atEndPoint[team-1]):         
             
             currentLocations = []

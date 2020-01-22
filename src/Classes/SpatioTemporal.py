@@ -44,6 +44,7 @@ class SpatioTemporal(Kern):
         # TODO: Problem when inferring because X and X2 have completly different shapes.
         #  Maybe look at example from linear with dot product
         #  It seems like X2 is always None unless we infer
+        #  Also need to include norm again
         
         first = self.variance**2*np.exp(-self.b**2*np.dot((x+x2),(x+x2).transpose())-self.a**2*np.dot((t+t2),(t+t2).transpose()))
         second = self.variance**2*np.exp(-self.b**2*np.dot((x-x2),(x-x2).transpose())-self.a**2*np.dot((t-t2),(t-t2).transpose()))
