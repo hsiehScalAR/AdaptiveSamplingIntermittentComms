@@ -4,6 +4,9 @@
 from .kern import Kern
 from ...core.parameterization import Param
 from paramz.transformations import Logexp
+from ...util.linalg import tdot
+from ... import util
+
 import numpy as np
 
 class SpatioTemporal(Kern):
@@ -15,7 +18,8 @@ class SpatioTemporal(Kern):
     :param variance:
     :type variance: float
     """
-    def __init__(self, input_dim=3, variance=1., a=1., b=1., active_dims=None, name='SpatioTemporal'):
+    # TODO: figure out why it does not update the parameters when I set them to something different than 1 initially
+    def __init__(self, input_dim=3, variance=3., a=4., b=50., active_dims=None, name='SpatioTemporal'):
         assert input_dim==3
         super(SpatioTemporal, self).__init__(input_dim, active_dims, name)
         
@@ -29,80 +33,163 @@ class SpatioTemporal(Kern):
         # nothing todo here
         pass
     
-    def K(self,X,X2):
-        if X2 is None: 
-            print('X2 is None')
-            X2 = X
+    def K(self,X,X2):     
         x = np.array(X[:,0:2]).reshape((-1,2))
-        x2 = np.array(X2[:,0:2]).reshape((-1,2))
         t = np.array(X[:,2]).reshape((-1,1))
-        t2 = np.array(X2[:,2]).reshape((-1,1))
-        
-        # print((x+x2))
-        # print(np.dot(x,x2.T))
-        
-        # TODO: Problem when inferring because X and X2 have completly different shapes.
-        #  Maybe look at example from linear with dot product
-        #  It seems like X2 is always None unless we infer
-        #  Also need to include norm again
-        
-        first = self.variance**2*np.exp(-self.b**2*np.dot((x+x2),(x+x2).transpose())-self.a**2*np.dot((t+t2),(t+t2).transpose()))
-        second = self.variance**2*np.exp(-self.b**2*np.dot((x-x2),(x-x2).transpose())-self.a**2*np.dot((t-t2),(t-t2).transpose()))
-        third = -2*(self.variance**2*np.exp(-self.b**2*np.dot(x,x.transpose())-self.a**2*np.dot(t,t.transpose())) + self.variance**2*np.exp(-self.b**2*np.dot(x2,x2.transpose())-self.a**2*np.dot(t2,t2.transpose()))-self.variance**2)
+        if X2 is None: 
+            x2 = None
+            t2 = None
+        else:
+            x2 = np.array(X2[:,0:2]).reshape((-1,2))
+            t2 = np.array(X2[:,2]).reshape((-1,1))
+
+        xpos = self.distPos(self.b,x,x2)
+        tpos = self.distPos(self.a,t,t2)
+        xneg = self.distNeg(self.b,x,x2)
+        tneg = self.distNeg(self.a,t,t2)
+
+
+
+        first = self.variance**2*np.exp(-xpos**2-tpos**2)
+        second = self.variance**2*np.exp(-xneg**2-tneg**2)
+
+        xx = self.diagNorm(self.b,x)
+        tt = self.diagNorm(self.a,t)
+        if x2 is None:
+            xx2 = np.ones_like(xx)
+            tt2 = np.ones_like(tt)
+        else:
+            xx2 = self.diagNorm(self.b,x2)
+            tt2 = self.diagNorm(self.a,t2)
+
+        third = (-2*(np.dot(self.variance**2*np.exp(-xx**2-tt**2), self.variance**2*np.exp(-xx2**2-tt2**2).T)-self.variance**2))
         
         cov = first + second + third
 
         return cov
 
     def Kdiag(self,X):
+        # ret = np.empty(X.shape[0])
+        # ret[:] = self.variance
+        # return ret
         x = np.array(X[:,0:2]).reshape((-1,2))
-        x2 = x
         t = np.array(X[:,2]).reshape((-1,1))
-        t2 = t
+        x2 = None
+        t2 = None
         
-        first = self.variance**2*np.exp(-self.b**2*np.dot((x+x2),(x+x2).transpose())-self.a**2*np.dot((t+t2),(t+t2).transpose()))
-        second = self.variance**2*np.exp(-self.b**2*np.dot((x-x2),(x-x2).transpose())-self.a**2*np.dot((t-t2),(t-t2).transpose()))
-        third = -2*(self.variance**2*np.exp(-self.b**2*np.dot(x,x.transpose())-self.a**2*np.dot(t,t.transpose())) + self.variance**2*np.exp(-self.b**2*np.dot(x2,x2.transpose())-self.a**2*np.dot(t2,t2.transpose()))-self.variance**2)
+        # xpos = self.distSingle(self.b,x)
+        # tpos = self.distSingle(self.a,t)
+        # xneg = self.distSingle(self.b,x)
+        # tneg = self.distSingle(self.a,t)
         
-        cov = first + second + third
+        xx = self.diagNorm(self.b,x)
+        tt = self.diagNorm(self.a,t)
+        xx2 = self.diagNorm(self.b,x2)
+        tt2 = self.diagNorm(self.a,t2)
+        
+        # first and second are zero on diagonal
+        # first = self.variance**2*np.exp(-xpos**2-tpos**2)
 
-        return np.diag(cov)
-    
+        # second = self.variance**2*np.exp(-xneg**2-tneg**2)
+
+        third = (-2*(self.variance**2*np.exp(-xx**2-tt**2) + self.variance**2*np.exp(-xx2**2-tt2**2)-self.variance**2))
+
+        # cov = first + second + third
+        cov = third
+
+        return np.reshape(cov,(-1))
+
     def update_gradients_full(self, dL_dK, X, X2):
-        if X2 is None: X2 = X
-
         x = np.array(X[:,0:2]).reshape((-1,2))
-        x2 = np.array(X2[:,0:2]).reshape((-1,2))
         t = np.array(X[:,2]).reshape((-1,1))
-        t2 = np.array(X2[:,2]).reshape((-1,1))
+        if X2 is None: 
+            x2 = None
+            t2 = None
+        else:
+            x2 = np.array(X2[:,0:2]).reshape((-1,2))
+            t2 = np.array(X2[:,2]).reshape((-1,1))
 
-        first = np.exp(-self.b**2*np.dot((x+x2),(x+x2).transpose())-self.a**2*np.dot((t+t2),(t+t2).transpose()))
-        second = np.exp(-self.b**2*np.dot((x-x2),(x-x2).transpose())-self.a**2*np.dot((t-t2),(t-t2).transpose()))
-        third1 = np.exp(-self.b**2*np.dot(x,x.transpose())-self.a**2*np.dot(t,t.transpose()))
-        third2 = np.exp(-self.b**2*np.dot(x2,x2.transpose())-self.a**2*np.dot(t2,t2.transpose()))
+        xpos = self.distPos(self.b,x,x2)
+        tpos = self.distPos(self.a,t,t2)
+        xneg = self.distNeg(self.b,x,x2)
+        tneg = self.distNeg(self.a,t,t2)
 
-        dvar = 2*self.variance*(first + second -2*(third1 + third2 - 1)) 
-        da = -2*self.a*self.variance**2*(first + second) +4*self.a*self.variance**2*(third1 + third2) 
-        db = -2*self.b*self.variance**2*(first + second) +4*self.b*self.variance**2*(third1 + third2)
+        xx = self.diagNorm(self.b,x)
+        tt = self.diagNorm(self.a,t)
+        xx2 = self.diagNorm(self.b,x2)
+        tt2 = self.diagNorm(self.a,t2)
+
+        first = np.exp(-xpos**2-tpos**2)
+        second = np.exp(-xneg**2-tneg**2)
+        third1 = np.exp(-xx**2-tt**2)
+        third2 = np.exp(-xx2**2-tt2**2)
+
+        dvar = 2*self.variance*(first + second -2*(np.dot(third1, third2.T) - 1)) 
+        da = -2*self.a*self.variance**2*(first + second) +4*self.a*self.variance**2*np.dot(third1, third2.T) 
+        db = -2*self.b*self.variance**2*(first + second) +4*self.b*self.variance**2*np.dot(third1, third2.T)
         
         self.variance.gradient = np.sum(dvar*dL_dK)
         self.a.gradient = np.sum(da*dL_dK)
         self.b.gradient = np.sum(db*dL_dK)
     
-    # def update_gradients_diag(self, dL_dKdiag, X):
-    #     self.variance.gradient = np.sum(dL_dKdiag)
-    #     # here self.lengthscale and self.power have no influence on Kdiag so target[1:] are unchanged
+    def distNeg(self, lengthscale, X, X2=None):
+        """
+        Compute the Euclidean distance between each row of X and X2, or between
+        each pair of rows of X if X2 is None.
+        """
+        if X2 is None:
+            Xsq = np.sum(np.square(X),1)
+            r2 = -2.*tdot(X) + (Xsq[:,None] + Xsq[None,:])
+            util.diag.view(r2)[:,]= 0. # force diagnoal to be zero: sometime numerically a little negative
+            # r2 = np.clip(r2, 0, np.inf)
+            return np.sqrt(r2)/lengthscale
+        else:
+            X1sq = np.sum(np.square(X),1)
+            X2sq = np.sum(np.square(X2),1)
+            r2 = -2.*np.dot(X, X2.T) + (X1sq[:,None] + X2sq[None,:])
+            # r2 = np.clip(r2, 0, np.inf)
+            return np.sqrt(r2)/lengthscale
+
+    def distPos(self, lengthscale, X, X2=None):
+        """
+        Compute the Euclidean distance between each row of X and X2, or between
+        each pair of rows of X if X2 is None.
+        """
+        if X2 is None:
+            Xsq = np.sum(np.square(X),1)
+            r2 = +2.*tdot(X) + (Xsq[:,None] + Xsq[None,:])
+            util.diag.view(r2)[:,]= 0. # force diagnoal to be zero: sometime numerically a little negative
+            # r2 = np.clip(r2, 0, np.inf)
+            return np.sqrt(r2)/lengthscale
+        else:
+            X1sq = np.sum(np.square(X),1)
+            X2sq = np.sum(np.square(X2),1)
+            r2 = +2.*np.dot(X, X2.T) + (X1sq[:,None] + X2sq[None,:])
+            # r2 = np.clip(r2, 0, np.inf)
+            return np.sqrt(r2)/lengthscale
     
-    # def gradients_X(self,dL_dK,X,X2):
-    #     """derivative of the covariance matrix with respect to X."""
-    #     if X2 is None: X2 = X
-    #     dist2 = np.square((X-X2.T)/self.lengthscale)
-    
-    #     dX = -self.variance*self.power * (X-X2.T)/self.lengthscale**2 *  (1 + dist2/2./self.lengthscale)**(-self.power-1)
-    #     return np.sum(dL_dK*dX,1)[:,None]
-    
-    # def gradients_X_diag(self,dL_dKdiag,X):
-    #     # no diagonal gradients
-    #     pass
+    def distSingle(self, lengthscale, X):
+        """
+        Compute the Euclidean distance between each row of X and X2, or between
+        each pair of rows of X if X2 is None.
+        """
+        if X is None:
+            return np.array([0])
+        # r2 = np.sum(np.square(X))
+        r2 = np.matmul(X,X.T)
+        # r2 = np.clip(r2, 0, np.inf)
+        return np.sqrt(r2)/lengthscale
+
+    def diagNorm(self, lengthscale, X):
+        """
+        Compute the Euclidean distance between each row of X and X2, or between
+        each pair of rows of X if X2 is None.
+        """
+        if X is None:
+            return 0
+        r2 = np.sum(np.square(X),1)
+        # r2 = np.clip(r2, 0, np.inf)
+        return np.reshape(np.sqrt(r2)/lengthscale,(-1,1))
+
 
 

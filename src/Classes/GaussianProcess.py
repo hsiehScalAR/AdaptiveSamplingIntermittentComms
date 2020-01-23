@@ -55,23 +55,12 @@ class GaussianProcess:
 
         if spatiotemporal:
             
-            # self.kernel = GPy.kern.SpatioTemporal()
-            # self.specialKernel = True
+            self.kernel = GPy.kern.SpatioTemporal()
+            self.specialKernel = True
             
-            # TODO: would need to write own stationary file with an rbf kernel that does additive distance
-            # self.specialKernel = True
-            # self.kernel = ((GPy.kern.RBF(input_dim=2, variance=spatialVariance, lengthscale=spatialLengthScale, active_dims=[0,1],ARD=spatialARD)
-            #                 *GPy.kern.RBF(input_dim=1, variance=tempVariance, lengthscale=tempLengthScale, active_dims=[2], ARD=tempARD))
-            #                 + (GPy.kern.RBF(input_dim=2, variance=spatialVariance, lengthscale=spatialLengthScale, active_dims=[0,1],ARD=spatialARD)
-            #                 *GPy.kern.RBF(input_dim=1, variance=tempVariance, lengthscale=tempLengthScale, active_dims=[2], ARD=tempARD))
-            #                 *(GPy.kern.RBF(input_dim=2, variance=spatialVariance, lengthscale=spatialLengthScale, active_dims=[0,1],ARD=spatialARD)
-            #                 *GPy.kern.RBF(input_dim=1, variance=tempVariance, lengthscale=tempLengthScale, active_dims=[2], ARD=tempARD))
-            #                 + (GPy.kern.RBF(input_dim=2, variance=spatialVariance, lengthscale=spatialLengthScale, active_dims=[0,1],ARD=spatialARD)
-            #                 *GPy.kern.RBF(input_dim=1, variance=tempVariance, lengthscale=tempLengthScale, active_dims=[2], ARD=tempARD)))
-
-            self.kernel = (GPy.kern.RBF(input_dim=2, variance=spatialVariance, lengthscale=spatialLengthScale, active_dims=[0,1],ARD=spatialARD) 
-                           * GPy.kern.RBF(input_dim=1, variance=tempVariance, lengthscale=tempLengthScale, active_dims=[2], ARD=tempARD))
-            self.specialKernel = False
+            # self.kernel = (GPy.kern.RBF(input_dim=2, variance=spatialVariance, lengthscale=spatialLengthScale, active_dims=[0,1],ARD=spatialARD) 
+            #                * GPy.kern.RBF(input_dim=1, variance=tempVariance, lengthscale=tempLengthScale, active_dims=[2], ARD=tempARD))
+            # self.specialKernel = False
 
         else:
             self.kernel = GPy.kern.RBF(input_dim=2, variance=spatialVariance, lengthscale=spatialLengthScale,ARD=spatialARD)
@@ -94,8 +83,8 @@ class GaussianProcess:
             x = x.reshape(-1,2)
     
         self.model = GPy.models.GPRegression(x,y, self.kernel)     # Works good
-
-        self.model.constrain_bounded(0.5,300)
+        
+        self.model.constrain_bounded(0.005,300)
         self.model.Gaussian_noise.variance.unconstrain()
 
         if self.spatiotemporal and not self.specialKernel:             
@@ -180,7 +169,7 @@ class GaussianProcess:
 
         if robot.ID >= 0:
             fig, ax = plt.subplots(1,3,figsize=(18, 6))
-            fig.subplots_adjust(left=0.02, bottom=0.06, right=0.8, top=0.94, wspace=0.12,hspace=0.1)
+            # fig.subplots_adjust(left=0.02, bottom=0.06, right=0.8, top=0.94, wspace=0.12,hspace=0.1)
             if time == None:
                 dispTime = robot.currentTime
             else:
@@ -190,10 +179,14 @@ class GaussianProcess:
             fig.suptitle(title)
 
             ax[0].set_title('Expected Measurement')  
-            im = ax[0].imshow(robot.expectedMeasurement, origin='lower', vmin=-1, vmax=15*scaling)
+            # im = ax[0].imshow(robot.expectedMeasurement, origin='lower', vmin=-1, vmax=15*scaling)
+            im = ax[0].imshow(robot.expectedMeasurement, origin='lower')
+            fig.colorbar(im, ax=ax[0])
 
             ax[1].set_title('Expected Variance')  
-            im = ax[1].imshow(robot.expectedVariance, origin='lower', vmin=-1, vmax=15*scaling)        
+            # im = ax[1].imshow(robot.expectedVariance, origin='lower', vmin=-1, vmax=15*scaling)        
+            im = ax[1].imshow(robot.expectedVariance, origin='lower') 
+            fig.colorbar(im, ax=ax[1])
 
             ax[2].set_title('GroundTruth') 
 
@@ -201,11 +194,12 @@ class GaussianProcess:
             ax[2].plot(y,x, '-', label='Robot %d'%robot.ID)
             ax[2].legend()
 
-            im = ax[2].imshow(robot.mappingGroundTruth, origin='lower', vmin=-1, vmax=15*scaling)
-
-            cbar_ax = fig.add_axes([0.83, 0.1, 0.01, 0.8])
-            fig.colorbar(im, cax=cbar_ax)
-            im.set_clim(-1, 15*scaling)
+            # im = ax[2].imshow(robot.mappingGroundTruth, origin='lower', vmin=-1, vmax=15*scaling)
+            im = ax[2].imshow(robot.mappingGroundTruth, origin='lower')
+            fig.colorbar(im, ax=ax[2])
+            # cbar_ax = fig.add_axes([0.83, 0.1, 0.01, 0.8])
+            # fig.colorbar(im, cax=cbar_ax)
+            # im.set_clim(-1, 15*scaling)
             fig.savefig(PATH + title + '.png')
             
             plt.close(fig)
