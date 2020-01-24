@@ -18,14 +18,13 @@ class SpatioTemporal(Kern):
     :param variance:
     :type variance: float
     """
-    # TODO: figure out why it does not update the parameters when I set them to something different than 1 initially
-    def __init__(self, input_dim=3, variance=3., a=4., b=50., active_dims=None, name='SpatioTemporal'):
+    def __init__(self, input_dim=3, variance=3., a=50., b=10., active_dims=None, name='SpatioTemporal'):
         assert input_dim==3
         super(SpatioTemporal, self).__init__(input_dim, active_dims, name)
         
         self.variance = Param('variance', variance, Logexp())
-        self.a = Param('a', a, Logexp())
-        self.b = Param('b', b, Logexp())
+        self.a = Param('timescale', a)
+        self.b = Param('lengthscale', b)
         
         self.link_parameters(self.variance, self.a, self.b)
         
@@ -48,8 +47,6 @@ class SpatioTemporal(Kern):
         xneg = self.distNeg(self.b,x,x2)
         tneg = self.distNeg(self.a,t,t2)
 
-
-
         first = self.variance**2*np.exp(-xpos**2-tpos**2)
         second = self.variance**2*np.exp(-xneg**2-tneg**2)
 
@@ -69,32 +66,18 @@ class SpatioTemporal(Kern):
         return cov
 
     def Kdiag(self,X):
-        # ret = np.empty(X.shape[0])
-        # ret[:] = self.variance
-        # return ret
         x = np.array(X[:,0:2]).reshape((-1,2))
         t = np.array(X[:,2]).reshape((-1,1))
         x2 = None
         t2 = None
         
-        # xpos = self.distSingle(self.b,x)
-        # tpos = self.distSingle(self.a,t)
-        # xneg = self.distSingle(self.b,x)
-        # tneg = self.distSingle(self.a,t)
-        
         xx = self.diagNorm(self.b,x)
         tt = self.diagNorm(self.a,t)
         xx2 = self.diagNorm(self.b,x2)
         tt2 = self.diagNorm(self.a,t2)
-        
-        # first and second are zero on diagonal
-        # first = self.variance**2*np.exp(-xpos**2-tpos**2)
-
-        # second = self.variance**2*np.exp(-xneg**2-tneg**2)
 
         third = (-2*(self.variance**2*np.exp(-xx**2-tt**2) + self.variance**2*np.exp(-xx2**2-tt2**2)-self.variance**2))
 
-        # cov = first + second + third
         cov = third
 
         return np.reshape(cov,(-1))
@@ -125,12 +108,13 @@ class SpatioTemporal(Kern):
         third2 = np.exp(-xx2**2-tt2**2)
 
         dvar = 2*self.variance*(first + second -2*(np.dot(third1, third2.T) - 1)) 
-        da = -2*self.a*self.variance**2*(first + second) +4*self.a*self.variance**2*np.dot(third1, third2.T) 
-        db = -2*self.b*self.variance**2*(first + second) +4*self.b*self.variance**2*np.dot(third1, third2.T)
-        
+        da = -2*self.a*self.variance**2*(tpos**2*first + tneg**2*second) +4*self.a*self.variance**2*np.dot(tt*third1, tt2*third2.T) 
+        db = -2*self.b*self.variance**2*(xpos**2*first + xneg**2*second) +4*self.b*self.variance**2*np.dot(xx*third1, xx2*third2.T)
+
+        # TODO: Not sure if the negative sign shoud be there for the gradients of a and b but seems to work better
         self.variance.gradient = np.sum(dvar*dL_dK)
-        self.a.gradient = np.sum(da*dL_dK)
-        self.b.gradient = np.sum(db*dL_dK)
+        self.a.gradient = -np.sum(da*dL_dK)
+        self.b.gradient = -np.sum(db*dL_dK)
     
     def distNeg(self, lengthscale, X, X2=None):
         """
@@ -167,18 +151,6 @@ class SpatioTemporal(Kern):
             r2 = +2.*np.dot(X, X2.T) + (X1sq[:,None] + X2sq[None,:])
             # r2 = np.clip(r2, 0, np.inf)
             return np.sqrt(r2)/lengthscale
-    
-    def distSingle(self, lengthscale, X):
-        """
-        Compute the Euclidean distance between each row of X and X2, or between
-        each pair of rows of X if X2 is None.
-        """
-        if X is None:
-            return np.array([0])
-        # r2 = np.sum(np.square(X))
-        r2 = np.matmul(X,X.T)
-        # r2 = np.clip(r2, 0, np.inf)
-        return np.sqrt(r2)/lengthscale
 
     def diagNorm(self, lengthscale, X):
         """

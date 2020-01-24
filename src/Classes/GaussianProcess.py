@@ -90,6 +90,8 @@ class GaussianProcess:
         if self.spatiotemporal and not self.specialKernel:             
             self.model.mul.rbf_1.lengthscale.unconstrain()
             print(self.model[''])
+        elif self.specialKernel:
+            self.model.SpatioTemporal.timescale.unconstrain()
 
         self.model.optimize(optimizer='lbfgsb',messages=False,max_f_eval = ITERATIONS,ipython_notebook=False)    # Works good
 
