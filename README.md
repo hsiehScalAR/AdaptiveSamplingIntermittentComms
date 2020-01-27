@@ -5,6 +5,7 @@ This repo contains the code for my master thesis about adaptive sampling with in
 ## Environment Setup
 
 First you need to install a couple libraries to be able to execute the code. The code is written in python version 3.7.1 under Ubuntu 18.04.
+
 Setup instructions are executed using the command line so you will need to work with the terminal and you need sudo access. In order to generate the double gyre snapshot matlab is also required, but the data is already in the `src/Data` folder
 
 ### Project source code
@@ -15,6 +16,7 @@ First, clone the repository using the following command:
 ### Install python
 
 `sudo apt-get update`
+
 `sudo apt-get install python3.7`
 
 ### Install libraries
@@ -74,13 +76,16 @@ The project uses numpy, matplotlib, skimage, scipy, networkx and GPy.
 # Important Note:
 
 The path variables need to be adjusted in order for the program to execute correctly!
-Path variables in files: 
-`TestIntermittent.py`
-`Setup.py`
-`GaussianProcess.py`
-`ErrorAnalysis.py`
+Path variables in files:
 
-Also important, the file `SpatioTemporal.py` needs to be copied in the location of the kernels of the GPy package, in my case it was: `/home/hannes/anaconda3/lib/python3.7/site-packages/GPy/kern/src`
+`TestIntermittent.py`  
+`Setup.py`  
+`GaussianProcess.py`  
+`ErrorAnalysis.py`  
+
+Also important, the file `SpatioTemporal.py` needs to be copied in the location of the kernels of the GPy package, in my case it was: 
+
+`/home/hannes/anaconda3/lib/python3.7/site-packages/GPy/kern/src`
 
 ## Support
 
