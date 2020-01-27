@@ -125,13 +125,13 @@ class SpatioTemporal(Kern):
             Xsq = np.sum(np.square(X),1)
             r2 = -2.*tdot(X) + (Xsq[:,None] + Xsq[None,:])
             util.diag.view(r2)[:,]= 0. # force diagnoal to be zero: sometime numerically a little negative
-            # r2 = np.clip(r2, 0, np.inf)
+            r2 = np.clip(r2, 0, np.inf)
             return np.sqrt(r2)/lengthscale
         else:
             X1sq = np.sum(np.square(X),1)
             X2sq = np.sum(np.square(X2),1)
             r2 = -2.*np.dot(X, X2.T) + (X1sq[:,None] + X2sq[None,:])
-            # r2 = np.clip(r2, 0, np.inf)
+            r2 = np.clip(r2, 0, np.inf)
             return np.sqrt(r2)/lengthscale
 
     def distPos(self, lengthscale, X, X2=None):
@@ -143,13 +143,13 @@ class SpatioTemporal(Kern):
             Xsq = np.sum(np.square(X),1)
             r2 = +2.*tdot(X) + (Xsq[:,None] + Xsq[None,:])
             util.diag.view(r2)[:,]= 0. # force diagnoal to be zero: sometime numerically a little negative
-            # r2 = np.clip(r2, 0, np.inf)
+            r2 = np.clip(r2, 0, np.inf)
             return np.sqrt(r2)/lengthscale
         else:
             X1sq = np.sum(np.square(X),1)
             X2sq = np.sum(np.square(X2),1)
             r2 = +2.*np.dot(X, X2.T) + (X1sq[:,None] + X2sq[None,:])
-            # r2 = np.clip(r2, 0, np.inf)
+            r2 = np.clip(r2, 0, np.inf)
             return np.sqrt(r2)/lengthscale
 
     def diagNorm(self, lengthscale, X):
@@ -160,7 +160,7 @@ class SpatioTemporal(Kern):
         if X is None:
             return 0
         r2 = np.sum(np.square(X),1)
-        # r2 = np.clip(r2, 0, np.inf)
+        r2 = np.clip(r2, 0, np.inf)
         return np.reshape(np.sqrt(r2)/lengthscale,(-1,1))
 
 

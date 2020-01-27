@@ -29,7 +29,7 @@ class GaussianProcess:
 
         self.spatiotemporal = spatiotemporal
         self.logFile = logFile
-        self.filterThreshold = 0.05 # was 0.05
+        self.filterThreshold = 0.2 # was 0.05
         self.timeFilter = 40 # was 50
 
         spatialLengthScale = 20.
