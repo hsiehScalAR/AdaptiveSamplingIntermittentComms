@@ -17,13 +17,14 @@ class Robot:
     
     objs = []  # Registrar keeps all attributes of class
 
-    def __init__(self, ID, teams, schedule, discretization, uMax, sensorPeriod, optPath, optPoint, spatiotemporal, logFile):
+    def __init__(self, ID, teams, schedule, discretization, uMax, sensorPeriod, optPath, optPoint, spatiotemporal, specialKernel, logFile):
         """Initializer of robot class"""
         # Input arguments:
         # ID = robot number
         # teams = to which team each robot belongs
         # schedule = schedule of teams
         # discretization = grid space 
+        # the rest are global variables from TestIntermittent
         
         self.ID = ID
         self.teams = teams
@@ -83,15 +84,21 @@ class Robot:
         self.endNodeCounter = 0
         self.endLocation = np.array([0, 0])
         
-        self.GP = GaussianProcess(spatiotemporal,logFile)
+        self.GP = GaussianProcess(spatiotemporal, specialKernel, logFile)
         Robot.objs.append(self)
         Robot.discretization = discretization
         
     def composeGraphs(self):
+        """Adds the graphs of different epoch together"""
+        # No input arguments
+
         self.totalGraph = nx.compose(self.totalGraph,self.graph)
         self.totalPath = nx.compose(self.totalPath,self.path)
     
     def initializeGraph(self):
+        """Initializer for nx graphs"""
+        # No input arguments
+        
         self.graph = nx.DiGraph()
     
     def addNode(self, firstTime = False):
@@ -109,6 +116,7 @@ class Robot:
         """creates a measurement map in the grid space without time reference"""
         # Input arguments:
         # newData = new measurement for single robot
+        # newDataTime = time of new measurement for single robot
         # currentLocations = sensing location of single robot
         
         x = np.int(self.currentLocation[0])

@@ -10,7 +10,12 @@ Created on Wed Nov 20 10:21:38 2019
 import numpy as np
 import scipy.io as sio
 
-def setupMatlabFileMeasurementData(discetization, invert=True):
+def setupMatlabFileMeasurementData(discretization, invert=True):
+    """Gets data from an FTLE file"""
+    # Input arguments:
+    # discretization = space dimensions
+    # invert = invert the data values
+
     mat = sio.loadmat('Data/FTLEDoubleGyre.mat')
     data = mat['FTLE']
     if invert:
@@ -19,6 +24,11 @@ def setupMatlabFileMeasurementData(discetization, invert=True):
         return data + 1
     
 def loadMeshFiles(sensorPeriod, correctTimeSteps = False):
+    """Gets data from the mesh files"""
+    # Input arguments:
+    # sensorPeriod = sampling time to match data
+    # correctTimeSteps = if we should use sampling time to get data or just avery frame
+
     pathname_mesh = 'Data/meshfiles/600x600_mesh.mat'
     pathname_node = 'Data/meshfiles/600x600_node_soln_fine.mat'
     pathname_times = 'Data/meshfiles/600x600_node_soln_fine_times.mat'
@@ -86,8 +96,8 @@ def loadMeshFiles(sensorPeriod, correctTimeSteps = False):
     return measurementGroundTruthList, maxTime
     
 def getSetup(case):
-    """returns the setup for the robot teams based on the case"""
-    #Input arguments
+    """Returns the setup for the robot teams based on the case"""
+    #Input arguments:
     # case = which case we are treating
     
     #robot i belongs to team j

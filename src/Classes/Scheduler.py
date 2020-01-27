@@ -24,7 +24,8 @@ class Schedule:
 
     def createTeams(self):
         """Create teams based on number of robots and number of teams"""
-        
+        # No input arguments
+
         T = [[] for x in range(self.numTeams)]
 
         for i in range(0, self.numTeams):
@@ -34,6 +35,7 @@ class Schedule:
 
     def createSchedule(self):
         """Create schedule based on team compositions"""
+        # No input arguments
         
         T = self.createTeams()
         schedule = np.zeros((self.numRobots, self.numTeams))

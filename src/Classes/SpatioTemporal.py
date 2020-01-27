@@ -1,5 +1,13 @@
-# Copyright (c) 2012, GPy authors (see AUTHORS.txt).
-# Licensed under the BSD 3-clause license (see LICENSE.txt)
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jan 13 10:11:34 2020
+
+@author: hannes
+"""
+
+# TODO: Needs to be placed in the right location, in my case: 
+# /home/hannes/anaconda3/lib/python3.7/site-packages/GPy/kern/src
 
 from .kern import Kern
 from ...core.parameterization import Param
@@ -17,22 +25,33 @@ class SpatioTemporal(Kern):
     :type input_dim: int
     :param variance:
     :type variance: float
+    :param a: timescale
+    :type variance: float
+    :param b: lengthscale
+    :type variance: float
     """
-    def __init__(self, input_dim=3, variance=3., a=50., b=10., active_dims=None, name='SpatioTemporal'):
+    def __init__(self, input_dim=3, variance=3., a=100., b=10., active_dims=None, name='SpatioTemporal'):
+        """Initialize class and set parameters"""
         assert input_dim==3
         super(SpatioTemporal, self).__init__(input_dim, active_dims, name)
         
         self.variance = Param('variance', variance, Logexp())
-        self.a = Param('timescale', a)
+        self.a = Param('lengthscale', a) # is the timescale
         self.b = Param('lengthscale', b)
         
         self.link_parameters(self.variance, self.a, self.b)
         
     def parameters_changed(self):
+        """Callback function is a parameter gets changed, generates error in deepcopy if there is something"""
         # nothing todo here
         pass
     
-    def K(self,X,X2):     
+    def K(self,X,X2):
+        """Calculats kernel"""
+        # Input arguments:
+        # X = measurement data
+        # X2 = inference points
+             
         x = np.array(X[:,0:2]).reshape((-1,2))
         t = np.array(X[:,2]).reshape((-1,1))
         if X2 is None: 
@@ -66,6 +85,10 @@ class SpatioTemporal(Kern):
         return cov
 
     def Kdiag(self,X):
+        """Calculats kernel diagonal"""
+        # Input arguments:
+        # X = measurement data
+
         x = np.array(X[:,0:2]).reshape((-1,2))
         t = np.array(X[:,2]).reshape((-1,1))
         x2 = None
@@ -83,6 +106,12 @@ class SpatioTemporal(Kern):
         return np.reshape(cov,(-1))
 
     def update_gradients_full(self, dL_dK, X, X2):
+        """Calculats gradient of the parameters"""
+        # Input arguments:
+        # dL_dK = gradient of kernel to log marginal likelyhood
+        # X = measurement data
+        # X2 = inference points
+
         x = np.array(X[:,0:2]).reshape((-1,2))
         t = np.array(X[:,2]).reshape((-1,1))
         if X2 is None: 
@@ -121,6 +150,11 @@ class SpatioTemporal(Kern):
         Compute the Euclidean distance between each row of X and X2, or between
         each pair of rows of X if X2 is None.
         """
+        # Input arguments:
+        # lengthscale = lengthscale of parameter to scale data
+        # X = measurement data
+        # X2 = inference points
+
         if X2 is None:
             Xsq = np.sum(np.square(X),1)
             r2 = -2.*tdot(X) + (Xsq[:,None] + Xsq[None,:])
@@ -136,9 +170,14 @@ class SpatioTemporal(Kern):
 
     def distPos(self, lengthscale, X, X2=None):
         """
-        Compute the Euclidean distance between each row of X and X2, or between
+        Compute the added distance between each row of X and X2, or between
         each pair of rows of X if X2 is None.
         """
+        # Input arguments:
+        # lengthscale = lengthscale of parameter to scale data
+        # X = measurement data
+        # X2 = inference points
+
         if X2 is None:
             Xsq = np.sum(np.square(X),1)
             r2 = +2.*tdot(X) + (Xsq[:,None] + Xsq[None,:])
@@ -154,9 +193,12 @@ class SpatioTemporal(Kern):
 
     def diagNorm(self, lengthscale, X):
         """
-        Compute the Euclidean distance between each row of X and X2, or between
-        each pair of rows of X if X2 is None.
+        Compute the squared matrix diagonal
         """
+        # Input arguments:
+        # lengthscale = lengthscale of parameter to scale data
+        # X = measurement data
+        
         if X is None:
             return 0
         r2 = np.sum(np.square(X),1)

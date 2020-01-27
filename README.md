@@ -19,13 +19,13 @@ First, clone the repository using the following command:
 
 ### Install libraries
 
-The project uses numpy, matplotlib and networkx.
+The project uses numpy, matplotlib, skimage, scipy, networkx and GPy.
 
-#### Numpy, scipy and matplotlib
+#### Numpy, scipy, skimage and matplotlib
 
 `sudo apt-get install python-pip`
 
-`python -m pip install --user numpy scipy matplotlib`
+`python -m pip install --user numpy scipy skimage matplotlib`
 
 #### Networkx
 
@@ -47,11 +47,14 @@ The project uses numpy, matplotlib and networkx.
      * `Robot.py`: Contains the robot class with all its attributes
      * `Schedule.py`: Creates the schedule and teams
      * `GaussianProcess.py`: Creates the Gaussian Process for each robot
+     * `SpatioTemporal.py`: Creates the custom kernel for the GP's
 
    * Utilities/:
      * `ControllerUtilities.py`: Contains functions used in the main control loop update()
      * `PathPlanningUtilities.py`: Contains all the functions for the updatePath() function
      * `VisualizationUtilities.py`: Plotting functions for various data formats
+     * `LogUtilities.py`: Writes results to logfile
+     * `ErrorAnalysis.py`: Script to be executed to analyses the errors 
 
    * Data/:
      * `FTLEDoubleGyre.jpg`: FTLE image used for the measurements
@@ -59,6 +62,7 @@ The project uses numpy, matplotlib and networkx.
      * meshfiles/:
        * `600x600_mesh.mat`: Defines the mesh locations
        * `600x600_node_soln_fine.mat`: Gives the measurements of solvant for each mesh node defined in `600x600_mesh.mat`
+       * `600x600_node_soln_fine_times.mat`: Gives the measurement times of solvant for each mesh node defined in `600x600_mesh.mat`
  
  * matlab/:
    * `double_gyre_func.m`: Velocity function of the double gyre
@@ -67,6 +71,16 @@ The project uses numpy, matplotlib and networkx.
    * `FTLE_computation.m`: Computes the FTLE of the double gyre, outputs the data required for the `Setup.py` file
    * `time_dep_double_gyre.m`: Time dependent double gyre
    
+# Important Note:
+
+The path variables need to be adjusted in order for the program to execute correctly!
+Path variables in files: 
+`TestIntermittent.py`
+`Setup.py`
+`GaussianProcess.py`
+`ErrorAnalysis.py`
+
+Also important, the file `SpatioTemporal.py` needs to be copied in the location of the kernels of the GPy package, in my case it was: `/home/hannes/anaconda3/lib/python3.7/site-packages/GPy/kern/src`
 
 ## Support
 

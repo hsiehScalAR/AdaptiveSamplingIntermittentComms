@@ -11,7 +11,7 @@ import numpy as np
 
 def checkMeetingLocation(positions, commRadius):
     """check if the robots are at the same location since robots from different teams could be waiting to communicate"""
-    # Input arguments
+    # Input arguments:
     # positions = current positions of the robots
     # commRadius = communication radius of robots
     
@@ -24,8 +24,9 @@ def checkMeetingLocation(positions, commRadius):
 
 def communicateToTeam(robots, GP=True):
     """communicate sensor measurements between robots of same team at meeting location"""
-    # Input arguments
+    # Input arguments:
     # robots = robots of same team
+    # GP = bool if we are using GP's
     
     mapping = np.zeros([robots[0].discretization[0],robots[0].discretization[0],2])
     
@@ -48,13 +49,13 @@ def communicateToTeam(robots, GP=True):
                 robots[r].expectedVariance = robots[0].expectedVariance
 
 def moveAlongPath(robot, deltaT):
-    # TODO: Add different motion model
-    
     """move the robot along the planned path and take measurements on the way"""
-    # Input arguments
+    # Input arguments:
     # robot = which robot we are moving
     # deltaT = sensor time step so that we move and take a measurement at each deltaT
     
+    # TODO: Add different motion model
+
     robot.currentTime += deltaT
     
     if robot.pathCounter >= len(robot.paths[robot.scheduleCounter]) or robot.atEndLocation:
@@ -87,10 +88,9 @@ def moveAlongPath(robot, deltaT):
     
 def measurement(robot):
     """Simulates a measurement for a single robot at one time instance"""
-    # Input arguments
+    # Input arguments:
     # robot = robot with currentlocation and ground truth measurement map
     
-#    singleMeasurement = np.random.uniform(0,1)
     x = np.int(robot.currentLocation[0])
     y = np.int(robot.currentLocation[1])
 
@@ -121,14 +121,3 @@ def measurement(robot):
     newData = newData + sigma*np.random.randn() + mean
         
     return newData, robot.currentTime
-
-#def measurement(numRobots, sensorPeriod): 
-#    #TODO check how we measure stuff, if single value since each robot measure one place or measurement over time for all robots
-#    """Simulates a measurement for all robots over time and for a single robot at one time instance"""
-#    # Input Arguments
-#    # numRobots = how many robots
-#    # sensorPeriod = period of sensing in ms
-#    
-#    allMeasurementsOverTime = np.random.uniform(0,1,(numRobots, sensorPeriod))
-#    singleMeasurement = np.random.uniform(0,1)
-#    return allMeasurementsOverTime, singleMeasurement

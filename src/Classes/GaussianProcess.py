@@ -21,13 +21,15 @@ ITERATIONS = 1000
 PATH = 'Results/Tmp/'
 
 class GaussianProcess:
-    def __init__(self, spatiotemporal,logFile):
+    def __init__(self, spatiotemporal, specialKernel,logFile):
         """Initialize kernel for the GPs"""
         # Input arguments:
         # spatiotemporal = bool if using time dependent kernel
+        # specialKernel = bool if own kernel should be used
         # logFile = logFile class which allows to write to file
 
         self.spatiotemporal = spatiotemporal
+        self.specialKernel = specialKernel
         self.logFile = logFile
         self.filterThreshold = 0.2 # was 0.05
         self.timeFilter = 40 # was 50
@@ -55,12 +57,11 @@ class GaussianProcess:
 
         if spatiotemporal:
             
-            self.kernel = GPy.kern.SpatioTemporal()
-            self.specialKernel = True
-            
-            # self.kernel = (GPy.kern.RBF(input_dim=2, variance=spatialVariance, lengthscale=spatialLengthScale, active_dims=[0,1],ARD=spatialARD) 
-            #                * GPy.kern.RBF(input_dim=1, variance=tempVariance, lengthscale=tempLengthScale, active_dims=[2], ARD=tempARD))
-            # self.specialKernel = False
+            if self.specialKernel:
+                self.kernel = GPy.kern.SpatioTemporal()
+            else:
+                self.kernel = (GPy.kern.RBF(input_dim=2, variance=spatialVariance, lengthscale=spatialLengthScale, active_dims=[0,1],ARD=spatialARD) 
+                            * GPy.kern.RBF(input_dim=1, variance=tempVariance, lengthscale=tempLengthScale, active_dims=[2], ARD=tempARD))
 
         else:
             self.kernel = GPy.kern.RBF(input_dim=2, variance=spatialVariance, lengthscale=spatialLengthScale,ARD=spatialARD)
@@ -84,14 +85,14 @@ class GaussianProcess:
     
         self.model = GPy.models.GPRegression(x,y, self.kernel)     # Works good
         
-        self.model.constrain_bounded(0.005,300)
+        self.model.constrain_bounded(0.005,300) # was 0.5 to 300 
         self.model.Gaussian_noise.variance.unconstrain()
 
         if self.spatiotemporal and not self.specialKernel:             
             self.model.mul.rbf_1.lengthscale.unconstrain()
             print(self.model[''])
-        elif self.specialKernel:
-            self.model.SpatioTemporal.timescale.unconstrain()
+        # elif self.specialKernel:
+        #     self.model.SpatioTemporal.lengthscale.unconstrain()
 
         self.model.optimize(optimizer='lbfgsb',messages=False,max_f_eval = ITERATIONS,ipython_notebook=False)    # Works good
 
@@ -135,6 +136,7 @@ class GaussianProcess:
         # Input arguments:
         # robot = robot whose GP should calculate estimate
         # pos = if single position, else whole grid is calculated
+        # time = if we do it for specific future inference time
         
         if isinstance(pos,np.ndarray):
             if self.spatiotemporal:
@@ -169,60 +171,85 @@ class GaussianProcess:
         
         dissimilarity = self.errorCalculation(robot)
 
-        if robot.ID >= 0:
-            fig, ax = plt.subplots(1,3,figsize=(18, 6))
-            # fig.subplots_adjust(left=0.02, bottom=0.06, right=0.8, top=0.94, wspace=0.12,hspace=0.1)
-            if time == None:
-                dispTime = robot.currentTime
-            else:
-                dispTime = time
+        if self.specialKernel:
+            if robot.ID >= 0:
+                fig, ax = plt.subplots(1,3,figsize=(18, 6))
+                if time == None:
+                    dispTime = robot.currentTime
+                else:
+                    dispTime = time
 
-            title = 'Robot %d, Time %.1f, Dissimilarity: %.2f' %(robot.ID,dispTime,dissimilarity)
-            fig.suptitle(title)
+                title = 'Robot %d, Time %.1f, Dissimilarity: %.2f' %(robot.ID,dispTime,dissimilarity)
+                fig.suptitle(title)
 
-            ax[0].set_title('Expected Measurement')  
-            # im = ax[0].imshow(robot.expectedMeasurement, origin='lower', vmin=-1, vmax=15*scaling)
-            im = ax[0].imshow(robot.expectedMeasurement, origin='lower')
-            fig.colorbar(im, ax=ax[0])
+                ax[0].set_title('Expected Measurement')  
+                im = ax[0].imshow(robot.expectedMeasurement, origin='lower')
+                fig.colorbar(im, ax=ax[0])
 
-            ax[1].set_title('Expected Variance')  
-            # im = ax[1].imshow(robot.expectedVariance, origin='lower', vmin=-1, vmax=15*scaling)        
-            im = ax[1].imshow(robot.expectedVariance, origin='lower') 
-            fig.colorbar(im, ax=ax[1])
+                ax[1].set_title('Expected Variance')       
+                im = ax[1].imshow(robot.expectedVariance, origin='lower') 
+                fig.colorbar(im, ax=ax[1])
 
-            ax[2].set_title('GroundTruth') 
+                ax[2].set_title('GroundTruth') 
 
-            x,y = zip(*robot.trajectory)
-            ax[2].plot(y,x, '-', label='Robot %d'%robot.ID)
-            ax[2].legend()
+                x,y = zip(*robot.trajectory)
+                ax[2].plot(y,x, '-', label='Robot %d'%robot.ID)
+                ax[2].legend()
 
-            # im = ax[2].imshow(robot.mappingGroundTruth, origin='lower', vmin=-1, vmax=15*scaling)
-            im = ax[2].imshow(robot.mappingGroundTruth, origin='lower')
-            fig.colorbar(im, ax=ax[2])
-            # cbar_ax = fig.add_axes([0.83, 0.1, 0.01, 0.8])
-            # fig.colorbar(im, cax=cbar_ax)
-            # im.set_clim(-1, 15*scaling)
-            fig.savefig(PATH + title + '.png')
+                im = ax[2].imshow(robot.mappingGroundTruth, origin='lower')
+                fig.colorbar(im, ax=ax[2])
+
+                fig.savefig(PATH + title + '.png')
+                
+                plt.close(fig)
+        else:
+            if robot.ID >= 0:
+                fig, ax = plt.subplots(1,3,figsize=(18, 6))
+                fig.subplots_adjust(left=0.02, bottom=0.06, right=0.8, top=0.94, wspace=0.12,hspace=0.1)
+                if time == None:
+                    dispTime = robot.currentTime
+                else:
+                    dispTime = time
+
+                title = 'Robot %d, Time %.1f, Dissimilarity: %.2f' %(robot.ID,dispTime,dissimilarity)
+                fig.suptitle(title)
+
+                ax[0].set_title('Expected Measurement')  
+                im = ax[0].imshow(robot.expectedMeasurement, origin='lower', vmin=-1, vmax=15*scaling)
+
+                ax[1].set_title('Expected Variance')  
+                im = ax[1].imshow(robot.expectedVariance, origin='lower', vmin=-1, vmax=15*scaling)        
+
+                ax[2].set_title('GroundTruth') 
+
+                x,y = zip(*robot.trajectory)
+                ax[2].plot(y,x, '-', label='Robot %d'%robot.ID)
+                ax[2].legend()
+
+                im = ax[2].imshow(robot.mappingGroundTruth, origin='lower', vmin=-1, vmax=15*scaling)
+                cbar_ax = fig.add_axes([0.83, 0.1, 0.01, 0.8])
+                fig.colorbar(im, cax=cbar_ax)
+                im.set_clim(-1, 15*scaling)
+                fig.savefig(PATH + title + '.png')
+                
+                plt.close(fig)
             
-            plt.close(fig)
 
     def plotGP(self, robot, time=None):
         """Plotting model of the GP"""
         # Input arguments:
         # robot = robot whose GP is to be plotted
+        # time = if we do it for specific future inference time
 
-        # self.inferGP(robot)
         self.inferGP(robot, time=time)
         print(self.model[''])
-        # self.model.plot(title='Robot %d, End' %(robot.ID))
-
-        # slices = [100, 200, 300, 400, 500]
-        # figure = GPy.plotting.plotting_library().figure(len(slices), 1)
-        # for i, y in zip(range(len(slices)), slices):
-        #     self.model.plot(figure=figure, fixed_inputs=[(0,y)], row=(i+1), plot_data=False)
 
     def errorCalculation(self, robot):
-
+        """Error calculation of modelling, computes different errors and writes to file"""
+        # Input arguments:
+        # robots = instance of the robots
+        # logFile = where to save the output
+        
         #TODO: use nrmse next time or fnorm
 
         rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())

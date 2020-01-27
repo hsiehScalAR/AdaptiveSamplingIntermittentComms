@@ -13,15 +13,14 @@ import os
 from skimage.measure import compare_ssim as ssim
 from scipy.spatial import procrustes
 
-
 #Personal imports
 from Classes.Scheduler import Schedule
 from Classes.Robot import Robot
-from Setup import getSetup, setupMatlabFileMeasurementData, loadMeshFiles
+from Setup import getSetup, loadMeshFiles
 
 from Utilities.ControllerUtilities import moveAlongPath, communicateToTeam, checkMeetingLocation, measurement
 from Utilities.VisualizationUtilities import (plotMeasurement, plotMeetingGraphs, plotMeetingPaths, 
-                                              clearPlots, plotTrajectory, plotTrajectoryAnimation,
+                                              plotTrajectory, plotTrajectoryAnimation,
                                               plotTrajectoryOverlayGroundTruth, plotDye)
 from Utilities.PathPlanningUtilities import (sampleVrand, findNearestNode, steer, buildSetVnear, 
                                              extendGraph, rewireGraph, calculateGoalSet, 
@@ -51,6 +50,7 @@ def main():
                 'OPTPATH        ': OPTPATH,
                 'OPTPOINT       ': OPTPOINT,
                 'SPATIOTEMPORAL ': SPATIOTEMPORAL,
+                'SPECIALKERNEL  ': SPECIALKERNEL,
                 'STATIONARY     ': STATIONARY,
                 'STATIONARYTIME ': STATIONARYTIME,
                 'PREDICTIVETIME ': PREDICTIVETIME,
@@ -79,9 +79,6 @@ def main():
 
     if STATIONARY:
         measurementGroundTruth = measurementGroundTruthList[np.int(STATIONARYTIME/SENSORPERIOD)]
-        # measurementGroundTruth = measurementGroundTruthList[np.random.randint(1,len(measurementGroundTruthList))]
-        #TODO: remove next line
-        # measurementGroundTruth = setupMatlabFileMeasurementData(DISCRETIZATION, invert=True)
     else:
         measurementGroundTruth = measurementGroundTruthList[0]
 
@@ -116,12 +113,6 @@ def main():
         if GAUSSIAN:
             robots[r].GP.initializeGP(robots[r])
     print('Environment Initialized\n')
-    # plotMeasurement(robots[0].mappingGroundTruth,'initialGroundTruth')
-    # print(ssim(robots[0].mappingGroundTruth,robots[0].expectedMeasurement, gaussian_weights=True))
-    # print(ssim(robots[0].mappingGroundTruth,robots[0].mappingGroundTruth, gaussian_weights=True))
-
-    # print(np.sqrt(np.square(robots[0].mappingGroundTruth - robots[0].expectedMeasurement).mean()))
-    # print(np.sqrt(np.square(robots[0].mappingGroundTruth - robots[0].mappingGroundTruth).mean()))
 
     print('Initializing Paths')
     for period in range(0,schedule.shape[1]):
@@ -213,8 +204,6 @@ def main():
         errorCalculation(robots, logFile)
     
     print('Plotting Finished\n')
-
-    
 
 def update(currentTime, robots, teams, commPeriod):
     """Update procedure of intermittent communication"""
@@ -378,6 +367,7 @@ def initializeRobots(numRobots, teams, schedule, logFile):
     # numRobots = how many robots
     # teams = team assignments
     # schedule = schedule for meeting events
+    # logFile = where to save the output
 
     robots = []
     for r in range(0, numRobots):
@@ -385,7 +375,7 @@ def initializeRobots(numRobots, teams, schedule, logFile):
         for t in range(0,len(teams)):    
             if r+1 in teams[t]:
                 belongsToTeam.append(t)
-        rob = Robot(r, np.asarray(belongsToTeam), schedule[r], DISCRETIZATION, UMAX, SENSORPERIOD, OPTPATH, OPTPOINT, SPATIOTEMPORAL, logFile)
+        rob = Robot(r, np.asarray(belongsToTeam), schedule[r], DISCRETIZATION, UMAX, SENSORPERIOD, OPTPATH, OPTPOINT, SPATIOTEMPORAL, SPECIALKERNEL, logFile)
         robots.append(rob)
     
     #Print test information
@@ -458,6 +448,10 @@ def randomStartingPositions(numRobots):
     return locations.astype(int)
 
 def errorCalculation(robots,logFile):
+    """Error calculation of modelling, computes different errors and writes to file"""
+    # Input arguments:
+    # robots = instance of the robots
+    # logFile = where to save the output
 
     #TODO: use nrmse next time or fnorm
     for robot in robots:
@@ -474,16 +468,16 @@ def errorCalculation(robots,logFile):
         similarity = ssim(robot.mappingGroundTruth,robot.expectedMeasurement, gaussian_weights=False)
         logFile.writeError(robot.ID,similarity,robot.currentTime, 'SSIM', endTime=True)
 
-        mat1,mat2,procru = procrustes(robot.mappingGroundTruth,robot.expectedMeasurement)
+        _, _, procru = procrustes(robot.mappingGroundTruth,robot.expectedMeasurement)
         logFile.writeError(robot.ID,procru,robot.currentTime, 'Dissim')
 
 if __name__ == "__main__":
     """Entry in Test Program"""
     
     """Setup"""
-    np.random.seed(1994)
+    # np.random.seed(1994)
     
-    TOTALTIME = 50 #total execution time of program
+    TOTALTIME = 100 #total execution time of program
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 4 robots 4 teams)
     CORRECTTIMESTEP = False #If dye time steps should be matched to correct time steps or if each time step in dye corresponds to time step here
     
@@ -493,7 +487,8 @@ if __name__ == "__main__":
     OPTPATH = GAUSSIAN == True #if path optimization should be used, can not be true if optpoint is used
     OPTPOINT = GAUSSIAN != OPTPATH == True #if point optimization should be used, can not be true if optpath is used
     
-    SPATIOTEMPORAL = True
+    SPATIOTEMPORAL = True # if spatiotemporal data or not
+    SPECIALKERNEL = True == SPATIOTEMPORAL # if own kernel should be used, only works if spatiotemporal 
     STATIONARY = not SPATIOTEMPORAL #if we are using time varying measurement data or not
     STATIONARYTIME = 5 #which starting time to use for the measurement data, if not STATIONARY, 0 is used for default
     PREDICTIVETIME = None #Time for which to make a prediction at the end, has to be bigger than total time

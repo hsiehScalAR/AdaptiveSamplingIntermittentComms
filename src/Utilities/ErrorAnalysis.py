@@ -12,8 +12,12 @@ import matplotlib.pyplot as plt
 import os
 
 def readAllFiles(path):
+    """Function which opens every subdir and reads the logFiles"""
+    # Input arguments:
+    # path = path to main parent directory
+
     data = []
-    for dirpath, dirnames, files in os.walk(path):
+    for dirpath, _, files in os.walk(path):
         for file_name in files:
             if file_name == 'logFile.txt':
                 with open(dirpath + '/' + file_name, "r+") as logFileData:
@@ -44,6 +48,13 @@ def readAllFiles(path):
     return data
 
 def plotError(data, metric, saveLoc, testrun=None):
+    """Plots the error in a lineplot"""
+    # Input arguments:
+    # data = error data which is to be analysed
+    # metric = which error metric is being used 
+    # saveLoc = where to save the image
+    # testrun = which test run to plot or if None all testruns
+
     if metric == 'RMSE':
         idx = 0
         bottom = 0
@@ -73,12 +84,17 @@ def plotError(data, metric, saveLoc, testrun=None):
             error, t = zip(*data[i][idx])
             plt.plot(t,error, '-', label=metric + '_run_%d' %i)
         plt.ylim([bottom, top])
-        # plt.legend()
         plt.savefig(saveLoc + metric + '_All_' + CASE + '.png' )
         plt.close()
 
 def statistics(totalData, saveLoc, stp):
-    fig, ax = plt.subplots()
+    """Plots the error in a combined box plot"""
+    # Input arguments:
+    # totalData = error data which is to be analysed
+    # saveLoc = where to save the image
+    # stp = stationary or spatiotemporal case
+
+    _, ax = plt.subplots()
 
     if stp == 0:
         name = 'Stationary Results (n=10)'
@@ -108,14 +124,13 @@ def statistics(totalData, saveLoc, stp):
 
 
 if __name__ == "__main__":
+    """Entry in Error Analysis Program"""
+
     basePath = '/home/hannes/MasterThesisCode/AdaptiveSamplingIntermittentComms/src/Results/Tests/IntermediateResults/'
     saveLoc = '/home/hannes/MasterThesisCode/AdaptiveSamplingIntermittentComms/src/Results/Tests/IntermediateResults/Figures/'
     CASE = ['Intermittent','Full']
 
-    SETUP = ['Spatial','SpatioTemporal']
-    # CASE = 'Intermittent'
-    # CASE = 'Full'
-    
+    SETUP = ['Spatial','SpatioTemporal']    
     
     for stp, _ in enumerate(SETUP):
         totalData = []

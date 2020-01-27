@@ -15,6 +15,11 @@ import datetime
 class LogFile:
 
     def __init__(self, name, path):
+        """Initialises parameters of logfile"""
+        # Input arguments:
+        # name = name of the logfile
+        # path = location of logfile
+
         self.name = path + name + '.txt'
         self.createLogFile(name, path)
         self.firstTimeParam = 0
@@ -22,13 +27,21 @@ class LogFile:
         self.firstTimeEnd = True
 
     def createLogFile(self, name, path):
-
+        """Creates logfile"""
+        # Input arguments:
+        # name = name of the logfile
+        # path = location of logfile
+        
         with open(self.name, 'w') as writer:
             writer.write('# This is a LogFile for TestIntermittent.py\n\n')
             writer.write('Hannes Rovina\n')
             writer.write(str(datetime.datetime.now()) + '\n')
 
     def writeParameters(self, **parameters):
+        """Writes parameters to logfile"""
+        # Input arguments:
+        # parameters = dict of parameters which have to be written to logfile
+
         if self.firstTimeParam < 2:
             with open(self.name,'a') as writer:
                 if self.firstTimeParam == 0:
@@ -40,6 +53,13 @@ class LogFile:
                 self.firstTimeParam += 1
 
     def writeError(self, robotID, error, time, errorName, endTime=False):
+        """Writes the errors to the logfile"""
+        # Input arguments:
+        # robotID = which robot 
+        # error = modelling error
+        # time = time of error
+        # errorName = name of the error
+        # endTime = bool if we are at end of execution
 
         with open(self.name,'a') as writer:
             if self.firstTimeInter:
