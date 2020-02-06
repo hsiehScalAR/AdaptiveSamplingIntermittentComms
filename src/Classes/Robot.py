@@ -12,6 +12,7 @@ import networkx as nx
 
 #Personal imports
 from Classes.GaussianProcess import GaussianProcess
+from Classes.ReducedOrderModel import ReducedOrderModel
 
 class Robot:
     
@@ -84,7 +85,8 @@ class Robot:
         self.endNodeCounter = 0
         self.endLocation = np.array([0, 0])
         
-        self.GP = GaussianProcess(spatiotemporal, specialKernel, logFile)
+        # self.model = GaussianProcess(spatiotemporal, specialKernel, logFile)
+        self.model = ReducedOrderModel(spatiotemporal, specialKernel, logFile)
         Robot.objs.append(self)
         Robot.discretization = discretization
         

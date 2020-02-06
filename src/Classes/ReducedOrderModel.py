@@ -1,26 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed Dec  4 11:22:42 2019
+Created on Thu Feb 6 09:53:55 2020
 
 @author: hannes
 """
 
 #General imports
 import numpy as np
-import GPy
 import matplotlib.pyplot as plt
-from scipy.stats import multivariate_normal
+
 from skimage.measure import compare_ssim as ssim
 from scipy.spatial import procrustes
 
 # Personal imports
-from Utilities.VisualizationUtilities import plotMeasurement, plotProcrustes
-                                              
-ITERATIONS = 1000
+# from Utilities.VisualizationUtilities import plotMeasurement, plotProcrustes
+
 PATH = 'Results/Tmp/'
 
-class GaussianProcess:
+class ReducedOrderModel:
     def __init__(self, spatiotemporal, specialKernel,logFile):
         """Initialize kernel for the GPs"""
         # Input arguments:
@@ -55,46 +53,30 @@ class GaussianProcess:
                     }
         self.logFile.writeParameters(**parameters)
 
-        if spatiotemporal:
-            
-            if self.specialKernel:
-                self.kernel = GPy.kern.SpatioTemporal()
-            else:
-                self.kernel = (GPy.kern.RBF(input_dim=2, variance=spatialVariance, lengthscale=spatialLengthScale, active_dims=[0,1],ARD=spatialARD) 
-                            * GPy.kern.RBF(input_dim=1, variance=tempVariance, lengthscale=tempLengthScale, active_dims=[2], ARD=tempARD))
-
-        else:
-            self.kernel = GPy.kern.RBF(input_dim=2, variance=spatialVariance, lengthscale=spatialLengthScale,ARD=spatialARD)
     
     def initialize(self, robot):
         """Initialize model for the GPs"""
         # Input arguments:
         # robot = robot whose GP is to be initialized
         
-        r,c = np.where(robot.mapping[:,:,0] != 0)
+        y = np.where(robot.mapping[:,:,0] != 0,robot.mapping[:,:,0],0)
         
-        y = robot.mapping[r,c,0]
-        y = y.reshape(-1,1)
-        if self.spatiotemporal:
-            t = robot.mapping[r,c,1]
-            x = np.dstack((r,c,t))
-            x = x.reshape(-1,3)
-        else:
-            x = np.dstack((r,c))
-            x = x.reshape(-1,2)
-    
-        self.model = GPy.models.GPRegression(x,y, self.kernel)     # Works good
+        # y = robot.mapping[r,c,0]
+        # y = y.reshape(-1,1)
+        # if self.spatiotemporal:
+        #     t = robot.mapping[r,c,1]
+        #     x = np.dstack((r,c,t))
+        #     x = x.reshape(-1,3)
+        # else:
+        #     x = np.dstack((r,c))
+        #     x = x.reshape(-1,2)
+
         
-        self.model.constrain_bounded(0.005,300) # was 0.5 to 300 
-        self.model.Gaussian_noise.variance.unconstrain()
-
-        if self.spatiotemporal and not self.specialKernel:             
-            self.model.mul.rbf_1.lengthscale.unconstrain()
-            print(self.model[''])
-        # elif self.specialKernel:
-        #     self.model.SpatioTemporal.lengthscale.unconstrain()
-
-        self.model.optimize(optimizer='lbfgsb',messages=False,max_f_eval = ITERATIONS,ipython_notebook=False)    # Works good
+        # TODO: Make first basis calculation and maybe give set of regions
+        
+        # y = y.reshape((-1,1))
+        print(y.shape)
+        self.calculateBasis(y)
 
         
     def update(self, robot):
@@ -102,33 +84,36 @@ class GaussianProcess:
         # Input arguments:
         # robot = robot whose GP is to be updated
         
-        print('Updating GP for robot %d' %robot.ID)
+        print('Updating POD for robot %d' %robot.ID)
         print('Time: %.1f' %robot.currentTime)
         if self.spatiotemporal:
             if self.timeFilter != None:
-                r,c = np.where((robot.mapping[:,:,0] > self.filterThreshold) & (robot.mapping[:,:,1] > (robot.currentTime-self.timeFilter))) # was 0.05
+                y = np.where((robot.mapping[:,:,0] > self.filterThreshold) & (robot.mapping[:,:,1] > (robot.currentTime-self.timeFilter)),robot.mapping[:,:,0],0) # was 0.05
         else:
-            r,c = np.where(robot.mapping[:,:,0] > self.filterThreshold) # was 0.05
+            y = np.where(robot.mapping[:,:,0] > self.filterThreshold,robot.mapping[:,:,0],0) # was 0.05
         
-        y = robot.mapping[r,c,0]
-        y = y.reshape(-1,1)
+        # y = robot.mapping[r,c,0]
+        # y = y.reshape(-1,1)
 
-        if self.spatiotemporal:
-            t = robot.mapping[r,c,1]
-            x = np.dstack((r,c,t))
-            x = x.reshape(-1,3)
-        else:
-            x = np.dstack((r,c))
-            x = x.reshape(-1,2)
+        # if self.spatiotemporal:
+        #     t = robot.mapping[r,c,1]
+        #     x = np.dstack((r,c,t))
+        #     x = x.reshape(-1,3)
+        # else:
+        #     x = np.dstack((r,c))
+        #     x = x.reshape(-1,2)
 
         print(y.shape)
         if y.shape[0] == 0:
             return
 
-        self.model.set_XY(x,y)
-        
-        self.model.optimize(optimizer='lbfgsb',messages=False,max_f_eval = ITERATIONS,ipython_notebook=False)    # Works good
-        print('GP Updated\n')
+
+        # TODO: Make new basis calculation and maybe give set of regions     
+        self.calculateBasis(y)
+
+        # self.model.set_XY(x,y)
+        # self.model.optimize(optimizer='lbfgsb',messages=False,max_f_eval = ITERATIONS,ipython_notebook=False)    # Works good
+        print('POD Updated\n')
 
         
     def infer(self, robot, pos=None, time=None):
@@ -139,29 +124,38 @@ class GaussianProcess:
         # time = if we do it for specific future inference time
         
         if isinstance(pos,np.ndarray):
-            if self.spatiotemporal:
-                z = np.dstack((pos[0], pos[1], robot.currentTime))
-                z = z.reshape(-1,3)
-            else:
-                z = np.dstack((pos[0], pos[1]))
-                z = z.reshape(-1,2)
-            ym, ys = self.model.predict(z)
-            return ym, ys
+            # if self.spatiotemporal:
+            #     z = np.dstack((pos[0], pos[1], robot.currentTime))
+            #     z = z.reshape(-1,3)
+            # else:
+
+            z = np.dstack((pos[0], pos[1]))
+            z = z.reshape(-1,2)
+            
+            # TODO: Calculate mean and if possible expected variance
+            ym = self.phiReduced @ self.timeDepCoeff
+            ys = np.zeros_like(ym)
+            # ym, ys = self.model.predict(z)
+            return ym[pos], ys[pos]
         else:
-            X, Y = np.mgrid[0:robot.discretization[0]:1, 0:robot.discretization[1]:1]
-            if self.spatiotemporal:
-                if time == None:
-                    T = np.ones(len(np.ravel(X)))*robot.currentTime
-                else:
-                    T = np.ones(len(np.ravel(X)))*time
-                z = np.dstack((np.ravel(X),np.ravel(Y),np.ravel(T)))
-                z = z.reshape(-1,3)
-            else:
-                z = np.dstack((np.ravel(X),np.ravel(Y)))
-                z = z.reshape(-1,2)
+            # X, Y = np.mgrid[0:robot.discretization[0]:1, 0:robot.discretization[1]:1]
+            # if self.spatiotemporal:
+            #     if time == None:
+            #         T = np.ones(len(np.ravel(X)))*robot.currentTime
+            #     else:
+            #         T = np.ones(len(np.ravel(X)))*time
+            #     z = np.dstack((np.ravel(X),np.ravel(Y),np.ravel(T)))
+            #     z = z.reshape(-1,3)
+            # else:
+            #     z = np.dstack((np.ravel(X),np.ravel(Y)))
+            #     z = z.reshape(-1,2)
+            ym = self.phiReduced @ self.timeDepCoeff
+            ys = np.zeros_like(ym)
                 
         print('Inferring GP')
-        ym, ys = self.model.predict(z)
+        # TODO: Calculate mean and if possible expected variance
+        
+        # ym, ys = self.model.predict(z)
 
         robot.expectedMeasurement = ym.reshape(robot.discretization)
 
@@ -242,7 +236,6 @@ class GaussianProcess:
         # time = if we do it for specific future inference time
 
         self.infer(robot, time=time)
-        print(self.model[''])
 
     def errorCalculation(self, robot):
         """Error calculation of modelling, computes different errors and writes to file"""
@@ -270,7 +263,61 @@ class GaussianProcess:
 
         # plotProcrustes(robot, mat1,mat2)
         return procru
-       
+
+    def calculateCovariance(self, measurements):
+        X = measurements
+        self.covariance = X @ X.T
+
+    def createReducedBasis(self, eigVectors, eigValues):
         
+        cumSum = 0
+        totalSum = sum(eigValues).real
+        numBase = 0 
+
+        for i in range(0, len(eigValues)):
+            cumSum += eigValues[i].real
+            percentage_energy = cumSum/totalSum
+
+            if percentage_energy < 0.99:
+                numBase = i
+            else:
+                numBase = i
+                break
+
+        phi = eigVectors[:, 0:numBase+1]
+
+        return phi.real
+    
+    
+    def calculateTimeDepCoeff(self, y):
         
+        a = self.phiReduced.T @ self.phiReduced
+        b = self.phiReduced.T @ y
+
+        self.timeDepCoeff = np.linalg.inv(a) @ b
+
+
+    def calculateBasis(self, measurements):
         
+        self.calculateCovariance(measurements)
+
+        eigValues, eigVectors = np.linalg.eig(self.covariance)
+
+        eigVectors = eigVectors.real
+        eigValues = eigValues.real
+        I = np.argsort(eigValues)[::-1]
+
+        eigValues = eigValues[I]
+        eigVectors = eigVectors[:,I]
+
+        self.phiReduced = self.createReducedBasis(eigVectors, eigValues)
+        self.calculateTimeDepCoeff(measurements)
+
+    def copy(self):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        result.__dict__.update(self.__dict__)
+        return result
+
+
+    

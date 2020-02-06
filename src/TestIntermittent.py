@@ -29,8 +29,11 @@ from Utilities.PathPlanningUtilities import (sampleVrand, findNearestNode, steer
 from Utilities.LogUtilities import LogFile
 
 def main():
-    """main test loop"""
-    # no inputs 
+    """
+    Main test loop
+    
+    No inputs 
+    """
     
     """Remove Tmp results file"""  
     for filename in os.listdir(FOLDER):
@@ -107,11 +110,11 @@ def main():
         robots[r].sensingRange = SENSINGRANGE
         robots[r].mappingGroundTruth = measurementGroundTruth
         
-        """Initialize GPs"""
+        """Initialize models"""
         meas, measTime = measurement(robots[r])
         robots[r].createMap(meas, measTime, robots[r].currentLocation)
         if GAUSSIAN:
-            robots[r].GP.initializeGP(robots[r])
+            robots[r].model.initialize(robots[r])
     print('Environment Initialized\n')
 
     print('Initializing Paths')
@@ -189,8 +192,8 @@ def main():
         plotTrajectoryOverlayGroundTruth(robots,0)
 
         for r in range(0,numRobots):
-            robots[r].GP.updateGP(robots[r])
-            robots[r].GP.plotGP(robots[r])
+            robots[r].model.update(robots[r])
+            robots[r].model.plot(robots[r])
             if PREDICTIVETIME != None:
                 
                 if PREDICTIVETIME >= maxTime:
@@ -199,20 +202,23 @@ def main():
                     predictiveTime = np.int(PREDICTIVETIME/SENSORPERIOD)
                 robots[r].currentTime = predictiveTime*SENSORPERIOD
                 robots[r].mappingGroundTruth = measurementGroundTruthList[predictiveTime]
-                robots[r].GP.plotGP(robots[r], robots[r].currentTime)
+                robots[r].model.plot(robots[r], robots[r].currentTime)
         
         errorCalculation(robots, logFile)
     
     print('Plotting Finished\n')
 
 def update(currentTime, robots, teams, commPeriod):
-    """Update procedure of intermittent communication"""
-    # Input arguments:
-    # currentTime = current time of the execution
-    # robots = instances of the robots that are to be moved
-    # teams = teams of the robots
-    # commPeriod = how many schedules there are
-    
+    """
+    Update procedure of intermittent communication
+
+    Input arguments:
+    currentTime = current time of the execution
+    robots = instances of the robots that are to be moved
+    teams = teams of the robots
+    commPeriod = how many schedules there are
+    """
+
     atEndPoint = np.zeros(len(robots))
     
     for i, rob in enumerate(robots):
@@ -255,10 +261,13 @@ def update(currentTime, robots, teams, commPeriod):
     return round(currentTime,1)
 
 def updatePaths(robots):
-    """Update procedure of intermittent communication"""
-    # Input arguments:
-    # robots = instances of the robots that are to be moved
-    
+    """
+    Update procedure of intermittent communication
+
+    Input arguments:
+    robots = instances of the robots that are to be moved
+    """
+
     #add node v0 to list of nodes for each robot       
     for r in range(0, len(robots)):        
         #make last node equal to the first of new period
@@ -294,7 +303,7 @@ def updatePaths(robots):
             for r in range(0, len(robots)):       
                 
                 if distribution == 'uniform':
-                    #looking for either optimal position or path based on GP modeling
+                    #looking for either optimal position or path based on model modeling
                     if OPTPATH:              
                         maxVariance = 0
                         vrand = np.array([0, 0])
@@ -362,13 +371,15 @@ def updatePaths(robots):
     print('Needed %d retry(-ies) for path planning' %(counter-1))
     
 def initializeRobots(numRobots, teams, schedule, logFile):
-    """initialize the robot class"""
-    # Input arguments:
-    # numRobots = how many robots
-    # teams = team assignments
-    # schedule = schedule for meeting events
-    # logFile = where to save the output
-
+    """
+    Initialize the robot class
+    
+    Input arguments:
+    numRobots = how many robots
+    teams = team assignments
+    schedule = schedule for meeting events
+    logFile = where to save the output
+    """
     robots = []
     for r in range(0, numRobots):
         belongsToTeam = []
@@ -392,12 +403,15 @@ def initializeRobots(numRobots, teams, schedule, logFile):
     return robots
 
 def initializeScheduler(numRobots, numTeams, robTeams):
-    """initialize schedule and create teams and schedule"""  
-    # Input arguments:
-    # numRobots = how many robots
-    # numTeams = how many teams
-    # robTeams = which robots are in which teams, comes from initial graph design; robot i belongs to team j in matrix
+    """
+    Initialize schedule and create teams and schedule 
     
+    Input arguments:
+    numRobots = how many robots
+    numTeams = how many teams
+    robTeams = which robots are in which teams, comes from initial graph design; robot i belongs to team j in matrix
+    """
+
     #initializer
     scheduleClass = Schedule(numRobots, numTeams, robTeams)
     
@@ -422,10 +436,13 @@ def initializeScheduler(numRobots, numTeams, robTeams):
     return S, T, communicationPeriod
 
 def randomStartingPositions(numRobots):
-    """Ensures that the starting position are exclusive within communication radius"""
-    # Input arguments:
-    # numRobots = how many robots
+    """
+    Ensures that the starting position are exclusive within communication radius
     
+    Input arguments:
+    numRobots = how many robots
+    """
+
     locations = np.zeros([numRobots, 2])
     pos = np.random.randint(0,2*COMMRANGE, size=2)
     locations[0] = pos
@@ -448,11 +465,14 @@ def randomStartingPositions(numRobots):
     return locations.astype(int)
 
 def errorCalculation(robots,logFile):
-    """Error calculation of modelling, computes different errors and writes to file"""
-    # Input arguments:
-    # robots = instance of the robots
-    # logFile = where to save the output
+    """
+    Error calculation of modelling, computes different errors and writes to file
 
+    Input arguments:
+    robots = instance of the robots
+    logFile = where to save the output
+    """
+    
     #TODO: use nrmse next time or fnorm
     for robot in robots:
         rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())

@@ -38,12 +38,14 @@ def communicateToTeam(robots, GP=True):
         robots[r].mapping = mapping
         
     if GP:
-        robots[0].GP.updateGP(robots[0])
+        robots[0].model.update(robots[0])
         # TODO: maybe always infer so that we have more datapoints for error analysis
         if robots[0].optPath:
-            robots[0].GP.inferGP(robots[0])
+            robots[0].model.infer(robots[0])
         for r in range(1,len(robots)):
-            robots[r].GP.model = robots[0].GP.model.copy()
+            # TODO: Make it work for both at the same time
+            # robots[r].model.model = robots[0].model.model.copy()
+            robots[r].model = robots[0].model.copy()
             if robots[0].optPath:
                 robots[r].expectedMeasurement = robots[0].expectedMeasurement
                 robots[r].expectedVariance = robots[0].expectedVariance
