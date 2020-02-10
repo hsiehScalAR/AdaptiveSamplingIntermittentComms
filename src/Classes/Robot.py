@@ -18,15 +18,17 @@ class Robot:
     
     objs = []  # Registrar keeps all attributes of class
 
-    def __init__(self, ID, teams, schedule, discretization, uMax, sensorPeriod, optPath, optPoint, spatiotemporal, specialKernel, logFile):
-        """Initializer of robot class"""
-        # Input arguments:
-        # ID = robot number
-        # teams = to which team each robot belongs
-        # schedule = schedule of teams
-        # discretization = grid space 
-        # the rest are global variables from TestIntermittent
-        
+    def __init__(self, ID, teams, schedule, discretization, uMax, sensorPeriod, optPath, optPoint, spatiotemporal, specialKernel, pod, logFile):
+        """Initializer of robot class
+
+        Input arguments:
+        ID = robot number
+        teams = to which team each robot belongs
+        schedule = schedule of teams
+        discretization = grid space 
+        the rest are global variables from TestIntermittent
+        """
+
         self.ID = ID
         self.teams = teams
         self.schedule = schedule
@@ -36,6 +38,7 @@ class Robot:
         self.mapping = np.zeros([discretization[0],discretization[1],2])
         self.mappingGroundTruth = np.zeros_like([discretization[0],discretization[1]])
         self.sensingRange = 0
+        self.numbMeasurements = 0
         self.measurementRangeX = np.array([self.sensingRange, self.sensingRange])
         self.measurementRangeY = np.array([self.sensingRange, self.sensingRange])
         self.uMax = uMax
@@ -85,29 +88,38 @@ class Robot:
         self.endNodeCounter = 0
         self.endLocation = np.array([0, 0])
         
-        # self.model = GaussianProcess(spatiotemporal, specialKernel, logFile)
-        self.model = ReducedOrderModel(spatiotemporal, specialKernel, logFile)
+        if pod:
+            self.model = ReducedOrderModel(spatiotemporal, specialKernel, logFile)
+        else:
+            self.model = GaussianProcess(spatiotemporal, specialKernel, logFile)
+        
         Robot.objs.append(self)
         Robot.discretization = discretization
         
     def composeGraphs(self):
-        """Adds the graphs of different epoch together"""
-        # No input arguments
+        """Adds the graphs of different epoch together
+
+        No input arguments
+        """
 
         self.totalGraph = nx.compose(self.totalGraph,self.graph)
         self.totalPath = nx.compose(self.totalPath,self.path)
     
     def initializeGraph(self):
-        """Initializer for nx graphs"""
-        # No input arguments
-        
+        """Initializer for nx graphs
+
+        No input arguments
+        """
+
         self.graph = nx.DiGraph()
     
     def addNode(self, firstTime = False):
-        """Add new node with pos and total time attributes and edge with edge travel time cost to graph based on self variables"""
-        # Input arguments:
-        # FirstTime = bool that decides if we should do an edge or not
-        
+        """Add new node with pos and total time attributes and edge with edge travel time cost to graph based on self variables
+
+        Input arguments:
+        FirstTime = bool that decides if we should do an edge or not
+        """
+
         self.graph.add_node(self.nodeCounter, pos = self.vnew, t = self.totalTime, informationGain = self.vnewInformation)
         self.vnewIdx = self.nodeCounter
         if self.nodeCounter != 0 and firstTime == False:
@@ -115,11 +127,13 @@ class Robot:
         self.nodeCounter += 1
 
     def createMap(self,newData, newDataTime, currentLocations):
-        """creates a measurement map in the grid space without time reference"""
-        # Input arguments:
-        # newData = new measurement for single robot
-        # newDataTime = time of new measurement for single robot
-        # currentLocations = sensing location of single robot
+        """creates a measurement map in the grid space without time reference
+
+        Input arguments:
+        newData = new measurement for single robot
+        newDataTime = time of new measurement for single robot
+        currentLocations = sensing location of single robot
+        """
         
         x = np.int(self.currentLocation[0])
         y = np.int(self.currentLocation[1])

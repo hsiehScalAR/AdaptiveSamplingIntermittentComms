@@ -22,22 +22,34 @@ PATH = 'Results/Tmp/'
 
 class GaussianProcess:
     def __init__(self, spatiotemporal, specialKernel,logFile):
-        """Initialize kernel for the GPs"""
-        # Input arguments:
-        # spatiotemporal = bool if using time dependent kernel
-        # specialKernel = bool if own kernel should be used
-        # logFile = logFile class which allows to write to file
+        """Initialize kernel for the GPs
+
+        Input arguments:
+        spatiotemporal = bool if using time dependent kernel
+        specialKernel = bool if own kernel should be used
+        logFile = logFile class which allows to write to file
+        """
 
         self.spatiotemporal = spatiotemporal
         self.specialKernel = specialKernel
         self.logFile = logFile
-        self.filterThreshold = 0.2 # was 0.05
-        self.timeFilter = 40 # was 50
+        if self.specialKernel:
+            self.filterThreshold = 0.2 # was 0.05
+            self.timeFilter = 40 # was 50
 
-        spatialLengthScale = 20.
-        tempLengthScale = 2.  
-        spatialVariance = 4. 
-        tempVariance = 2.
+            spatialLengthScale = 20.
+            tempLengthScale = 2.  
+            spatialVariance = 4. 
+            tempVariance = 2.
+        else:
+            self.filterThreshold = 0.05 # was 0.05
+            self.timeFilter = 40 # was 50
+
+            spatialLengthScale = 20.
+            tempLengthScale = 2.  
+            spatialVariance = 4. 
+            tempVariance = 2.
+
         spatialARD = True
         tempARD = False
 
@@ -67,10 +79,12 @@ class GaussianProcess:
             self.kernel = GPy.kern.RBF(input_dim=2, variance=spatialVariance, lengthscale=spatialLengthScale,ARD=spatialARD)
     
     def initialize(self, robot):
-        """Initialize model for the GPs"""
-        # Input arguments:
-        # robot = robot whose GP is to be initialized
-        
+        """Initialize model for the GPs
+
+        Input arguments:
+        robot = robot whose GP is to be initialized
+        """
+
         r,c = np.where(robot.mapping[:,:,0] != 0)
         
         y = robot.mapping[r,c,0]
@@ -90,7 +104,7 @@ class GaussianProcess:
 
         if self.spatiotemporal and not self.specialKernel:             
             self.model.mul.rbf_1.lengthscale.unconstrain()
-            print(self.model[''])
+            # print(self.model[''])
         # elif self.specialKernel:
         #     self.model.SpatioTemporal.lengthscale.unconstrain()
 
@@ -98,10 +112,12 @@ class GaussianProcess:
 
         
     def update(self, robot):
-        """Update function for GPs, adds new measurements to model"""
-        # Input arguments:
-        # robot = robot whose GP is to be updated
-        
+        """Update function for GPs, adds new measurements to model
+
+        Input arguments:
+        robot = robot whose GP is to be updated
+        """
+
         print('Updating GP for robot %d' %robot.ID)
         print('Time: %.1f' %robot.currentTime)
         if self.spatiotemporal:
@@ -132,12 +148,14 @@ class GaussianProcess:
 
         
     def infer(self, robot, pos=None, time=None):
-        """Calculates estimated measurement at location"""
-        # Input arguments:
-        # robot = robot whose GP should calculate estimate
-        # pos = if single position, else whole grid is calculated
-        # time = if we do it for specific future inference time
-        
+        """Calculates estimated measurement at location
+
+        Input arguments:
+        robot = robot whose GP should calculate estimate
+        pos = if single position, else whole grid is calculated
+        time = if we do it for specific future inference time
+        """
+
         if isinstance(pos,np.ndarray):
             if self.spatiotemporal:
                 z = np.dstack((pos[0], pos[1], robot.currentTime))
@@ -236,20 +254,24 @@ class GaussianProcess:
             
 
     def plot(self, robot, time=None):
-        """Plotting model of the GP"""
-        # Input arguments:
-        # robot = robot whose GP is to be plotted
-        # time = if we do it for specific future inference time
+        """Plotting model of the GP
+
+        Input arguments:
+        robot = robot whose GP is to be plotted
+        time = if we do it for specific future inference time
+        """
 
         self.infer(robot, time=time)
-        print(self.model[''])
+        # print(self.model[''])
 
     def errorCalculation(self, robot):
-        """Error calculation of modelling, computes different errors and writes to file"""
-        # Input arguments:
-        # robots = instance of the robots
-        # logFile = where to save the output
-        
+        """Error calculation of modelling, computes different errors and writes to file
+
+        Input arguments:
+        robots = instance of the robots
+        logFile = where to save the output
+        """
+
         #TODO: use nrmse next time or fnorm
 
         rmse = np.sqrt(np.square(robot.mappingGroundTruth - robot.expectedMeasurement).mean())

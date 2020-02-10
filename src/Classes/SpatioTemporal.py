@@ -32,6 +32,7 @@ class SpatioTemporal(Kern):
     """
     def __init__(self, input_dim=3, variance=3., a=100., b=10., active_dims=None, name='SpatioTemporal'):
         """Initialize class and set parameters"""
+
         assert input_dim==3
         super(SpatioTemporal, self).__init__(input_dim, active_dims, name)
         
@@ -47,11 +48,13 @@ class SpatioTemporal(Kern):
         pass
     
     def K(self,X,X2):
-        """Calculats kernel"""
-        # Input arguments:
-        # X = measurement data
-        # X2 = inference points
-             
+        """Calculats kernel
+
+        Input arguments:
+        X = measurement data
+        X2 = inference points
+        """
+
         x = np.array(X[:,0:2]).reshape((-1,2))
         t = np.array(X[:,2]).reshape((-1,1))
         if X2 is None: 
@@ -85,9 +88,11 @@ class SpatioTemporal(Kern):
         return cov
 
     def Kdiag(self,X):
-        """Calculats kernel diagonal"""
-        # Input arguments:
-        # X = measurement data
+        """Calculats kernel diagonal
+
+        Input arguments:
+        X = measurement data
+        """
 
         x = np.array(X[:,0:2]).reshape((-1,2))
         t = np.array(X[:,2]).reshape((-1,1))
@@ -106,11 +111,13 @@ class SpatioTemporal(Kern):
         return np.reshape(cov,(-1))
 
     def update_gradients_full(self, dL_dK, X, X2):
-        """Calculats gradient of the parameters"""
-        # Input arguments:
-        # dL_dK = gradient of kernel to log marginal likelyhood
-        # X = measurement data
-        # X2 = inference points
+        """Calculats gradient of the parameters
+
+        Input arguments:
+        dL_dK = gradient of kernel to log marginal likelyhood
+        X = measurement data
+        X2 = inference points
+        """
 
         x = np.array(X[:,0:2]).reshape((-1,2))
         t = np.array(X[:,2]).reshape((-1,1))
@@ -146,14 +153,13 @@ class SpatioTemporal(Kern):
         self.b.gradient = -np.sum(db*dL_dK)
     
     def distNeg(self, lengthscale, X, X2=None):
+        """Compute the Euclidean distance between each row of X and X2, or between each pair of rows of X if X2 is None.
+        
+        Input arguments:
+        lengthscale = lengthscale of parameter to scale data
+        X = measurement data
+        X2 = inference points
         """
-        Compute the Euclidean distance between each row of X and X2, or between
-        each pair of rows of X if X2 is None.
-        """
-        # Input arguments:
-        # lengthscale = lengthscale of parameter to scale data
-        # X = measurement data
-        # X2 = inference points
 
         if X2 is None:
             Xsq = np.sum(np.square(X),1)
@@ -169,14 +175,13 @@ class SpatioTemporal(Kern):
             return np.sqrt(r2)/lengthscale
 
     def distPos(self, lengthscale, X, X2=None):
+        """Compute the added distance between each row of X and X2, or between each pair of rows of X if X2 is None.
+        
+        Input arguments:
+        lengthscale = lengthscale of parameter to scale data
+        X = measurement data
+        X2 = inference points
         """
-        Compute the added distance between each row of X and X2, or between
-        each pair of rows of X if X2 is None.
-        """
-        # Input arguments:
-        # lengthscale = lengthscale of parameter to scale data
-        # X = measurement data
-        # X2 = inference points
 
         if X2 is None:
             Xsq = np.sum(np.square(X),1)
@@ -192,13 +197,13 @@ class SpatioTemporal(Kern):
             return np.sqrt(r2)/lengthscale
 
     def diagNorm(self, lengthscale, X):
-        """
-        Compute the squared matrix diagonal
-        """
-        # Input arguments:
-        # lengthscale = lengthscale of parameter to scale data
-        # X = measurement data
+        """Compute the squared matrix diagonal
         
+        Input arguments:
+        lengthscale = lengthscale of parameter to scale data
+        X = measurement data
+        """
+
         if X is None:
             return 0
         r2 = np.sum(np.square(X),1)

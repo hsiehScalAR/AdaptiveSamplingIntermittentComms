@@ -49,6 +49,7 @@ def main():
                 'TOTALTIME      ': TOTALTIME,
                 'CASE           ': CASE,
                 'CORRECTTIMESTEP': CORRECTTIMESTEP,
+                'POD            ': POD,
                 'GAUSSIAN       ': GAUSSIAN,
                 'OPTPATH        ': OPTPATH,
                 'OPTPOINT       ': OPTPOINT,
@@ -249,7 +250,7 @@ def update(currentTime, robots, teams, commPeriod):
                 robots[r-1].endTotalTime  = currentTime
                 robs.append(robots[r-1])
             
-            communicateToTeam(robs, GAUSSIAN)
+            communicateToTeam(robs, GAUSSIAN, POD)
             
             print('Updating Paths')
             updatePaths(robs)
@@ -386,7 +387,7 @@ def initializeRobots(numRobots, teams, schedule, logFile):
         for t in range(0,len(teams)):    
             if r+1 in teams[t]:
                 belongsToTeam.append(t)
-        rob = Robot(r, np.asarray(belongsToTeam), schedule[r], DISCRETIZATION, UMAX, SENSORPERIOD, OPTPATH, OPTPOINT, SPATIOTEMPORAL, SPECIALKERNEL, logFile)
+        rob = Robot(r, np.asarray(belongsToTeam), schedule[r], DISCRETIZATION, UMAX, SENSORPERIOD, OPTPATH, OPTPOINT, SPATIOTEMPORAL, SPECIALKERNEL, POD, logFile)
         robots.append(rob)
     
     #Print test information
@@ -494,8 +495,9 @@ def errorCalculation(robots,logFile):
 if __name__ == "__main__":
     """Entry in Test Program"""
     
-    """Setup"""
-    # np.random.seed(1994)
+    """Setup Variables"""
+
+    # np.random.seed(1992)
     
     TOTALTIME = 100 #total execution time of program
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 4 robots 4 teams)
@@ -503,17 +505,18 @@ if __name__ == "__main__":
     
     DEBUG = False #debug to true shows prints
     ANIMATION = False #if animation should be done
+    POD = False # if we are using POD or GP
     GAUSSIAN = True #if GP should be calculated
     OPTPATH = GAUSSIAN == True #if path optimization should be used, can not be true if optpoint is used
     OPTPOINT = GAUSSIAN != OPTPATH == True #if point optimization should be used, can not be true if optpath is used
     
     SPATIOTEMPORAL = True # if spatiotemporal data or not
-    SPECIALKERNEL = True == SPATIOTEMPORAL # if own kernel should be used, only works if spatiotemporal 
+    SPECIALKERNEL = False == SPATIOTEMPORAL # if own kernel should be used, only works if spatiotemporal 
     STATIONARY = not SPATIOTEMPORAL #if we are using time varying measurement data or not
     STATIONARYTIME = 5 #which starting time to use for the measurement data, if not STATIONARY, 0 is used for default
     PREDICTIVETIME = None #Time for which to make a prediction at the end, has to be bigger than total time
 
-    SENSINGRANGE = 0 # Sensing range of robots
+    SENSINGRANGE = 0 # Sensing range of robots, 0 for GP and 20 for POD
     COMMRANGE = 3 # communication range for robots
     TIMEINTERVAL = 1 # time interval for communication events
     
@@ -523,7 +526,6 @@ if __name__ == "__main__":
     TOTALSAMPLES = 50 #how many samples in total
 
     SENSORPERIOD = 0.1 #time between sensor measurement or between updates of data
-    EIGENVECPERIOD = 0.04 #time between POD calculations
        
     UMAX = 80 # Max velocity, pixel/second
     EPSILON = DISCRETIZATION[0]/10 # Maximum step size of robots

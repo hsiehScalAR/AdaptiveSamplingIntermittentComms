@@ -17,20 +17,23 @@ from scipy.spatial import procrustes
 # from Utilities.VisualizationUtilities import plotMeasurement, plotProcrustes
 
 PATH = 'Results/Tmp/'
+ENERGY = 0.99
 
 class ReducedOrderModel:
     def __init__(self, spatiotemporal, specialKernel,logFile):
-        """Initialize kernel for the GPs"""
-        # Input arguments:
-        # spatiotemporal = bool if using time dependent kernel
-        # specialKernel = bool if own kernel should be used
-        # logFile = logFile class which allows to write to file
+        """Initialize parameters for the PODs
+        
+        Input arguments:
+        spatiotemporal = bool if using time dependent kernel
+        specialKernel = bool if own kernel should be used
+        logFile = logFile class which allows to write to file
+        """
 
         self.spatiotemporal = spatiotemporal
         self.specialKernel = specialKernel
         self.logFile = logFile
-        self.filterThreshold = 0.2 # was 0.05
-        self.timeFilter = 40 # was 50
+        self.filterThreshold = 0.0 # was 0.05
+        self.timeFilter = 120 # was 50
 
         spatialLengthScale = 20.
         tempLengthScale = 2.  
@@ -55,12 +58,14 @@ class ReducedOrderModel:
 
     
     def initialize(self, robot):
-        """Initialize model for the GPs"""
-        # Input arguments:
-        # robot = robot whose GP is to be initialized
+        """Initialize model for the PODs
         
-        y = np.where(robot.mapping[:,:,0] != 0,robot.mapping[:,:,0],0)
-        
+        Input arguments:
+        robot = robot whose POD is to be initialized
+        """
+
+        # y = np.where(robot.mapping[:,:,0] != 0, robot.mapping[:,:,:],0)
+        y = robot.mapping
         # y = robot.mapping[r,c,0]
         # y = y.reshape(-1,1)
         # if self.spatiotemporal:
@@ -76,21 +81,25 @@ class ReducedOrderModel:
         
         # y = y.reshape((-1,1))
         print(y.shape)
-        self.calculateBasis(y)
+        self.calculateBasis(y, robot.numbMeasurements, robot.sensorPeriod)
 
         
     def update(self, robot):
-        """Update function for GPs, adds new measurements to model"""
-        # Input arguments:
-        # robot = robot whose GP is to be updated
+        """Update function for PODs, adds new measurements to model
+        
+        Input arguments:
+        robot = robot whose POD is to be updated
+        """
         
         print('Updating POD for robot %d' %robot.ID)
         print('Time: %.1f' %robot.currentTime)
         if self.spatiotemporal:
             if self.timeFilter != None:
-                y = np.where((robot.mapping[:,:,0] > self.filterThreshold) & (robot.mapping[:,:,1] > (robot.currentTime-self.timeFilter)),robot.mapping[:,:,0],0) # was 0.05
+                y = robot.mapping
+                # y = np.where((robot.mapping[:,:,0] > self.filterThreshold) & (robot.mapping[:,:,1] > (robot.currentTime-self.timeFilter)),robot.mapping[:,:,:],0) # was 0.05
         else:
-            y = np.where(robot.mapping[:,:,0] > self.filterThreshold,robot.mapping[:,:,0],0) # was 0.05
+            y = robot.mapping
+            # y = np.where(robot.mapping[:,:,0] > self.filterThreshold, robot.mapping[:,:,:],0)
         
         # y = robot.mapping[r,c,0]
         # y = y.reshape(-1,1)
@@ -109,7 +118,7 @@ class ReducedOrderModel:
 
 
         # TODO: Make new basis calculation and maybe give set of regions     
-        self.calculateBasis(y)
+        self.calculateBasis(y, robot.numbMeasurements, robot.sensorPeriod)
 
         # self.model.set_XY(x,y)
         # self.model.optimize(optimizer='lbfgsb',messages=False,max_f_eval = ITERATIONS,ipython_notebook=False)    # Works good
@@ -117,51 +126,37 @@ class ReducedOrderModel:
 
         
     def infer(self, robot, pos=None, time=None):
-        """Calculates estimated measurement at location"""
-        # Input arguments:
-        # robot = robot whose GP should calculate estimate
-        # pos = if single position, else whole grid is calculated
-        # time = if we do it for specific future inference time
+        """Calculates estimated measurement at location
+        
+        Input arguments:
+        robot = robot whose GP should calculate estimate
+        pos = if single position, else whole grid is calculated
+        time = if we do it for specific future inference time
+        """
         
         if isinstance(pos,np.ndarray):
-            # if self.spatiotemporal:
-            #     z = np.dstack((pos[0], pos[1], robot.currentTime))
-            #     z = z.reshape(-1,3)
-            # else:
-
-            z = np.dstack((pos[0], pos[1]))
-            z = z.reshape(-1,2)
             
             # TODO: Calculate mean and if possible expected variance
             ym = self.phiReduced @ self.timeDepCoeff
             ys = np.zeros_like(ym)
-            # ym, ys = self.model.predict(z)
-            return ym[pos], ys[pos]
+
+            return ym[pos,0], ys[pos,1]
         else:
-            # X, Y = np.mgrid[0:robot.discretization[0]:1, 0:robot.discretization[1]:1]
-            # if self.spatiotemporal:
-            #     if time == None:
-            #         T = np.ones(len(np.ravel(X)))*robot.currentTime
-            #     else:
-            #         T = np.ones(len(np.ravel(X)))*time
-            #     z = np.dstack((np.ravel(X),np.ravel(Y),np.ravel(T)))
-            #     z = z.reshape(-1,3)
-            # else:
-            #     z = np.dstack((np.ravel(X),np.ravel(Y)))
-            #     z = z.reshape(-1,2)
             ym = self.phiReduced @ self.timeDepCoeff
+            
             ys = np.zeros_like(ym)
                 
-        print('Inferring GP')
+        print('Inferring POD')
         # TODO: Calculate mean and if possible expected variance
-        
-        # ym, ys = self.model.predict(z)
 
-        robot.expectedMeasurement = ym.reshape(robot.discretization)
+        robot.expectedMeasurement = ym.reshape([600,600,2])[:,:,0]
 
         scaling = 1
-        robot.expectedVariance = ys.reshape(robot.discretization)
-        print('GP inferred\n')
+        robot.expectedVariance = ys.reshape([600,600,2])[:,:,1]
+
+        index = np.where(robot.mapping[:,:,1] != 0, 14 - 14*robot.mapping[:,:,1]/robot.currentTime,14)
+        robot.expectedVariance = index
+        print('POD inferred\n')
         
         dissimilarity = self.errorCalculation(robot)
 
@@ -230,18 +225,22 @@ class ReducedOrderModel:
             
 
     def plot(self, robot, time=None):
-        """Plotting model of the GP"""
-        # Input arguments:
-        # robot = robot whose GP is to be plotted
-        # time = if we do it for specific future inference time
-
+        """Plotting model of the POD
+        
+        Input arguments:
+        robot = robot whose POD is to be plotted
+        time = if we do it for specific future inference time
+        """
+        
         self.infer(robot, time=time)
 
     def errorCalculation(self, robot):
-        """Error calculation of modelling, computes different errors and writes to file"""
-        # Input arguments:
-        # robots = instance of the robots
-        # logFile = where to save the output
+        """Error calculation of POD, computes different errors and writes to file
+        
+        Input arguments:
+        robots = instance of the robots
+        logFile = where to save the output
+        """
         
         #TODO: use nrmse next time or fnorm
 
@@ -258,27 +257,51 @@ class ReducedOrderModel:
         similarity = ssim(robot.mappingGroundTruth,robot.expectedMeasurement, gaussian_weights=False)
         self.logFile.writeError(robot.ID,similarity,robot.currentTime, 'SSIM')
 
+        if np.max(robot.expectedMeasurement) == 0:
+            return 1
+        
         mat1,mat2,procru = procrustes(robot.mappingGroundTruth,robot.expectedMeasurement)
         self.logFile.writeError(robot.ID,procru,robot.currentTime, 'Dissim')
 
         # plotProcrustes(robot, mat1,mat2)
         return procru
 
-    def calculateCovariance(self, measurements):
-        X = measurements
-        self.covariance = X @ X.T
+    def calculateCovariance(self, measurements, numbMeasurements, sensingPeriod):
+        """Calculation of the covariance of the time dependent data
+        
+        Input arguments:
+        measurements = measurement data of robot
+        numbMeasurements = how many measurements have been taken
+        sensingPeriod = interval between measurements
+        """
+
+        sumXXT = np.zeros_like(measurements[:,:,0])
+        tol = 1e-4
+        for t in range(0, numbMeasurements):
+            
+            X = np.where((measurements[:,:,1] > t*sensingPeriod-tol) & (measurements[:,:,1] < t*sensingPeriod+tol), measurements[:,:,0],0)
+            XXT = X @ X.T
+            sumXXT = sumXXT + XXT
+
+        self.covariance = 1/numbMeasurements * sumXXT
 
     def createReducedBasis(self, eigVectors, eigValues):
+        """Calculation of the reduced basis
         
+        Input arguments:
+        eigVectors = sorted eigenvectors
+        eigValues = sorted eigenvalues
+        """
+
         cumSum = 0
         totalSum = sum(eigValues).real
         numBase = 0 
 
         for i in range(0, len(eigValues)):
             cumSum += eigValues[i].real
-            percentage_energy = cumSum/totalSum
+            percentageEnergy = cumSum/totalSum
 
-            if percentage_energy < 0.99:
+            if percentageEnergy < ENERGY:
                 numBase = i
             else:
                 numBase = i
@@ -290,16 +313,28 @@ class ReducedOrderModel:
     
     
     def calculateTimeDepCoeff(self, y):
+        """Calculation of the time dependent coefficients
         
+        Input arguments:
+        y = measurement data of robot
+        """
+
         a = self.phiReduced.T @ self.phiReduced
         b = self.phiReduced.T @ y
 
         self.timeDepCoeff = np.linalg.inv(a) @ b
 
 
-    def calculateBasis(self, measurements):
+    def calculateBasis(self, measurements, numbMeasurements, sensingPeriod):
+        """Calculation of the reduced basis and time dependent coefficients
         
-        self.calculateCovariance(measurements)
+        Input arguments:
+        measurements = measurement data of robot
+        numbMeasurements = how many measurements have been taken
+        sensingPeriod = interval between measurements
+        """
+
+        self.calculateCovariance(measurements, numbMeasurements, sensingPeriod)
 
         eigValues, eigVectors = np.linalg.eig(self.covariance)
 
@@ -314,6 +349,11 @@ class ReducedOrderModel:
         self.calculateTimeDepCoeff(measurements)
 
     def copy(self):
+        """Copy of class
+        
+        No input arguments
+        """
+
         cls = self.__class__
         result = cls.__new__(cls)
         result.__dict__.update(self.__dict__)

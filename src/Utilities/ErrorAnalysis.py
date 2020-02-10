@@ -12,10 +12,12 @@ import matplotlib.pyplot as plt
 import os
 
 def readAllFiles(path):
-    """Function which opens every subdir and reads the logFiles"""
-    # Input arguments:
-    # path = path to main parent directory
+    """Function which opens every subdir and reads the logFiles
 
+    Input arguments:
+    path = path to main parent directory
+    """
+    
     data = []
     for dirpath, _, files in os.walk(path):
         for file_name in files:
@@ -48,12 +50,14 @@ def readAllFiles(path):
     return data
 
 def plotError(data, metric, saveLoc, testrun=None):
-    """Plots the error in a lineplot"""
-    # Input arguments:
-    # data = error data which is to be analysed
-    # metric = which error metric is being used 
-    # saveLoc = where to save the image
-    # testrun = which test run to plot or if None all testruns
+    """Plots the error in a lineplot
+
+    Input arguments:
+    data = error data which is to be analysed
+    metric = which error metric is being used 
+    saveLoc = where to save the image
+    testrun = which test run to plot or if None all testruns
+    """
 
     if metric == 'RMSE':
         idx = 0
@@ -88,11 +92,13 @@ def plotError(data, metric, saveLoc, testrun=None):
         plt.close()
 
 def statistics(totalData, saveLoc, stp):
-    """Plots the error in a combined box plot"""
-    # Input arguments:
-    # totalData = error data which is to be analysed
-    # saveLoc = where to save the image
-    # stp = stationary or spatiotemporal case
+    """Plots the error in a combined box plot
+
+    Input arguments:
+    totalData = error data which is to be analysed
+    saveLoc = where to save the image
+    stp = stationary or spatiotemporal case
+    """
 
     _, ax = plt.subplots()
 

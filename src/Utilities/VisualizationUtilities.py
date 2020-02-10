@@ -18,11 +18,13 @@ from scipy.stats import multivariate_normal
 PATH = 'Results/Tmp/'
 
 def plotTrajectoryAnimation(robots, measurementGroundTruthList):
-    """Make an animation of the robots journee"""
-    # Input arguments:
-    # robots = robots which measured and moved around
-    # measurementGroundTruthList = measurement data which changes over time
+    """Make an animation of the robots journee
 
+    Input arguments:
+    robots = robots which measured and moved around
+    measurementGroundTruthList = measurement data which changes over time
+    """
+    
     fig = plt.figure()
     ax1 = plt.axes(xlim=(0, 600), ylim=(0,600))
     
@@ -59,9 +61,11 @@ def plotTrajectoryAnimation(robots, measurementGroundTruthList):
     ani.save(PATH + 'basic_animation.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
     
 def plotTrajectory(robots):
-    """Plot the trajectories of all robots"""
-    # Input arguments:
-    # robots = robots which measured and moved around
+    """Plot the trajectories of all robots
+
+    Input arguments:
+    robots = robots which measured and moved around
+    """
 
     plt.figure()
     for r in range(0,len(robots)):
@@ -72,10 +76,12 @@ def plotTrajectory(robots):
     plt.close()
 
 def plotMeasurement(data, title):
-    """Plot the measurement data"""
-    # Input arguments:
-    # data = measurement data
-    # title = title of the figure
+    """Plot the measurement data
+
+    Input arguments:
+    data = measurement data
+    title = title of the figure
+    """
 
     _, ax = plt.subplots()
 
@@ -87,13 +93,15 @@ def plotMeasurement(data, title):
     
     
 def plotMeetingGraphs(robots, index, team, subplot=None, length=0):
-    """Plot the trajectories of all robots"""
-    # Input arguments:
-    # robots = robots which measured and moved around
-    # index = which robots should be plotted
-    # team = team of the robots
-    # subplot = if we want to plot all teams
-    # length = how many subplots we need
+    """Plot the trajectories of all robots
+
+    Input arguments:
+    robots = robots which measured and moved around
+    index = which robots should be plotted
+    team = team of the robots
+    subplot = if we want to plot all teams
+    length = how many subplots we need
+    """
 
     #TODO: add savefig in main loop
     if subplot != None:
@@ -116,14 +124,16 @@ def plotMeetingGraphs(robots, index, team, subplot=None, length=0):
     
 
 def plotMeetingPaths(robots, index, team, subplot=None, length=0):
-    """Plot the trajectories of all robots"""
-    # Input arguments:
-    # robots = robots which measured and moved around
-    # index = which robots should be plotted
-    # team = team of the robots
-    # subplot = if we want to plot all teams
-    # length = how many subplots we need
-    
+    """Plot the trajectories of all robots
+
+    Input arguments:
+    robots = robots which measured and moved around
+    index = which robots should be plotted
+    team = team of the robots
+    subplot = if we want to plot all teams
+    length = how many subplots we need
+    """
+
     #TODO: add savefig in main loop
     if subplot != None:
         plt.figure('RRT* Paths')
@@ -145,10 +155,12 @@ def plotMeetingPaths(robots, index, team, subplot=None, length=0):
         
     
 def plotTrajectoryOverlayGroundTruth(robots, index):
-    """Plot the trajectories over the ground truth"""
-    # Input arguments:
-    # robots = robots which measured and moved around
-    # index = which robots ground truth to use
+    """Plot the trajectories over the ground truth
+
+    Input arguments:
+    robots = robots which measured and moved around
+    index = which robots ground truth to use
+    """
 
     fig, ax = plt.subplots()
     meetingList = []
@@ -174,11 +186,13 @@ def plotTrajectoryOverlayGroundTruth(robots, index):
     plt.close(fig)
     
 def plotProcrustes(robot, image1, image2):
-    """Plot the procrustes analysis results"""
-    # Input arguments:
-    # robot = robot instance
-    # image1 = result from procrustes
-    # image2 = result from procrustes
+    """Plot the procrustes analysis results
+
+    Input arguments:
+    robot = robot instance
+    image1 = result from procrustes
+    image2 = result from procrustes
+    """
 
     fig, ax = plt.subplots(1,4,figsize=(18, 6))
 
@@ -205,11 +219,13 @@ def plotProcrustes(robot, image1, image2):
     plt.close(fig)
 
 def plotDye(image1, image2, image3):
-    """Plot the dye at three different time steps"""
-    # Input arguments:
-    # image1 = dye at specific timestep
-    # image2 = dye at specific timestep
-    # image3 = dye at specific timestep
+    """Plot the dye at three different time steps
+
+    Input arguments:
+    image1 = dye at specific timestep
+    image2 = dye at specific timestep
+    image3 = dye at specific timestep
+    """
 
     fig, ax = plt.subplots(1,3,figsize=(18, 6))
 

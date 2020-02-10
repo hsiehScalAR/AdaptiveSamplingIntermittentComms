@@ -12,19 +12,23 @@ import numpy as np
 class Schedule:
     
     def __init__(self, numRobots, numTeams, robTeams):
-        """scheduler class to create teams and schedules"""
-        # Input arguments:
-        # numRobots = how many robots
-        # numTeams = how many teams
-        # robTeams = which robots are in which teams, comes from initial graph design; robot i belongs to team j in matrix
-        
+        """scheduler class to create teams and schedules
+
+        Input arguments:
+        numRobots = how many robots
+        numTeams = how many teams
+        robTeams = which robots are in which teams, comes from initial graph design; robot i belongs to team j in matrix
+        """
+
         self.numRobots = numRobots
         self.numTeams = numTeams
         self.robTeams = robTeams
 
     def createTeams(self):
-        """Create teams based on number of robots and number of teams"""
-        # No input arguments
+        """Create teams based on number of robots and number of teams
+
+        No input arguments
+        """
 
         T = [[] for x in range(self.numTeams)]
 
@@ -34,8 +38,10 @@ class Schedule:
         return T
 
     def createSchedule(self):
-        """Create schedule based on team compositions"""
-        # No input arguments
+        """Create schedule based on team compositions
+
+        No input arguments
+        """
         
         T = self.createTeams()
         schedule = np.zeros((self.numRobots, self.numTeams))

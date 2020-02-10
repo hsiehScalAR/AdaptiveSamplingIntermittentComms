@@ -10,11 +10,13 @@ Created on Wed Nov 20 09:54:18 2019
 import numpy as np
 
 def checkMeetingLocation(positions, commRadius):
-    """check if the robots are at the same location since robots from different teams could be waiting to communicate"""
-    # Input arguments:
-    # positions = current positions of the robots
-    # commRadius = communication radius of robots
+    """check if the robots are at the same location since robots from different teams could be waiting to communicate
     
+    Input arguments:
+    positions = current positions of the robots
+    commRadius = communication radius of robots
+    """
+
     normDist = np.sqrt(np.sum((positions[0] - positions)**2, axis=1))
 
     if all(x <= commRadius for x in normDist):
@@ -22,16 +24,21 @@ def checkMeetingLocation(positions, commRadius):
     else:
         return False
 
-def communicateToTeam(robots, GP=True):
-    """communicate sensor measurements between robots of same team at meeting location"""
-    # Input arguments:
-    # robots = robots of same team
-    # GP = bool if we are using GP's
+def communicateToTeam(robots, GP=True, POD=False):
+    """communicate sensor measurements between robots of same team at meeting location
     
+    Input arguments:
+    robots = robots of same team
+    GP = bool if we are using GP's
+    POD = bool if we are using POD
+    """
+
     mapping = np.zeros([robots[0].discretization[0],robots[0].discretization[0],2])
     
     for r in range(0, len(robots)):
-        pixels = np.where(robots[r].mapping[:,:,0] != 0, True,False)
+        # TODO: remove commented line, was before but wanted to keep it, problem is that it overwrites data without taking into account that it could be newer ones
+        # pixels = np.where(robots[r].mapping[:,:,0] != 0, True,False)
+        pixels = np.where(robots[r].mapping[:,:,1] > mapping[:,:,1], True,False)
         mapping[pixels] = robots[r].mapping[pixels]
     
     for r in range(0, len(robots)):
@@ -44,18 +51,23 @@ def communicateToTeam(robots, GP=True):
             robots[0].model.infer(robots[0])
         for r in range(1,len(robots)):
             # TODO: Make it work for both at the same time
-            # robots[r].model.model = robots[0].model.model.copy()
-            robots[r].model = robots[0].model.copy()
+            if POD:
+                robots[r].model = robots[0].model.copy()
+            else:
+                robots[r].model.model = robots[0].model.model.copy()
+            
             if robots[0].optPath:
                 robots[r].expectedMeasurement = robots[0].expectedMeasurement
                 robots[r].expectedVariance = robots[0].expectedVariance
 
 def moveAlongPath(robot, deltaT):
-    """move the robot along the planned path and take measurements on the way"""
-    # Input arguments:
-    # robot = which robot we are moving
-    # deltaT = sensor time step so that we move and take a measurement at each deltaT
-    
+    """move the robot along the planned path and take measurements on the way
+
+    Input arguments:
+    robot = which robot we are moving
+    deltaT = sensor time step so that we move and take a measurement at each deltaT
+    """
+
     # TODO: Add different motion model
 
     robot.currentTime += deltaT
@@ -89,9 +101,11 @@ def moveAlongPath(robot, deltaT):
     return False
     
 def measurement(robot):
-    """Simulates a measurement for a single robot at one time instance"""
-    # Input arguments:
-    # robot = robot with currentlocation and ground truth measurement map
+    """Simulates a measurement for a single robot at one time instance
+
+    Input arguments:
+    robot = robot with currentlocation and ground truth measurement map
+    """
     
     x = np.int(robot.currentLocation[0])
     y = np.int(robot.currentLocation[1])
@@ -99,6 +113,8 @@ def measurement(robot):
     # Add noise
     sigma = 0.2
     mean = 0
+
+    robot.numbMeasurements += 1
     
     if robot.sensingRange < 1:
         newData = robot.mappingGroundTruth[x, y]
