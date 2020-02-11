@@ -152,7 +152,7 @@ class ReducedOrderModel:
         robot.expectedMeasurement = ym.reshape([600,600,2])[:,:,0]
 
         scaling = 1
-        robot.expectedVariance = ys.reshape([600,600,2])[:,:,1]
+        # robot.expectedVariance = ys.reshape([600,600,2])[:,:,1]
 
         index = np.where(robot.mapping[:,:,1] != 0, 14 - 14*robot.mapping[:,:,1]/robot.currentTime,14)
         robot.expectedVariance = index
@@ -160,68 +160,36 @@ class ReducedOrderModel:
         
         dissimilarity = self.errorCalculation(robot)
 
-        if self.specialKernel:
-            if robot.ID >= 0:
-                fig, ax = plt.subplots(1,3,figsize=(18, 6))
-                if time == None:
-                    dispTime = robot.currentTime
-                else:
-                    dispTime = time
+        if robot.ID >= 0:
+            fig, ax = plt.subplots(1,3,figsize=(18, 6))
+            fig.subplots_adjust(left=0.02, bottom=0.06, right=0.8, top=0.94, wspace=0.12,hspace=0.1)
+            if time == None:
+                dispTime = robot.currentTime
+            else:
+                dispTime = time
 
-                title = 'Robot %d, Time %.1f, Dissimilarity: %.2f' %(robot.ID,dispTime,dissimilarity)
-                fig.suptitle(title)
+            title = 'Robot %d, Time %.1f, Dissimilarity: %.2f' %(robot.ID,dispTime,dissimilarity)
+            fig.suptitle(title)
 
-                ax[0].set_title('Expected Measurement')  
-                im = ax[0].imshow(robot.expectedMeasurement, origin='lower')
-                fig.colorbar(im, ax=ax[0])
+            ax[0].set_title('Expected Measurement')  
+            im = ax[0].imshow(robot.expectedMeasurement, origin='lower', vmin=-1, vmax=15*scaling)
 
-                ax[1].set_title('Expected Variance')       
-                im = ax[1].imshow(robot.expectedVariance, origin='lower') 
-                fig.colorbar(im, ax=ax[1])
+            ax[1].set_title('Trajectory Uncertainty')  
+            im = ax[1].imshow(robot.expectedVariance, origin='lower', vmin=-1, vmax=15*scaling)        
 
-                ax[2].set_title('GroundTruth') 
+            ax[2].set_title('Ground Truth') 
 
-                x,y = zip(*robot.trajectory)
-                ax[2].plot(y,x, '-', label='Robot %d'%robot.ID)
-                ax[2].legend()
+            x,y = zip(*robot.trajectory)
+            ax[2].plot(y,x, '-', label='Robot %d'%robot.ID)
+            ax[2].legend()
 
-                im = ax[2].imshow(robot.mappingGroundTruth, origin='lower')
-                fig.colorbar(im, ax=ax[2])
-
-                fig.savefig(PATH + title + '.png')
-                
-                plt.close(fig)
-        else:
-            if robot.ID >= 0:
-                fig, ax = plt.subplots(1,3,figsize=(18, 6))
-                fig.subplots_adjust(left=0.02, bottom=0.06, right=0.8, top=0.94, wspace=0.12,hspace=0.1)
-                if time == None:
-                    dispTime = robot.currentTime
-                else:
-                    dispTime = time
-
-                title = 'Robot %d, Time %.1f, Dissimilarity: %.2f' %(robot.ID,dispTime,dissimilarity)
-                fig.suptitle(title)
-
-                ax[0].set_title('Expected Measurement')  
-                im = ax[0].imshow(robot.expectedMeasurement, origin='lower', vmin=-1, vmax=15*scaling)
-
-                ax[1].set_title('Expected Variance')  
-                im = ax[1].imshow(robot.expectedVariance, origin='lower', vmin=-1, vmax=15*scaling)        
-
-                ax[2].set_title('GroundTruth') 
-
-                x,y = zip(*robot.trajectory)
-                ax[2].plot(y,x, '-', label='Robot %d'%robot.ID)
-                ax[2].legend()
-
-                im = ax[2].imshow(robot.mappingGroundTruth, origin='lower', vmin=-1, vmax=15*scaling)
-                cbar_ax = fig.add_axes([0.83, 0.1, 0.01, 0.8])
-                fig.colorbar(im, cax=cbar_ax)
-                im.set_clim(-1, 15*scaling)
-                fig.savefig(PATH + title + '.png')
-                
-                plt.close(fig)
+            im = ax[2].imshow(robot.mappingGroundTruth, origin='lower', vmin=-1, vmax=15*scaling)
+            cbar_ax = fig.add_axes([0.83, 0.1, 0.01, 0.8])
+            fig.colorbar(im, cax=cbar_ax)
+            im.set_clim(-1, 15*scaling)
+            fig.savefig(PATH + title + '.png')
+            
+            plt.close(fig)
             
 
     def plot(self, robot, time=None):
@@ -260,7 +228,7 @@ class ReducedOrderModel:
         if np.max(robot.expectedMeasurement) == 0:
             return 1
         
-        mat1,mat2,procru = procrustes(robot.mappingGroundTruth,robot.expectedMeasurement)
+        _,_,procru = procrustes(robot.mappingGroundTruth,robot.expectedMeasurement)
         self.logFile.writeError(robot.ID,procru,robot.currentTime, 'Dissim')
 
         # plotProcrustes(robot, mat1,mat2)

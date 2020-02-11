@@ -36,8 +36,6 @@ def communicateToTeam(robots, GP=True, POD=False):
     mapping = np.zeros([robots[0].discretization[0],robots[0].discretization[0],2])
     
     for r in range(0, len(robots)):
-        # TODO: remove commented line, was before but wanted to keep it, problem is that it overwrites data without taking into account that it could be newer ones
-        # pixels = np.where(robots[r].mapping[:,:,0] != 0, True,False)
         pixels = np.where(robots[r].mapping[:,:,1] > mapping[:,:,1], True,False)
         mapping[pixels] = robots[r].mapping[pixels]
     
@@ -50,7 +48,6 @@ def communicateToTeam(robots, GP=True, POD=False):
         if robots[0].optPath:
             robots[0].model.infer(robots[0])
         for r in range(1,len(robots)):
-            # TODO: Make it work for both at the same time
             if POD:
                 robots[r].model = robots[0].model.copy()
             else:

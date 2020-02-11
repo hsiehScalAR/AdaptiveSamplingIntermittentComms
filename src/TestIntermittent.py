@@ -499,7 +499,7 @@ if __name__ == "__main__":
 
     # np.random.seed(1992)
     
-    TOTALTIME = 100 #total execution time of program
+    TOTALTIME = 50 #total execution time of program
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 4 robots 4 teams)
     CORRECTTIMESTEP = False #If dye time steps should be matched to correct time steps or if each time step in dye corresponds to time step here
     
@@ -510,13 +510,17 @@ if __name__ == "__main__":
     OPTPATH = GAUSSIAN == True #if path optimization should be used, can not be true if optpoint is used
     OPTPOINT = GAUSSIAN != OPTPATH == True #if point optimization should be used, can not be true if optpath is used
     
-    SPATIOTEMPORAL = True # if spatiotemporal data or not
-    SPECIALKERNEL = False == SPATIOTEMPORAL # if own kernel should be used, only works if spatiotemporal 
+    SPATIOTEMPORAL = False # if spatiotemporal data or not
     STATIONARY = not SPATIOTEMPORAL #if we are using time varying measurement data or not
+    SPECIALKERNEL = True == SPATIOTEMPORAL # if own kernel should be used, only works if spatiotemporal 
     STATIONARYTIME = 5 #which starting time to use for the measurement data, if not STATIONARY, 0 is used for default
     PREDICTIVETIME = None #Time for which to make a prediction at the end, has to be bigger than total time
 
-    SENSINGRANGE = 0 # Sensing range of robots, 0 for GP and 20 for POD
+    if POD:
+        SENSINGRANGE = 20 # Sensing range of robots, 0 for GP and 20 for POD
+    else:
+        SENSINGRANGE = 0
+    
     COMMRANGE = 3 # communication range for robots
     TIMEINTERVAL = 1 # time interval for communication events
     

@@ -103,7 +103,7 @@ class GaussianProcess:
         self.model.Gaussian_noise.variance.unconstrain()
 
         if self.spatiotemporal and not self.specialKernel:             
-            self.model.mul.rbf_1.lengthscale.unconstrain()
+            self.model.mul.rbf_1.lengthscale.constrain_bounded(20,300) 
             # print(self.model[''])
         # elif self.specialKernel:
         #     self.model.SpatioTemporal.lengthscale.unconstrain()
@@ -208,7 +208,7 @@ class GaussianProcess:
                 im = ax[1].imshow(robot.expectedVariance, origin='lower') 
                 fig.colorbar(im, ax=ax[1])
 
-                ax[2].set_title('GroundTruth') 
+                ax[2].set_title('Ground Truth') 
 
                 x,y = zip(*robot.trajectory)
                 ax[2].plot(y,x, '-', label='Robot %d'%robot.ID)
@@ -238,7 +238,7 @@ class GaussianProcess:
                 ax[1].set_title('Expected Variance')  
                 im = ax[1].imshow(robot.expectedVariance, origin='lower', vmin=-1, vmax=15*scaling)        
 
-                ax[2].set_title('GroundTruth') 
+                ax[2].set_title('Ground Truth') 
 
                 x,y = zip(*robot.trajectory)
                 ax[2].plot(y,x, '-', label='Robot %d'%robot.ID)
@@ -262,7 +262,7 @@ class GaussianProcess:
         """
 
         self.infer(robot, time=time)
-        # print(self.model[''])
+        print(self.model[''])
 
     def errorCalculation(self, robot):
         """Error calculation of modelling, computes different errors and writes to file
@@ -287,7 +287,7 @@ class GaussianProcess:
         similarity = ssim(robot.mappingGroundTruth,robot.expectedMeasurement, gaussian_weights=False)
         self.logFile.writeError(robot.ID,similarity,robot.currentTime, 'SSIM')
 
-        mat1,mat2,procru = procrustes(robot.mappingGroundTruth,robot.expectedMeasurement)
+        _,_,procru = procrustes(robot.mappingGroundTruth,robot.expectedMeasurement)
         self.logFile.writeError(robot.ID,procru,robot.currentTime, 'Dissim')
 
         # plotProcrustes(robot, mat1,mat2)
