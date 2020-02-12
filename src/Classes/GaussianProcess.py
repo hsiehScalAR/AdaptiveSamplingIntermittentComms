@@ -212,7 +212,7 @@ class GaussianProcess:
         # robot = robot whose GP is to be plotted
 
         # self.inferGP(robot)
-        self.inferGP(robot, time=time)
+        self.infer(robot, time=time)
         print(self.model[''])
         # self.model.plot(title='Robot %d, End' %(robot.ID))
 
