@@ -69,7 +69,7 @@ def main():
     """Create Measurement Data"""
     measurementGroundTruthList, maxTime = loadMeshFiles(SENSORPERIOD,CORRECTTIMESTEP)
     
-    # plotDye(measurementGroundTruthList[50],measurementGroundTruthList[1000],measurementGroundTruthList[-1])
+    plotDye(measurementGroundTruthList[50],measurementGroundTruthList[500],measurementGroundTruthList[1000])
     
     print('**********************************************************************\n')
     print('Max allowed time is: %.1f length of data: %.1f\n' %(maxTime,len(measurementGroundTruthList)))
@@ -499,20 +499,20 @@ if __name__ == "__main__":
 
     # np.random.seed(1992)
     
-    TOTALTIME = 50 #total execution time of program
+    TOTALTIME = 100 #total execution time of program
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 4 robots 4 teams)
     CORRECTTIMESTEP = False #If dye time steps should be matched to correct time steps or if each time step in dye corresponds to time step here
     
     DEBUG = False #debug to true shows prints
     ANIMATION = False #if animation should be done
-    POD = False # if we are using POD or GP
+    POD = True # if we are using POD or GP
     GAUSSIAN = True #if GP should be calculated
     OPTPATH = GAUSSIAN == True #if path optimization should be used, can not be true if optpoint is used
     OPTPOINT = GAUSSIAN != OPTPATH == True #if point optimization should be used, can not be true if optpath is used
     
-    SPATIOTEMPORAL = False # if spatiotemporal data or not
+    SPATIOTEMPORAL = True # if spatiotemporal data or not
     STATIONARY = not SPATIOTEMPORAL #if we are using time varying measurement data or not
-    SPECIALKERNEL = True == SPATIOTEMPORAL # if own kernel should be used, only works if spatiotemporal 
+    SPECIALKERNEL = False == SPATIOTEMPORAL # if own kernel should be used, only works if spatiotemporal 
     STATIONARYTIME = 5 #which starting time to use for the measurement data, if not STATIONARY, 0 is used for default
     PREDICTIVETIME = None #Time for which to make a prediction at the end, has to be bigger than total time
 

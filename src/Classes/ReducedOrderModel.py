@@ -162,7 +162,7 @@ class ReducedOrderModel:
 
         if robot.ID >= 0:
             fig, ax = plt.subplots(1,3,figsize=(18, 6))
-            fig.subplots_adjust(left=0.02, bottom=0.06, right=0.8, top=0.94, wspace=0.12,hspace=0.1)
+            fig.subplots_adjust(bottom=0.06, right=0.8, top=0.94, wspace=0.2,hspace=0.1)
             if time == None:
                 dispTime = robot.currentTime
             else:
@@ -171,20 +171,25 @@ class ReducedOrderModel:
             title = 'Robot %d, Time %.1f, Dissimilarity: %.2f' %(robot.ID,dispTime,dissimilarity)
             fig.suptitle(title)
 
-            ax[0].set_title('Expected Measurement')  
+            ax[0].set_title('Expected Measurement')
+            ax[0].set_xlabel('x')
+            ax[0].set_ylabel('y')  
             im = ax[0].imshow(robot.expectedMeasurement, origin='lower', vmin=-1, vmax=15*scaling)
 
-            ax[1].set_title('Trajectory Uncertainty')  
+            ax[1].set_title('Trajectory Uncertainty')
+            ax[1].set_xlabel('x')
+            ax[1].set_ylabel('y')  
             im = ax[1].imshow(robot.expectedVariance, origin='lower', vmin=-1, vmax=15*scaling)        
 
             ax[2].set_title('Ground Truth') 
-
+            ax[2].set_xlabel('x')
+            ax[2].set_ylabel('y')
             x,y = zip(*robot.trajectory)
             ax[2].plot(y,x, '-', label='Robot %d'%robot.ID)
             ax[2].legend()
 
             im = ax[2].imshow(robot.mappingGroundTruth, origin='lower', vmin=-1, vmax=15*scaling)
-            cbar_ax = fig.add_axes([0.83, 0.1, 0.01, 0.8])
+            cbar_ax = fig.add_axes([0.83, 0.2, 0.01, 0.6])
             fig.colorbar(im, cax=cbar_ax)
             im.set_clim(-1, 15*scaling)
             fig.savefig(PATH + title + '.png')
