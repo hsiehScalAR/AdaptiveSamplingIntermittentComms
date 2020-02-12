@@ -91,7 +91,7 @@ def plotError(data, metric, saveLoc, testrun=None):
         plt.savefig(saveLoc + metric + '_All_' + CASE + '.png' )
         plt.close()
 
-def statistics(totalData, saveLoc, stp):
+def individualStatistics(totalData, saveLoc, stp):
     """Plots the error in a combined box plot
 
     Input arguments:
@@ -103,9 +103,13 @@ def statistics(totalData, saveLoc, stp):
     _, ax = plt.subplots()
 
     if stp == 0:
-        name = 'Stationary Results (n=10)'
+        name = 'Stationary Results GP (n=10)'
+    elif stp == 1:
+        name = 'Stationary Results POD (n=10)'
+    elif stp == 2:
+        name = 'Spatiotemporal Results GP (n=10)'
     else:
-        name = 'Spatiotemporal Results (n=10)'
+        name = 'Spatiotemporal Results POD (n=10)'
     ax.set_title(name)
 
     mean = np.zeros([10,6])
@@ -129,6 +133,49 @@ def statistics(totalData, saveLoc, stp):
     plt.close()
 
 
+def totalStatistics(totalData, saveLoc):
+    """Plots the error in a combined box plot
+
+    Input arguments:
+    totalData = error data which is to be analysed
+    saveLoc = where to save the image
+    stp = stationary or spatiotemporal case
+    """
+
+    _, ax = plt.subplots(figsize=(12, 6))
+
+    name = 'Comparison of Results (n=10)'
+    
+    ax.set_title(name)
+
+    mean = np.zeros([10,24])
+    std = np.zeros([10,24])
+
+    index = 0
+
+    for _, dataSet in enumerate(totalData):
+        for _, data in enumerate(dataSet):
+            for i in range(0,10):
+                for e in range(0,3):
+                    error,_ = zip(*data[i][e])
+                    error = np.array(error)
+                    mean[i,e + index] = np.mean(error)
+                    std[i,e + index] = np.std(error)
+            index += 3
+        
+    bp1 = ax.boxplot([mean[:,0],mean[:,2],mean[:,6],mean[:,8],mean[:,12],mean[:,14],mean[:,18],mean[:,20]],positions=[1,9,3,11,5,13,7,15], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C0"))
+    bp2 = ax.boxplot([mean[:,3],mean[:,5],mean[:,9],mean[:,11],mean[:,15],mean[:,17],mean[:,21],mean[:,23]], positions=[2,10,4,12,6,14,8,16], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C2"))
+    ax.set_ylim(0,2.5)
+    ax.legend([bp1["boxes"][0], bp2["boxes"][0]], ['Intermittent', 'Full'], loc='upper right')
+
+    plt.xticks([1.5,2.5,3.5,4.5,5.5,6.5,7.5,9.5,10.5,11.5,12.5,13.5,14.5,15.5],['GP','\nSpatial','POD','\n\nRMSE','GP','\nSpatiotemporal','POD','GP','\nSpatial','POD','\n\nDISSIM','GP','\nSpatiotemporal','POD'])
+
+    ax.xaxis.set_tick_params(length=0)
+    ax.axhline(1,xmin=0.5, xmax=1, color='red', lw=2)
+
+    plt.savefig(saveLoc + 'Boxplot_Comparison.png')
+    plt.close()
+
 if __name__ == "__main__":
     """Entry in Error Analysis Program"""
 
@@ -136,10 +183,11 @@ if __name__ == "__main__":
     saveLoc = '/home/hannes/MasterThesisCode/AdaptiveSamplingIntermittentComms/src/Results/Tests/IntermediateResults/Figures/'
     CASE = ['Intermittent','Full']
 
-    SETUP = ['Spatial','SpatioTemporal']    
+    SETUP = ['SpatialGP','SpatialPOD','SpatioTemporalGP','SpatioTemporalPOD']    
     
+    totalData = []
     for stp, _ in enumerate(SETUP):
-        totalData = []
+        individualData = []
         for idx,_ in enumerate(CASE):
             if CASE[idx] == 'Intermittent':
                 path = basePath + SETUP[stp] + '/IntermittentCommunication'
@@ -149,8 +197,10 @@ if __name__ == "__main__":
                 ROBOTID = 4
         
             data = readAllFiles(path)
-            totalData.append(data)
-        statistics(totalData, saveLoc, stp)
-        # plotError(data,'DISSIM',saveLoc)
+            individualData.append(data)
+        totalData.append(individualData)
+        individualStatistics(individualData, saveLoc, stp)
+
+    totalStatistics(totalData, saveLoc)
 
 
