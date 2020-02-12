@@ -15,9 +15,9 @@ def communicateToTeam(virtualRobot, GP=True):
     # robots = robots of same team
         
     if GP:
-        virtualRobot.GP.updateGP(virtualRobot)
+        virtualRobot.model.update(virtualRobot)
         if virtualRobot.optPath:
-            virtualRobot.GP.inferGP(virtualRobot)
+            virtualRobot.model.infer(virtualRobot)
 
 def moveAlongPath(robot, virtualRobot, deltaT):
     # TODO: Add different motion model
@@ -54,6 +54,7 @@ def moveAlongPath(robot, virtualRobot, deltaT):
     robot.trajectory.append(robot.currentLocation)
     
     meas, measTime = measurement(robot)
+    virtualRobot.numbMeasurements += 1
     virtualRobot.createMap(meas, measTime, robot.currentLocation, robot)  # Create Map
     
     return False
@@ -70,6 +71,8 @@ def measurement(robot):
     sigma = 0.2
     mean = 0
     
+    robot.numbMeasurements += 1
+
     if robot.sensingRange < 1:
         newData = robot.mappingGroundTruth[x, y]
         newData = newData + sigma*np.random.randn() + mean

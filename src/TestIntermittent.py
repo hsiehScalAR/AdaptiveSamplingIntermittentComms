@@ -43,19 +43,21 @@ def main():
 
     """Write parameters to new logfile"""
     parameters = {
-                'Connectivity   ': 'all-time',  
                 'TOTALTIME      ': TOTALTIME,
                 'CASE           ': CASE,
                 'CORRECTTIMESTEP': CORRECTTIMESTEP,
+                'POD            ': POD,
                 'GAUSSIAN       ': GAUSSIAN,
                 'OPTPATH        ': OPTPATH,
                 'OPTPOINT       ': OPTPOINT,
                 'SPATIOTEMPORAL ': SPATIOTEMPORAL,
+                'SPECIALKERNEL  ': SPECIALKERNEL,
                 'STATIONARY     ': STATIONARY,
                 'STATIONARYTIME ': STATIONARYTIME,
                 'PREDICTIVETIME ': PREDICTIVETIME,
                 'SENSINGRANGE   ': SENSINGRANGE,
                 'COMMRANGE      ': COMMRANGE,
+                'TIMEINTERVAL   ': TIMEINTERVAL,
                 'SENSORPERIOD   ': SENSORPERIOD
                 }
     logFile = LogFile(LOGFILE,FOLDER +'/')
@@ -91,7 +93,7 @@ def main():
 
     """Initialize robots"""
     robots = initializeRobots(numRobots, logFile)
-    virtualRobot = Robot(numRobots, DISCRETIZATION, UMAX, SENSORPERIOD, OPTPATH, OPTPOINT, SPATIOTEMPORAL, logFile)
+    virtualRobot = Robot(numRobots, DISCRETIZATION, UMAX, SENSORPERIOD, OPTPATH, OPTPOINT, SPATIOTEMPORAL, POD, logFile)
     
     """create the initial plans for all periods"""
     initialTime = 0
@@ -116,9 +118,10 @@ def main():
     """Initialize GP"""
     for r in range(0,numRobots):
         meas, measTime = measurement(robots[r])
+        virtualRobot.numbMeasurements += 1
         virtualRobot.createMap(meas, measTime, robots[r].currentLocation, robots[r])
     if GAUSSIAN:
-        virtualRobot.GP.initializeGP(virtualRobot)
+        virtualRobot.model.initialize(virtualRobot)
     
     robots.append(virtualRobot)
 
@@ -161,8 +164,8 @@ def main():
 
         plotTrajectoryOverlayGroundTruth(robots,0)
 
-        robots[-1].GP.updateGP(robots[-1])
-        robots[-1].GP.plotGP(robots[-1])
+        robots[-1].model.update(robots[-1])
+        robots[-1].model.plot(robots[-1])
         if PREDICTIVETIME != None:
             
             if PREDICTIVETIME >= maxTime:
@@ -171,7 +174,7 @@ def main():
                 predictiveTime = np.int(PREDICTIVETIME/SENSORPERIOD)
             robots[-1].currentTime = predictiveTime*SENSORPERIOD
             robots[-1].mappingGroundTruth = measurementGroundTruthList[predictiveTime]
-            robots[-1].GP.plotGP(robots[-1], robots[-1].currentTime)
+            robots[-1].model.plot(robots[-1], robots[-1].currentTime)
      
     
     print('Plotting Finished\n')
@@ -315,7 +318,7 @@ def initializeRobots(numRobots, logFile):
 
     robots = []
     for r in range(0, numRobots):
-        rob = Robot(r, DISCRETIZATION, UMAX, SENSORPERIOD, OPTPATH, OPTPOINT, SPATIOTEMPORAL, logFile)
+        rob = Robot(r, DISCRETIZATION, UMAX, SENSORPERIOD, OPTPATH, OPTPOINT, SPATIOTEMPORAL, POD, logFile)
         robots.append(rob)
     
     #Print test information
@@ -373,9 +376,7 @@ if __name__ == "__main__":
     """Entry in Test Program"""
     
     """Setup"""
-    # np.random.seed(1908)
-    
-    clearPlots()
+    # np.random.seed(1992)
     
     TOTALTIME = 100 #total execution time of program
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 4 robots 4 teams)
@@ -383,17 +384,24 @@ if __name__ == "__main__":
     
     DEBUG = False #debug to true shows prints
     ANIMATION = False #if animation should be done
+    POD = True # if we are using POD or GP
     GAUSSIAN = True #if GP should be calculated
     OPTPATH = GAUSSIAN == True #if path optimization should be used, can not be true if optpoint is used
     OPTPOINT = GAUSSIAN != OPTPATH == True #if point optimization should be used, can not be true if optpath is used
     
-    SPATIOTEMPORAL = True
+    SPATIOTEMPORAL = True # if spatiotemporal data or not
     STATIONARY = not SPATIOTEMPORAL #if we are using time varying measurement data or not
+    SPECIALKERNEL = True == SPATIOTEMPORAL # if own kernel should be used, only works if spatiotemporal 
     STATIONARYTIME = 5 #which starting time to use for the measurement data, if not STATIONARY, 0 is used for default
     PREDICTIVETIME = None #Time for which to make a prediction at the end, has to be bigger than total time
 
-    SENSINGRANGE = 0 # Sensing range of robots
-    COMMRANGE = 6 # communication range for robots
+    if POD:
+        SENSINGRANGE = 20 # Sensing range of robots, 0 for GP and 20 for POD
+    else:
+        SENSINGRANGE = 0
+    
+    COMMRANGE = 20 # communication range for robots
+    TIMEINTERVAL = 1 # time interval for communication events
     
     DISCRETIZATION = np.array([600, 600]) #grid space
     DIMENSION = 2 #dimension of robot space

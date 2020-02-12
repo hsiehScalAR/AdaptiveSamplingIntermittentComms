@@ -12,12 +12,13 @@ import networkx as nx
 
 #Personal imports
 from Classes.GaussianProcess import GaussianProcess
+from Classes.ReducedOrderModel import ReducedOrderModel
 
 class Robot:
     
     objs = []  # Registrar keeps all attributes of class
 
-    def __init__(self, ID, discretization, uMax, sensorPeriod, optPath, optPoint, spatiotemporal, logFile):
+    def __init__(self, ID, discretization, uMax, sensorPeriod, optPath, optPoint, spatiotemporal, pod, logFile):
         """Initializer of robot class"""
         # Input arguments:
         # ID = robot number
@@ -29,6 +30,7 @@ class Robot:
         self.mapping = np.zeros([discretization[0],discretization[1],2])
         self.mappingGroundTruth = np.zeros_like([discretization[0],discretization[1]])
         self.sensingRange = 0
+        self.numbMeasurements = 0
         self.measurementRangeX = np.array([self.sensingRange, self.sensingRange])
         self.measurementRangeY = np.array([self.sensingRange, self.sensingRange])
         self.uMax = uMax
@@ -79,7 +81,10 @@ class Robot:
         self.endNodeCounter = 0
         self.endLocation = np.array([0, 0])
         
-        self.GP = GaussianProcess(spatiotemporal,logFile)
+        if pod:
+            self.model = ReducedOrderModel(spatiotemporal, logFile)
+        else:
+            self.model = GaussianProcess(spatiotemporal, logFile)
         Robot.objs.append(self)
         Robot.discretization = discretization
         

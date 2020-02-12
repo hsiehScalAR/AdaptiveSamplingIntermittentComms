@@ -71,7 +71,7 @@ class GaussianProcess:
         else:
             self.kernel = GPy.kern.RBF(input_dim=2, variance=spatialVariance, lengthscale=spatialLengthScale,ARD=spatialARD)
     
-    def initializeGP(self, robot):
+    def initialize(self, robot):
         """Initialize model for the GPs"""
         # Input arguments:
         # robot = robot whose GP is to be initialized
@@ -100,7 +100,7 @@ class GaussianProcess:
         self.model.optimize(optimizer='lbfgsb',messages=False,max_f_eval = ITERATIONS,ipython_notebook=False)    # Works good
 
         
-    def updateGP(self, robot):
+    def update(self, robot):
         """Update function for GPs, adds new measurements to model"""
         # Input arguments:
         # robot = robot whose GP is to be updated
@@ -135,7 +135,7 @@ class GaussianProcess:
         print('GP Updated\n')
 
         
-    def inferGP(self, robot, pos=None, time=None):
+    def infer(self, robot, pos=None, time=None):
         """Calculates estimated measurement at location"""
         # Input arguments:
         # robot = robot whose GP should calculate estimate
@@ -206,7 +206,7 @@ class GaussianProcess:
             
             plt.close(fig)
 
-    def plotGP(self, robot, time=None):
+    def plot(self, robot, time=None):
         """Plotting model of the GP"""
         # Input arguments:
         # robot = robot whose GP is to be plotted
