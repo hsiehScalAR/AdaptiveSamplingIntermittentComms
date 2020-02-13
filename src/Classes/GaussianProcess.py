@@ -255,7 +255,7 @@ class GaussianProcess:
                 ax[2].legend()
 
                 im = ax[2].imshow(robot.mappingGroundTruth, origin='lower', vmin=-1, vmax=15*scaling)
-                cbar_ax = fig.add_axes([0.83, 0.1, 0.01, 0.8])
+                cbar_ax = fig.add_axes([0.83, 0.2, 0.01, 0.6])
                 fig.colorbar(im, cax=cbar_ax)
                 im.set_clim(-1, 15*scaling)
                 fig.savefig(PATH + title + '.png')
