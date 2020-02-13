@@ -127,7 +127,7 @@ def individualStatistics(totalData, saveLoc, stp):
     bp2 = ax.boxplot([mean[:,3],mean[:,5]], positions=[2,4], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C2"))
     ax.set_ylim(0,2.5)
     ax.legend([bp1["boxes"][0], bp2["boxes"][0]], ['Intermittent', 'Full'], loc='upper right')
-
+    ax.set_ylabel('RMSE')
     plt.xticks([1.5, 3.5], ['RMSE', 'DISSIM'])
     plt.savefig(saveLoc + 'Boxplot_' + SETUP[stp] + '.png' )
     plt.close()
@@ -167,7 +167,8 @@ def totalStatistics(totalData, saveLoc):
     bp2 = ax.boxplot([mean[:,3],mean[:,5],mean[:,9],mean[:,11],mean[:,15],mean[:,17],mean[:,21],mean[:,23]], positions=[2,10,4,12,6,14,8,16], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C2"))
     ax.set_ylim(0,2.5)
     ax.legend([bp1["boxes"][0], bp2["boxes"][0]], ['Intermittent', 'Full'], loc='upper right')
-
+    ax.set_ylabel('RMSE')
+    
     plt.xticks([1.5,2.5,3.5,4.5,5.5,6.5,7.5,9.5,10.5,11.5,12.5,13.5,14.5,15.5],['GP','\nSpatial','POD','\n\nRMSE','GP','\nSpatiotemporal','POD','GP','\nSpatial','POD','\n\nDISSIM','GP','\nSpatiotemporal','POD'])
 
     ax.xaxis.set_tick_params(length=0)

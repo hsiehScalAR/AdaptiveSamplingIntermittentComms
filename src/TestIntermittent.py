@@ -505,8 +505,8 @@ if __name__ == "__main__":
     
     DEBUG = False #debug to true shows prints
     ANIMATION = False #if animation should be done
-    POD = True # if we are using POD or GP
-    GAUSSIAN = True #if GP should be calculated
+    POD = False # if we are using POD or GP
+    GAUSSIAN = True #if model should be calculated
     OPTPATH = GAUSSIAN == True #if path optimization should be used, can not be true if optpoint is used
     OPTPOINT = GAUSSIAN != OPTPATH == True #if point optimization should be used, can not be true if optpath is used
     
