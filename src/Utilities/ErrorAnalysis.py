@@ -92,7 +92,7 @@ def plotError(data, metric, saveLoc, testrun=None):
         plt.close()
 
 def individualStatistics(totalData, saveLoc, stp):
-    """Plots the error in a combined box plot
+    """Plots the error in an individual box plot
 
     Input arguments:
     totalData = error data which is to be analysed
@@ -132,6 +132,12 @@ def individualStatistics(totalData, saveLoc, stp):
     plt.savefig(saveLoc + 'Boxplot_' + SETUP[stp] + '.png' )
     plt.close()
 
+    print('\n' + SETUP[stp])
+
+    print('intermittent, RMSE mean:    %.2f   std:  %.2f' %(np.mean(mean[:,0]), np.mean(std[:,0])))
+    print('intermittent, DISSIM mean:  %.2f   std:  %.2f' %(np.mean(mean[:,2]), np.mean(std[:,2])))
+    print('full, RMSE mean:            %.2f   std:  %.2f' %(np.mean(mean[:,3]), np.mean(std[:,3])))
+    print('full, DISSIM mean:          %.2f   std:  %.2f' %(np.mean(mean[:,5]), np.mean(std[:,5])))
 
 def totalStatistics(totalData, saveLoc):
     """Plots the error in a combined box plot
@@ -139,14 +145,7 @@ def totalStatistics(totalData, saveLoc):
     Input arguments:
     totalData = error data which is to be analysed
     saveLoc = where to save the image
-    stp = stationary or spatiotemporal case
     """
-
-    _, ax = plt.subplots(figsize=(12, 6))
-
-    name = 'Comparison of Results (n=10)'
-    
-    ax.set_title(name)
 
     mean = np.zeros([10,24])
     std = np.zeros([10,24])
@@ -162,20 +161,41 @@ def totalStatistics(totalData, saveLoc):
                     mean[i,e + index] = np.mean(error)
                     std[i,e + index] = np.std(error)
             index += 3
+
+    _, ax = plt.subplots(figsize=(8, 6))
         
-    bp1 = ax.boxplot([mean[:,0],mean[:,2],mean[:,6],mean[:,8],mean[:,12],mean[:,14],mean[:,18],mean[:,20]],positions=[1,9,3,11,5,13,7,15], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C0"))
-    bp2 = ax.boxplot([mean[:,3],mean[:,5],mean[:,9],mean[:,11],mean[:,15],mean[:,17],mean[:,21],mean[:,23]], positions=[2,10,4,12,6,14,8,16], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C2"))
+    bp1 = ax.boxplot([mean[:,0],mean[:,6],mean[:,12],mean[:,18]],positions=[1,3,5,7], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C0"))
+    bp2 = ax.boxplot([mean[:,3],mean[:,9],mean[:,15],mean[:,21]], positions=[2,4,6,8], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C2"))
     ax.set_ylim(0,2.5)
-    ax.legend([bp1["boxes"][0], bp2["boxes"][0]], ['Intermittent', 'Full'], loc='upper right')
+    ax.legend([bp1["boxes"][0], bp2["boxes"][0]], ['Intermittent', 'Full'], loc='lower right')
     ax.set_ylabel('RMSE')
     
-    plt.xticks([1.5,2.5,3.5,4.5,5.5,6.5,7.5,9.5,10.5,11.5,12.5,13.5,14.5,15.5],['GP','\nSpatial','POD','\n\nRMSE','GP','\nSpatiotemporal','POD','GP','\nSpatial','POD','\n\nDISSIM','GP','\nSpatiotemporal','POD'])
+    plt.xticks([1.5,2.5,3.5,5.5,6.5,7.5],['GP','\nSpatial','POD','GP','\nSpatiotemporal','POD'])
 
     ax.xaxis.set_tick_params(length=0)
-    ax.axhline(1,xmin=0.5, xmax=1, color='red', lw=2)
+    ax.axvline(4.5,ymin=0, ymax=1, color='grey',linestyle='--', lw=1)
 
-    plt.savefig(saveLoc + 'Boxplot_Comparison.png')
+    plt.savefig(saveLoc + 'Boxplot_Comparison_RMSE.png')
     plt.close()
+
+
+    _, ax = plt.subplots(figsize=(8, 6))
+
+    bp3 = ax.boxplot([mean[:,2],mean[:,8],mean[:,14],mean[:,20]],positions=[1,3,5,7], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C0"))
+    bp4 = ax.boxplot([mean[:,5],mean[:,11],mean[:,17],mean[:,23]], positions=[2,4,6,8], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C2"))
+    ax.set_ylim(0,1)
+    ax.legend([bp3["boxes"][0], bp4["boxes"][0]], ['Intermittent', 'Full'], loc='lower right')
+    ax.set_ylabel('DISSIM')
+    
+    plt.xticks([1.5,2.5,3.5,5.5,6.5,7.5],['GP','\nSpatial','POD','GP','\nSpatiotemporal','POD'])
+
+    ax.xaxis.set_tick_params(length=0)
+    ax.axvline(4.5,ymin=0, ymax=1, color='grey',linestyle='--', lw=1)
+
+    plt.savefig(saveLoc + 'Boxplot_Comparison_DISSIM.png')
+    plt.close()
+
+    return mean, std
 
 if __name__ == "__main__":
     """Entry in Error Analysis Program"""
@@ -202,6 +222,9 @@ if __name__ == "__main__":
         totalData.append(individualData)
         individualStatistics(individualData, saveLoc, stp)
 
-    totalStatistics(totalData, saveLoc)
+    mean, std = totalStatistics(totalData, saveLoc)
 
+    # print(np.mean(mean[0:-1:3],axis=0))
+    # print(np.std(mean[0:-1:3],axis=0))
+    
 
