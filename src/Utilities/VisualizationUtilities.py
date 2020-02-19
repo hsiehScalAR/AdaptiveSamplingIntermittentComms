@@ -17,20 +17,71 @@ from scipy.stats import multivariate_normal
 
 PATH = 'Results/Tmp/'
 
-def plotTrajectoryAnimation(robots, measurementGroundTruthList):
+# def plotTrajectoryAnimation(robots, measurementGroundTruthList, modelEstimates):
+#     """Make an animation of the robots journee
+
+#     Input arguments:
+#     robots = robots which measured and moved around
+#     measurementGroundTruthList = measurement data which changes over time
+#     modelEstimates = list of model updates and time
+#     """
+
+#     fig = plt.figure()
+#     ax1 = plt.axes(xlim=(0, 600), ylim=(0,600))
+    
+#     graphs = []
+#     for r in range(len(robots)):
+#         graphobj = ax1.plot([], [], '-', label='Robot %d'%r)[0]
+#         graphs.append(graphobj)
+    
+    
+#     def init():
+#         for graph in graphs:
+#             graph.set_data([],[])
+#         return graphs
+    
+#     xlist = [i for i in range(len(robots))]
+#     ylist = [i for i in range(len(robots))]
+    
+#     def animate(i):
+#         for r in range(0,len(robots)):
+#             x,y = zip(*robots[r].trajectory)
+#             xlist[r] = x[:i]
+#             ylist[r] = y[:i]
+
+#         for gnum,graph in enumerate(graphs):
+            
+#             graph.set_data(ylist[gnum], xlist[gnum]) # set data for each line separately. 
+#         ax1.imshow(measurementGroundTruthList[i], origin='lower')
+#         return graphs
+
+#     ani = animation.FuncAnimation(fig, animate, init_func=init,
+#                                   frames=len(robots[-1].trajectory), interval=200)
+#     plt.legend(loc='lower right')
+    
+#     ani.save(PATH + 'basic_animation.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
+
+def plotTrajectoryAnimation(robots, measurementGroundTruthList, modelEstimates):
     """Make an animation of the robots journee
 
     Input arguments:
     robots = robots which measured and moved around
     measurementGroundTruthList = measurement data which changes over time
+    modelEstimates = list of model updates and time
     """
-    
-    fig = plt.figure()
-    ax1 = plt.axes(xlim=(0, 600), ylim=(0,600))
+    fig, ax = plt.subplots(1,2,figsize=(12, 6))
+    ax[0].set_xlim(0,600)
+    ax[0].set_ylim(0,600)
+    ax[0].set_title('Model')
+    ax[1].set_xlim(0,600)
+    ax[1].set_ylim(0,600)
+    ax[1].set_title('Ground Truth')
+    # fig = plt.figure()
+    # ax1 = plt.axes(xlim=(0, 600), ylim=(0,600))
     
     graphs = []
     for r in range(len(robots)):
-        graphobj = ax1.plot([], [], '-', label='Robot %d'%r)[0]
+        graphobj = ax[1].plot([], [], '-', label='Robot %d'%r)[0]
         graphs.append(graphobj)
     
     
@@ -41,7 +92,10 @@ def plotTrajectoryAnimation(robots, measurementGroundTruthList):
     
     xlist = [i for i in range(len(robots))]
     ylist = [i for i in range(len(robots))]
-    
+
+    updatedModel, updatedTime = zip(*modelEstimates)
+    # print(updatedTime)
+    updatedTime = np.around(updatedTime, decimals=1)
     def animate(i):
         for r in range(0,len(robots)):
             x,y = zip(*robots[r].trajectory)
@@ -51,14 +105,19 @@ def plotTrajectoryAnimation(robots, measurementGroundTruthList):
         for gnum,graph in enumerate(graphs):
             
             graph.set_data(ylist[gnum], xlist[gnum]) # set data for each line separately. 
-        ax1.imshow(measurementGroundTruthList[i], origin='lower')
+        ax[1].imshow(measurementGroundTruthList[i], origin='lower')
+
+        idx = np.where(updatedTime == np.round(i*0.1,decimals=1))
+        # print(idx[0])
+        if len(idx) > 0 and len(idx[0]) > 0:
+            ax[0].imshow(updatedModel[idx[0][0]], origin='lower')
         return graphs
 
     ani = animation.FuncAnimation(fig, animate, init_func=init,
                                   frames=len(robots[-1].trajectory), interval=200)
-    plt.legend()
+    # plt.legend(loc='lower right')
     
-    ani.save(PATH + 'basic_animation.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
+    ani.save(PATH + 'video.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
     
 def plotTrajectory(robots):
     """Plot the trajectories of all robots

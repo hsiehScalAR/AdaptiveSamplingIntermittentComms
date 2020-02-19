@@ -162,7 +162,7 @@ def totalStatistics(totalData, saveLoc):
                     std[i,e + index] = np.std(error)
             index += 3
 
-    _, ax = plt.subplots(figsize=(8, 6))
+    _, ax = plt.subplots(figsize=(8, 4))
         
     bp1 = ax.boxplot([mean[:,0],mean[:,6],mean[:,12],mean[:,18]],positions=[1,3,5,7], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C0"))
     bp2 = ax.boxplot([mean[:,3],mean[:,9],mean[:,15],mean[:,21]], positions=[2,4,6,8], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C2"))
@@ -179,7 +179,7 @@ def totalStatistics(totalData, saveLoc):
     plt.close()
 
 
-    _, ax = plt.subplots(figsize=(8, 6))
+    _, ax = plt.subplots(figsize=(8, 4))
 
     bp3 = ax.boxplot([mean[:,2],mean[:,8],mean[:,14],mean[:,20]],positions=[1,3,5,7], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C0"))
     bp4 = ax.boxplot([mean[:,5],mean[:,11],mean[:,17],mean[:,23]], positions=[2,4,6,8], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C2"))

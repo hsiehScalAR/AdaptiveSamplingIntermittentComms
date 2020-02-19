@@ -88,11 +88,12 @@ class Robot:
         self.endNodeCounter = 0
         self.endLocation = np.array([0, 0])
         
+        # Model variable
         if pod:
             self.model = ReducedOrderModel(spatiotemporal, specialKernel, logFile)
         else:
             self.model = GaussianProcess(spatiotemporal, specialKernel, logFile)
-        
+
         Robot.objs.append(self)
         Robot.discretization = discretization
         

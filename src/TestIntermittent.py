@@ -46,6 +46,7 @@ def main():
 
     """Write parameters to new logfile"""
     parameters = {
+                'RANDINT        ': RANDINT,
                 'TOTALTIME      ': TOTALTIME,
                 'CASE           ': CASE,
                 'CORRECTTIMESTEP': CORRECTTIMESTEP,
@@ -159,12 +160,15 @@ def main():
     print('Starting ControlLoop')
     currentTime = initialTime
 
+    modelEstimates = []
+    modelEstimates.append([np.zeros([DISCRETIZATION[0],DISCRETIZATION[1]]),0])
+
     for t in range(0,np.int(TOTALTIME/SENSORPERIOD)):
         if not STATIONARY:
             for r in range(0,numRobots):
                 robots[r].mappingGroundTruth = measurementGroundTruthList[t]
             
-        currentTime = update(currentTime, robots, teams, commPeriod)
+        currentTime = update(currentTime, robots, teams, commPeriod, modelEstimates)
         
 
     print('ControlLoop Finished\n')
@@ -186,7 +190,7 @@ def main():
         plotMeasurement(totalMap, 'Measurements of robots after communication events')
 
     if ANIMATION:
-        plotTrajectoryAnimation(robots, measurementGroundTruthList)
+        plotTrajectoryAnimation(robots, measurementGroundTruthList, modelEstimates)
     
     if GAUSSIAN:
 
@@ -209,7 +213,7 @@ def main():
     
     print('Plotting Finished\n')
 
-def update(currentTime, robots, teams, commPeriod):
+def update(currentTime, robots, teams, commPeriod, modelEstimates):
     """
     Update procedure of intermittent communication
 
@@ -218,6 +222,7 @@ def update(currentTime, robots, teams, commPeriod):
     robots = instances of the robots that are to be moved
     teams = teams of the robots
     commPeriod = how many schedules there are
+    modelEstimates = list of model updates and time
     """
 
     atEndPoint = np.zeros(len(robots))
@@ -250,7 +255,7 @@ def update(currentTime, robots, teams, commPeriod):
                 robots[r-1].endTotalTime  = currentTime
                 robs.append(robots[r-1])
             
-            communicateToTeam(robs, GAUSSIAN, POD)
+            modelEstimates.append([communicateToTeam(robs, GAUSSIAN, POD), currentTime])
             
             print('Updating Paths')
             updatePaths(robs)
@@ -496,15 +501,16 @@ if __name__ == "__main__":
     """Entry in Test Program"""
     
     """Setup Variables"""
-
-    # np.random.seed(1992)
+    RANDINT = np.random.randint(0,2000)
+    # RANDINT = 1978
+    np.random.seed(RANDINT)
     
-    TOTALTIME = 100 #total execution time of program
+    TOTALTIME = 20 #total execution time of program
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 4 robots 4 teams)
     CORRECTTIMESTEP = False #If dye time steps should be matched to correct time steps or if each time step in dye corresponds to time step here
     
     DEBUG = False #debug to true shows prints
-    ANIMATION = False #if animation should be done
+    ANIMATION = True #if animation should be done
     POD = False # if we are using POD or GP
     GAUSSIAN = True #if model should be calculated
     OPTPATH = GAUSSIAN == True #if path optimization should be used, can not be true if optpoint is used

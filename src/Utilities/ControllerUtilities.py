@@ -56,6 +56,8 @@ def communicateToTeam(robots, GP=True, POD=False):
             if robots[0].optPath:
                 robots[r].expectedMeasurement = robots[0].expectedMeasurement
                 robots[r].expectedVariance = robots[0].expectedVariance
+                
+    return robots[0].expectedMeasurement
 
 def moveAlongPath(robot, deltaT):
     """move the robot along the planned path and take measurements on the way
