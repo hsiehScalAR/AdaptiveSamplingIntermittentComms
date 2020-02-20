@@ -69,33 +69,51 @@ def plotTrajectoryAnimation(robots, measurementGroundTruthList, modelEstimates):
     measurementGroundTruthList = measurement data which changes over time
     modelEstimates = list of model updates and time
     """
+    colors = ['b','m','g','r']
+
     fig, ax = plt.subplots(1,2,figsize=(12, 6))
+    fig.subplots_adjust(bottom=0.06, right=0.8, top=0.94, wspace=0.2,hspace=0.1)
+    fig.suptitle('Reduced-Order Modeling of a Dynamic Process \n under Intermittent Connectivity with Distributed Robot Teams')
+
     ax[0].set_xlim(0,600)
     ax[0].set_ylim(0,600)
-    ax[0].set_title('Model')
+    ax[0].set_title('Ground Truth')
+    ax[0].set_xlabel('x')
+    ax[0].set_ylabel('y')
+    
     ax[1].set_xlim(0,600)
     ax[1].set_ylim(0,600)
-    ax[1].set_title('Ground Truth')
-    # fig = plt.figure()
-    # ax1 = plt.axes(xlim=(0, 600), ylim=(0,600))
+    ax[1].set_title('Model')
+    ax[1].set_xlabel('x')
+    ax[1].set_ylabel('y')
     
     graphs = []
+    arrows = []
     for r in range(len(robots)):
-        graphobj = ax[1].plot([], [], '-', label='Robot %d'%r)[0]
+        graphobj = ax[0].plot([], [], '-', color=colors[r], label='Robot %d'%r)[0]
+        arrow, = ax[0].plot([], [],'o', color=colors[r])
         graphs.append(graphobj)
+        arrows.append(arrow)
     
     
     def init():
         for graph in graphs:
             graph.set_data([],[])
-        return graphs
+        timeText = ax[1].text(-0.2, 1.1,'', transform=ax[1].transAxes)   
+        return graphs, timeText
     
     xlist = [i for i in range(len(robots))]
     ylist = [i for i in range(len(robots))]
 
     updatedModel, updatedTime = zip(*modelEstimates)
-    # print(updatedTime)
     updatedTime = np.around(updatedTime, decimals=1)
+
+    im = ax[1].imshow(updatedModel[0], origin='lower', vmin=-1, vmax=15)
+
+    timeText = ax[1].text(-0.2, 1.1,'', transform=ax[1].transAxes)  
+    
+    totalTime = len(robots[-1].trajectory)
+
     def animate(i):
         for r in range(0,len(robots)):
             x,y = zip(*robots[r].trajectory)
@@ -103,21 +121,39 @@ def plotTrajectoryAnimation(robots, measurementGroundTruthList, modelEstimates):
             ylist[r] = y[:i]
 
         for gnum,graph in enumerate(graphs):
+            graph.set_data(ylist[gnum], xlist[gnum])
+        if len(xlist[0]) > 1:
+        # if len(xlist[0]) > 10:
+            for arrowNb,arrow in enumerate(arrows):
+                # print(ylist[arrowNb][-1], xlist[arrowNb][-1])
+                # ax[0].arrow(ylist[arrowNb][-1],xlist[arrowNb][-1],ylist[arrowNb][-1]-ylist[arrowNb][-10],xlist[arrowNb][-1]-xlist[arrowNb][-10], shape='full', lw=0, length_includes_head=True, head_width=.05)
+                arrow.set_data(ylist[arrowNb][-1], xlist[arrowNb][-1])
             
-            graph.set_data(ylist[gnum], xlist[gnum]) # set data for each line separately. 
-        ax[1].imshow(measurementGroundTruthList[i], origin='lower')
+        ax[0].imshow(measurementGroundTruthList[i], origin='lower', vmin=-1, vmax=15)
 
         idx = np.where(updatedTime == np.round(i*0.1,decimals=1))
-        # print(idx[0])
         if len(idx) > 0 and len(idx[0]) > 0:
-            ax[0].imshow(updatedModel[idx[0][0]], origin='lower')
-        return graphs
+            ax[1].imshow(updatedModel[idx[0][0]], origin='lower', vmin=-1, vmax=15)
+        
+        textstr = 'Time: ' + str(np.round(i*0.1,decimals=1))
+
+        timeText.set_text(textstr)
+
+        print('Progress: %.1f percent\r' %(i/totalTime*100), end='')
+
+        return graphs, timeText, arrows
 
     ani = animation.FuncAnimation(fig, animate, init_func=init,
-                                  frames=len(robots[-1].trajectory), interval=200)
-    # plt.legend(loc='lower right')
+                                  frames=len(robots[-1].trajectory), interval=500)
     
-    ani.save(PATH + 'video.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
+    cbar_ax = fig.add_axes([0.83, 0.2, 0.01, 0.6])
+    cbar = fig.colorbar(im, cax=cbar_ax)
+    im.set_clim(-1, 15)
+    cbar.ax.set_ylabel('Dye Concentration', rotation=270, labelpad=15)
+    
+    ax[0].legend(loc='lower left', bbox_to_anchor=(-0.17, -0.24), ncol=4)
+            
+    ani.save(PATH + 'video.mp4', fps=15, extra_args=['-vcodec', 'libx264'])
     
 def plotTrajectory(robots):
     """Plot the trajectories of all robots

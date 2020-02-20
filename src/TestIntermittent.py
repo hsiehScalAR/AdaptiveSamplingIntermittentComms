@@ -189,16 +189,18 @@ def main():
         totalMap = robots[0].mapping[:,:,0]
         plotMeasurement(totalMap, 'Measurements of robots after communication events')
 
-    if ANIMATION:
-        plotTrajectoryAnimation(robots, measurementGroundTruthList, modelEstimates)
+    
     
     if GAUSSIAN:
 
-        plotTrajectoryOverlayGroundTruth(robots,0)
+        # plotTrajectoryOverlayGroundTruth(robots,0)
 
         for r in range(0,numRobots):
             robots[r].model.update(robots[r])
             robots[r].model.plot(robots[r])
+            if r == 0:
+                if ANIMATION:
+                    plotTrajectoryAnimation(robots, measurementGroundTruthList, modelEstimates)
             if PREDICTIVETIME != None:
                 
                 if PREDICTIVETIME >= maxTime:
@@ -502,10 +504,10 @@ if __name__ == "__main__":
     
     """Setup Variables"""
     RANDINT = np.random.randint(0,2000)
-    # RANDINT = 1978
+    # RANDINT = 671
     np.random.seed(RANDINT)
     
-    TOTALTIME = 20 #total execution time of program
+    TOTALTIME = 100 #total execution time of program
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 4 robots 4 teams)
     CORRECTTIMESTEP = False #If dye time steps should be matched to correct time steps or if each time step in dye corresponds to time step here
     
