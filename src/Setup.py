@@ -99,11 +99,12 @@ def loadMeshFiles(sensorPeriod, correctTimeSteps = False):
         maxTime = np.int(timeValues.shape[1]/skip)*sensorPeriod*lag
     return measurementGroundTruthList, maxTime
     
-def getSetup(case):
+def getSetup(case, pod):
     """Returns the setup for the robot teams based on the case
 
     Input arguments:
     case = which case we are treating
+    pod = if we are using pod or not
     """
     
     #robot i belongs to team j
@@ -128,7 +129,14 @@ def getSetup(case):
                               [599, 300],
                               [599, 0],
                               [300, 0],])
-    
+
+        uMax = np.array([80,80,80,80,80,80,80,80])
+        sensorPeriod = np.array([0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1])
+        if pod:
+            sensingRange = np.array([20,20,20,20,20,20,20,20])
+        else:
+            sensingRange = np.array([0,0,0,0,0,0,0,0])
+        
     elif case == 2:
         numTeams = 5
         numRobots = 8
@@ -149,6 +157,14 @@ def getSetup(case):
                               [599, 300],
                               [599, 0],
                               [300, 0],])
+
+        uMax = np.array([80,80,80,80,80,80,80,80])
+        sensorPeriod = np.array([0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1])
+        if pod:
+            sensingRange = np.array([20,20,20,20,20,20,20,20])
+        else:
+            sensingRange = np.array([0,0,0,0,0,0,0,0])
+
     elif case == 3:
         numTeams = 4
         numRobots = 4
@@ -161,8 +177,19 @@ def getSetup(case):
                              [0, 599],
                              [599, 0],
                              [599, 599],])
+
+
+        # uMax = np.array([80,40,80,40])
+        uMax = np.array([80,80,80,80])
+        sensorPeriod = np.array([0.1,0.1,0.1,0.1])
+        if pod:
+            # sensingRange = np.array([20,40,20,40])
+            sensingRange = np.array([20,20,20,20])
+        else:
+            sensingRange = np.array([0,0,0,0])
+            sensingRange = np.array([0,0,0,0])
     
     else:
         exit()
         
-    return numTeams, numRobots, robTeams, positions
+    return numTeams, numRobots, robTeams, positions, uMax,sensingRange

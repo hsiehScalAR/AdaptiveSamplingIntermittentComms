@@ -15,59 +15,16 @@ import matplotlib.animation as animation
 
 from scipy.stats import multivariate_normal
 
-PATH = 'Results/Tmp/'
+# PATH = 'Results/Tmp/'
 
-# def plotTrajectoryAnimation(robots, measurementGroundTruthList, modelEstimates):
-#     """Make an animation of the robots journee
-
-#     Input arguments:
-#     robots = robots which measured and moved around
-#     measurementGroundTruthList = measurement data which changes over time
-#     modelEstimates = list of model updates and time
-#     """
-
-#     fig = plt.figure()
-#     ax1 = plt.axes(xlim=(0, 600), ylim=(0,600))
-    
-#     graphs = []
-#     for r in range(len(robots)):
-#         graphobj = ax1.plot([], [], '-', label='Robot %d'%r)[0]
-#         graphs.append(graphobj)
-    
-    
-#     def init():
-#         for graph in graphs:
-#             graph.set_data([],[])
-#         return graphs
-    
-#     xlist = [i for i in range(len(robots))]
-#     ylist = [i for i in range(len(robots))]
-    
-#     def animate(i):
-#         for r in range(0,len(robots)):
-#             x,y = zip(*robots[r].trajectory)
-#             xlist[r] = x[:i]
-#             ylist[r] = y[:i]
-
-#         for gnum,graph in enumerate(graphs):
-            
-#             graph.set_data(ylist[gnum], xlist[gnum]) # set data for each line separately. 
-#         ax1.imshow(measurementGroundTruthList[i], origin='lower')
-#         return graphs
-
-#     ani = animation.FuncAnimation(fig, animate, init_func=init,
-#                                   frames=len(robots[-1].trajectory), interval=200)
-#     plt.legend(loc='lower right')
-    
-#     ani.save(PATH + 'basic_animation.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
-
-def plotTrajectoryAnimation(robots, measurementGroundTruthList, modelEstimates):
+def plotTrajectoryAnimation(robots, measurementGroundTruthList, modelEstimates, path):
     """Make an animation of the robots journee
 
     Input arguments:
     robots = robots which measured and moved around
     measurementGroundTruthList = measurement data which changes over time
     modelEstimates = list of model updates and time
+    path = savePath
     """
     colors = ['b','m','g','r']
 
@@ -139,7 +96,7 @@ def plotTrajectoryAnimation(robots, measurementGroundTruthList, modelEstimates):
 
         timeText.set_text(textstr)
 
-        print('Progress: %.1f percent\r' %(i/totalTime*100), end='')
+        print('Video Progress: %.1f percent\r' %(i/totalTime*100), end='')
 
         return graphs, timeText, arrows
 
@@ -153,13 +110,14 @@ def plotTrajectoryAnimation(robots, measurementGroundTruthList, modelEstimates):
     
     ax[0].legend(loc='lower left', bbox_to_anchor=(-0.17, -0.24), ncol=4)
             
-    ani.save(PATH + 'video.mp4', fps=15, extra_args=['-vcodec', 'libx264'])
+    ani.save(path + 'video.mp4', fps=15, extra_args=['-vcodec', 'libx264'])
     
-def plotTrajectory(robots):
+def plotTrajectory(robots, path):
     """Plot the trajectories of all robots
 
     Input arguments:
     robots = robots which measured and moved around
+    path = savePath
     """
 
     plt.figure()
@@ -167,15 +125,16 @@ def plotTrajectory(robots):
         x,y = zip(*robots[r].trajectory)
         plt.plot(y,x, '-', label='Robot %d'%r)
     plt.legend()
-    plt.savefig(PATH + 'Trajectory' + '.png')
+    plt.savefig(path + 'Trajectory' + '.png')
     plt.close()
 
-def plotMeasurement(data, title):
+def plotMeasurement(data, title, path):
     """Plot the measurement data
 
     Input arguments:
     data = measurement data
     title = title of the figure
+    path = savePath
     """
 
     _, ax = plt.subplots()
@@ -183,11 +142,11 @@ def plotMeasurement(data, title):
     ax.set_title(title)
     plt.imshow(data, origin='lower')
     plt.colorbar()
-    plt.savefig(PATH + 'Measurements' + '.png')
+    plt.savefig(path + 'Measurements' + '.png')
     plt.close()
     
     
-def plotMeetingGraphs(robots, index, team, subplot=None, length=0):
+def plotMeetingGraphs(robots, index, team, path, subplot=None, length=0):
     """Plot the trajectories of all robots
 
     Input arguments:
@@ -196,6 +155,7 @@ def plotMeetingGraphs(robots, index, team, subplot=None, length=0):
     team = team of the robots
     subplot = if we want to plot all teams
     length = how many subplots we need
+    path = savePath
     """
 
     #TODO: add savefig in main loop
@@ -214,11 +174,11 @@ def plotMeetingGraphs(robots, index, team, subplot=None, length=0):
                 node_color=node_color,node_size=100,with_labels = True,font_color='w',font_size=8)
     
     plt.legend()
-    plt.savefig(PATH + 'RRT* Graphs' + '.png')
+    plt.savefig(path + 'RRT* Graphs' + '.png')
     plt.close()
     
 
-def plotMeetingPaths(robots, index, team, subplot=None, length=0):
+def plotMeetingPaths(robots, index, team, path, subplot=None, length=0):
     """Plot the trajectories of all robots
 
     Input arguments:
@@ -227,6 +187,7 @@ def plotMeetingPaths(robots, index, team, subplot=None, length=0):
     team = team of the robots
     subplot = if we want to plot all teams
     length = how many subplots we need
+    path = savePath
     """
 
     #TODO: add savefig in main loop
@@ -245,16 +206,17 @@ def plotMeetingPaths(robots, index, team, subplot=None, length=0):
                 node_color=node_color,node_size=100,with_labels = True,font_color='w',font_size=8)
     
     plt.legend()
-    plt.savefig(PATH + 'RRT* Paths' + '.png')
+    plt.savefig(path + 'RRT* Paths' + '.png')
     plt.close()
         
     
-def plotTrajectoryOverlayGroundTruth(robots, index):
+def plotTrajectoryOverlayGroundTruth(robots, index, path):
     """Plot the trajectories over the ground truth
 
     Input arguments:
     robots = robots which measured and moved around
     index = which robots ground truth to use
+    path = savePath
     """
 
     fig, ax = plt.subplots()
@@ -277,16 +239,17 @@ def plotTrajectoryOverlayGroundTruth(robots, index):
     ax.set_title('Ground Truth and Trajectories')       
     fig.colorbar(im, ax=ax)
     plt.legend()
-    plt.savefig(PATH + 'Ground Truth and Trajectories' + '.png')
+    plt.savefig(path + 'Ground Truth and Trajectories' + '.png')
     plt.close(fig)
     
-def plotProcrustes(robot, image1, image2):
+def plotProcrustes(robot, image1, image2, path):
     """Plot the procrustes analysis results
 
     Input arguments:
     robot = robot instance
     image1 = result from procrustes
     image2 = result from procrustes
+    path = savePath
     """
 
     fig, ax = plt.subplots(1,4,figsize=(18, 6))
@@ -309,17 +272,18 @@ def plotProcrustes(robot, image1, image2):
 
     im = ax[3].imshow(robot.mappingGroundTruth, origin='lower')
 
-    fig.savefig(PATH + title + '.png')
+    fig.savefig(path + title + '.png')
     
     plt.close(fig)
 
-def plotDye(image1, image2, image3):
+def plotDye(image1, image2, image3, path):
     """Plot the dye at three different time steps
 
     Input arguments:
     image1 = dye at specific timestep
     image2 = dye at specific timestep
     image3 = dye at specific timestep
+    path = savePath
     """
 
     fig, ax = plt.subplots(1,3,figsize=(18, 6))
@@ -337,6 +301,6 @@ def plotDye(image1, image2, image3):
     im = ax[2].imshow(image3, origin='lower')      
     ax[2].set_xlabel('x')
     ax[2].set_ylabel('y')
-    fig.savefig(PATH + title + '.png')
+    fig.savefig(path + title + '.png')
     
     plt.close(fig)

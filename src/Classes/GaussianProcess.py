@@ -18,16 +18,17 @@ from scipy.spatial import procrustes
 from Utilities.VisualizationUtilities import plotMeasurement, plotProcrustes
                                               
 ITERATIONS = 1000
-PATH = 'Results/Tmp/'
+# PATH = 'Results/Tmp/'
 
 class GaussianProcess:
-    def __init__(self, spatiotemporal, specialKernel,logFile):
+    def __init__(self, spatiotemporal, specialKernel,logFile, path):
         """Initialize kernel for the GPs
 
         Input arguments:
         spatiotemporal = bool if using time dependent kernel
         specialKernel = bool if own kernel should be used
         logFile = logFile class which allows to write to file
+        path = savePath
         """
 
         self.spatiotemporal = spatiotemporal
@@ -66,6 +67,8 @@ class GaussianProcess:
                     'tempARD        ': tempARD,
                     }
         self.logFile.writeParameters(**parameters)
+
+        self.path = path
 
         if spatiotemporal:
             
@@ -222,7 +225,7 @@ class GaussianProcess:
                 im = ax[2].imshow(robot.mappingGroundTruth, origin='lower')
                 fig.colorbar(im, ax=ax[2])
 
-                fig.savefig(PATH + title + '.png')
+                fig.savefig(self.path + title + '.png')
                 
                 plt.close(fig)
         else:
@@ -258,7 +261,7 @@ class GaussianProcess:
                 cbar_ax = fig.add_axes([0.83, 0.2, 0.01, 0.6])
                 fig.colorbar(im, cax=cbar_ax)
                 im.set_clim(-1, 15*scaling)
-                fig.savefig(PATH + title + '.png')
+                fig.savefig(self.path + title + '.png')
                 
                 plt.close(fig)
             

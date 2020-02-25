@@ -112,8 +112,8 @@ def individualStatistics(totalData, saveLoc, stp):
         name = 'Spatiotemporal Results POD (n=10)'
     ax.set_title(name)
 
-    mean = np.zeros([10,6])
-    std = np.zeros([10,6])
+    mean = np.zeros([10,9])
+    std = np.zeros([10,9])
 
     for idx, data in enumerate(totalData):
         for i in range(0,10):
@@ -123,12 +123,14 @@ def individualStatistics(totalData, saveLoc, stp):
                 mean[i,e + 3*idx] = np.mean(error)
                 std[i,e + 3*idx] = np.std(error)
         
-    bp1 = ax.boxplot([mean[:,0],mean[:,2]],positions=[1,3], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C0"))
-    bp2 = ax.boxplot([mean[:,3],mean[:,5]], positions=[2,4], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C2"))
+    bp1 = ax.boxplot([mean[:,0],mean[:,2]],positions=[1,4], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C0"))
+    bp2 = ax.boxplot([mean[:,3],mean[:,5]], positions=[2,5], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C2"))
+    bp3 = ax.boxplot([mean[:,6],mean[:,8]], positions=[3,6], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C1"))
+    
     ax.set_ylim(0,2.5)
-    ax.legend([bp1["boxes"][0], bp2["boxes"][0]], ['Intermittent', 'Full'], loc='upper right')
+    ax.legend([bp1["boxes"][0], bp2["boxes"][0], bp3["boxes"][0]], ['Intermittent', 'AllTime','Full'], loc='upper right')
     ax.set_ylabel('RMSE')
-    plt.xticks([1.5, 3.5], ['RMSE', 'DISSIM'])
+    plt.xticks([2, 5], ['RMSE', 'DISSIM'])
     plt.savefig(saveLoc + 'Boxplot_' + SETUP[stp] + '.png' )
     plt.close()
 
@@ -136,8 +138,10 @@ def individualStatistics(totalData, saveLoc, stp):
 
     print('intermittent, RMSE mean:    %.2f   std:  %.2f' %(np.mean(mean[:,0]), np.mean(std[:,0])))
     print('intermittent, DISSIM mean:  %.2f   std:  %.2f' %(np.mean(mean[:,2]), np.mean(std[:,2])))
-    print('full, RMSE mean:            %.2f   std:  %.2f' %(np.mean(mean[:,3]), np.mean(std[:,3])))
-    print('full, DISSIM mean:          %.2f   std:  %.2f' %(np.mean(mean[:,5]), np.mean(std[:,5])))
+    print('all-time, RMSE mean:        %.2f   std:  %.2f' %(np.mean(mean[:,3]), np.mean(std[:,3])))
+    print('all-time, DISSIM mean:      %.2f   std:  %.2f' %(np.mean(mean[:,5]), np.mean(std[:,5])))
+    print('full, RMSE mean:            %.2f   std:  %.2f' %(np.mean(mean[:,6]), np.mean(std[:,6])))
+    print('full, DISSIM mean:          %.2f   std:  %.2f' %(np.mean(mean[:,8]), np.mean(std[:,8])))
 
 def totalStatistics(totalData, saveLoc):
     """Plots the error in a combined box plot
@@ -202,7 +206,7 @@ if __name__ == "__main__":
 
     basePath = '/home/hannes/MasterThesisCode/AdaptiveSamplingIntermittentComms/src/Results/Tests/IntermediateResults/'
     saveLoc = '/home/hannes/MasterThesisCode/AdaptiveSamplingIntermittentComms/src/Results/Tests/IntermediateResults/Figures/'
-    CASE = ['Intermittent','Full']
+    CASE = ['Intermittent','AllTime','Full']
 
     SETUP = ['SpatialGP','SpatialPOD','SpatioTemporalGP','SpatioTemporalPOD']    
     
@@ -213,16 +217,19 @@ if __name__ == "__main__":
             if CASE[idx] == 'Intermittent':
                 path = basePath + SETUP[stp] + '/IntermittentCommunication'
                 ROBOTID = 0
-            elif CASE[idx] == 'Full':
+            elif CASE[idx] == 'AllTime':
                 path = basePath + SETUP[stp] + '/AllTimeCommunication'
                 ROBOTID = 4
+            elif CASE[idx] == 'Full':
+                path = basePath + SETUP[stp] + '/FullCommunication'
+                ROBOTID = 0
         
             data = readAllFiles(path)
             individualData.append(data)
         totalData.append(individualData)
         individualStatistics(individualData, saveLoc, stp)
 
-    mean, std = totalStatistics(totalData, saveLoc)
+    # mean, std = totalStatistics(totalData, saveLoc)
 
     # print(np.mean(mean[0:-1:3],axis=0))
     # print(np.std(mean[0:-1:3],axis=0))

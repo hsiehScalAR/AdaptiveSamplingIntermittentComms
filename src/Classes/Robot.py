@@ -18,7 +18,7 @@ class Robot:
     
     objs = []  # Registrar keeps all attributes of class
 
-    def __init__(self, ID, teams, schedule, discretization, uMax, sensorPeriod, optPath, optPoint, spatiotemporal, specialKernel, pod, logFile):
+    def __init__(self, ID, teams, schedule, discretization, sensorPeriod, optPath, optPoint, spatiotemporal, specialKernel, pod, logFile, folder):
         """Initializer of robot class
 
         Input arguments:
@@ -41,7 +41,7 @@ class Robot:
         self.numbMeasurements = 0
         self.measurementRangeX = np.array([self.sensingRange, self.sensingRange])
         self.measurementRangeY = np.array([self.sensingRange, self.sensingRange])
-        self.uMax = uMax
+        self.uMax = 0
         self.sensorPeriod = sensorPeriod
         
         self.optPath = optPath
@@ -90,9 +90,9 @@ class Robot:
         
         # Model variable
         if pod:
-            self.model = ReducedOrderModel(spatiotemporal, specialKernel, logFile)
+            self.model = ReducedOrderModel(spatiotemporal, specialKernel, logFile, folder)
         else:
-            self.model = GaussianProcess(spatiotemporal, specialKernel, logFile)
+            self.model = GaussianProcess(spatiotemporal, specialKernel, logFile, folder)
 
         Robot.objs.append(self)
         Robot.discretization = discretization

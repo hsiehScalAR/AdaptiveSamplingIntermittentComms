@@ -16,11 +16,11 @@ from scipy.spatial import procrustes
 # Personal imports
 # from Utilities.VisualizationUtilities import plotMeasurement, plotProcrustes
 
-PATH = 'Results/Tmp/'
+# PATH = 'Results/Tmp/'
 ENERGY = 0.99
 
 class ReducedOrderModel:
-    def __init__(self, spatiotemporal, specialKernel,logFile):
+    def __init__(self, spatiotemporal, specialKernel,logFile, path):
         """Initialize parameters for the PODs
         
         Input arguments:
@@ -56,6 +56,7 @@ class ReducedOrderModel:
                     }
         self.logFile.writeParameters(**parameters)
 
+        self.path = path
     
     def initialize(self, robot):
         """Initialize model for the PODs
@@ -192,7 +193,7 @@ class ReducedOrderModel:
             cbar_ax = fig.add_axes([0.83, 0.2, 0.01, 0.6])
             fig.colorbar(im, cax=cbar_ax)
             im.set_clim(-1, 15*scaling)
-            fig.savefig(PATH + title + '.png')
+            fig.savefig(self.path + title + '.png')
             
             plt.close(fig)
             

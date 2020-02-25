@@ -9,7 +9,7 @@ Created on Mon Nov  4 10:48:29 2019
 #General imports
 import numpy as np
 import matplotlib.pyplot as plt
-import os
+import os, shutil
 from skimage.measure import compare_ssim as ssim
 from scipy.spatial import procrustes
 
@@ -34,21 +34,13 @@ def main():
     
     No inputs 
     """
-    
-    """Remove Tmp results file"""  
-    for filename in os.listdir(FOLDER):
-        file_path = os.path.join(FOLDER, filename)
-        try:
-            if os.path.isfile(file_path) or os.path.islink(file_path):
-                os.unlink(file_path)
-        except Exception as e:
-            print('Failed to delete %s. Reason: %s' % (file_path, e))
 
     """Write parameters to new logfile"""
     parameters = {
                 'RANDINT        ': RANDINT,
                 'TOTALTIME      ': TOTALTIME,
                 'CASE           ': CASE,
+                'FULLYCONNECTED ': FULLYCONNECTED,
                 'CORRECTTIMESTEP': CORRECTTIMESTEP,
                 'POD            ': POD,
                 'GAUSSIAN       ': GAUSSIAN,
@@ -70,7 +62,7 @@ def main():
     """Create Measurement Data"""
     measurementGroundTruthList, maxTime = loadMeshFiles(SENSORPERIOD,CORRECTTIMESTEP)
     
-    plotDye(measurementGroundTruthList[50],measurementGroundTruthList[500],measurementGroundTruthList[1000])
+    plotDye(measurementGroundTruthList[50],measurementGroundTruthList[500],measurementGroundTruthList[1000], FOLDER+'/')
     
     print('**********************************************************************\n')
     print('Max allowed time is: %.1f length of data: %.1f\n' %(maxTime,len(measurementGroundTruthList)))
@@ -89,7 +81,7 @@ def main():
 
            
     """create robot to team correspondence"""
-    numTeams, numRobots, robTeams, positions = getSetup(CASE)
+    numTeams, numRobots, robTeams, positions, uMax, sensingRange = getSetup(CASE, POD)
     
     """Variables"""
     if isinstance(positions, np.ndarray):
@@ -109,7 +101,8 @@ def main():
         robots[r].vnew = locations[r]
         robots[r].currentLocation = locations[r]
         robots[r].totalTime = initialTime
-        robots[r].sensingRange = SENSINGRANGE
+        robots[r].sensingRange = sensingRange[r]
+        robots[r].uMax = uMax[r]
         robots[r].mappingGroundTruth = measurementGroundTruth
         
         """Initialize models"""
@@ -175,32 +168,32 @@ def main():
     
     print('Starting Plotting')
     if DEBUG:
-        plotMeasurement(measurementGroundTruth, 'Ground truth measurement map')
+        plotMeasurement(measurementGroundTruth, 'Ground truth measurement map', FOLDER+'/')
         subplot = 1
         team = 0
         for r in teams:
             r = np.asarray(r[0]) -1
-            plotMeetingGraphs(robots, r, team, subplot, len(teams))
-            plotMeetingPaths(robots, r, team, subplot, len(teams))
+            plotMeetingGraphs(robots, r, team,  FOLDER+'/',subplot, len(teams))
+            plotMeetingPaths(robots, r, team,  FOLDER+'/', subplot, len(teams))
             subplot += 1
             team += 1
         
-        plotTrajectory(robots)
+        plotTrajectory(robots, FOLDER+'/')
         totalMap = robots[0].mapping[:,:,0]
-        plotMeasurement(totalMap, 'Measurements of robots after communication events')
+        plotMeasurement(totalMap, 'Measurements of robots after communication events', FOLDER+'/')
 
     
     
     if GAUSSIAN:
 
-        # plotTrajectoryOverlayGroundTruth(robots,0)
+        plotTrajectoryOverlayGroundTruth(robots,0, FOLDER+'/')
 
         for r in range(0,numRobots):
             robots[r].model.update(robots[r])
             robots[r].model.plot(robots[r])
             if r == 0:
                 if ANIMATION:
-                    plotTrajectoryAnimation(robots, measurementGroundTruthList, modelEstimates)
+                    plotTrajectoryAnimation(robots, measurementGroundTruthList, modelEstimates, FOLDER+'/')
             if PREDICTIVETIME != None:
                 
                 if PREDICTIVETIME >= maxTime:
@@ -394,7 +387,7 @@ def initializeRobots(numRobots, teams, schedule, logFile):
         for t in range(0,len(teams)):    
             if r+1 in teams[t]:
                 belongsToTeam.append(t)
-        rob = Robot(r, np.asarray(belongsToTeam), schedule[r], DISCRETIZATION, UMAX, SENSORPERIOD, OPTPATH, OPTPOINT, SPATIOTEMPORAL, SPECIALKERNEL, POD, logFile)
+        rob = Robot(r, np.asarray(belongsToTeam), schedule[r], DISCRETIZATION, SENSORPERIOD, OPTPATH, OPTPOINT, SPATIOTEMPORAL, SPECIALKERNEL, POD, logFile, FOLDER + '/')
         robots.append(rob)
     
     #Print test information
@@ -503,47 +496,75 @@ if __name__ == "__main__":
     """Entry in Test Program"""
     
     """Setup Variables"""
-    RANDINT = np.random.randint(0,2000)
-    # RANDINT = 671
-    np.random.seed(RANDINT)
     
-    TOTALTIME = 100 #total execution time of program
+    TOTALTIME = 50 #total execution time of program
     CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 4 robots 4 teams)
     CORRECTTIMESTEP = False #If dye time steps should be matched to correct time steps or if each time step in dye corresponds to time step here
     
     DEBUG = False #debug to true shows prints
-    ANIMATION = True #if animation should be done
-    POD = False # if we are using POD or GP
+    ANIMATION = False #if animation should be done
+    POD = True # if we are using POD or GP
     GAUSSIAN = True #if model should be calculated
     OPTPATH = GAUSSIAN == True #if path optimization should be used, can not be true if optpoint is used
     OPTPOINT = GAUSSIAN != OPTPATH == True #if point optimization should be used, can not be true if optpath is used
     
-    SPATIOTEMPORAL = True # if spatiotemporal data or not
+    SPATIOTEMPORAL = False # if spatiotemporal data or not
     STATIONARY = not SPATIOTEMPORAL #if we are using time varying measurement data or not
     SPECIALKERNEL = False == SPATIOTEMPORAL # if own kernel should be used, only works if spatiotemporal 
     STATIONARYTIME = 5 #which starting time to use for the measurement data, if not STATIONARY, 0 is used for default
     PREDICTIVETIME = None #Time for which to make a prediction at the end, has to be bigger than total time
+
+    FULLYCONNECTED = False #if fully connected without commrange constraint
 
     if POD:
         SENSINGRANGE = 20 # Sensing range of robots, 0 for GP and 20 for POD
     else:
         SENSINGRANGE = 0
     
-    COMMRANGE = 3 # communication range for robots
+    if FULLYCONNECTED:
+        COMMRANGE = 600 # communication range for robots
+        RANDOMSAMPLESMAX = 49 #how many random samples before trying to converge for communication
+        TOTALSAMPLES = 50 #how many samples in total
+    else:
+        COMMRANGE = 3 # communication range for robots
+        RANDOMSAMPLESMAX = 30 #how many random samples before trying to converge for communication
+        TOTALSAMPLES = 50 #how many samples in total
+    
     TIMEINTERVAL = 1 # time interval for communication events
     
     DISCRETIZATION = np.array([600, 600]) #grid space
     DIMENSION = 2 #dimension of robot space
-    RANDOMSAMPLESMAX = 30 #how many random samples before trying to converge for communication
-    TOTALSAMPLES = 50 #how many samples in total
-
+    
     SENSORPERIOD = 0.1 #time between sensor measurement or between updates of data
        
     UMAX = 80 # Max velocity, pixel/second
     EPSILON = DISCRETIZATION[0]/10 # Maximum step size of robots
     GAMMARRT = 100 # constant for rrt* algorithm, can it be calculated?
     
-    FOLDER = 'Results/Tmp'
+    BASEPATH = 'Results/Tmp'
     LOGFILE = 'logFile'
+
+    """Remove Tmp results files"""  
+    for filename in os.listdir(BASEPATH):
+        filePath = os.path.join(BASEPATH, filename)
+        try:
+            if os.path.isfile(filePath) or os.path.islink(filePath):
+                os.unlink(filePath)
+            elif os.path.isdir(filePath):
+                shutil.rmtree(filePath)
+        except Exception as e:
+            print('Failed to delete %s. Reason: %s' % (filePath, e))
     
-    main()
+    """Main function execution for a given number of iterations"""
+    ITERATIONS = 1 # How many main iterations
+    for i in range(1,ITERATIONS+1):
+
+        RANDINT = np.random.randint(0,2000)
+        # RANDINT = 671
+        np.random.seed(RANDINT)
+        
+        FOLDER = BASEPATH + '/Test'+str(i)
+        
+        os.mkdir(FOLDER)
+        
+        main()
