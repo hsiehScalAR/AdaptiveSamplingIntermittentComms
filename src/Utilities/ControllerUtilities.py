@@ -63,7 +63,7 @@ def moveAlongPath(robot, deltaT):
 
     Input arguments:
     robot = which robot we are moving
-    deltaT = sensor time step so that we move and take a measurement at each deltaT
+    deltaT = simulation time step
     """
 
     # TODO: Add different motion model
@@ -74,6 +74,11 @@ def moveAlongPath(robot, deltaT):
         robot.pathCounter = 0
         robot.atEndLocation = True
         robot.trajectory.append(robot.currentLocation)
+        
+        if robot.currentTime % robot.sensorPeriod < 0.1:
+            meas, measTime = measurement(robot)
+            robot.createMap(meas, measTime, robot.currentLocation)  # Create Map
+        
         return True
     
     currentNode = robot.paths[robot.scheduleCounter][robot.pathCounter]
@@ -93,8 +98,10 @@ def moveAlongPath(robot, deltaT):
     
     robot.trajectory.append(robot.currentLocation)
     
-    meas, measTime = measurement(robot)
-    robot.createMap(meas, measTime, robot.currentLocation)  # Create Map
+    print(robot.currentTime % robot.sensorPeriod)
+    if robot.currentTime % robot.sensorPeriod < 0.1:
+        meas, measTime = measurement(robot)
+        robot.createMap(meas, measTime, robot.currentLocation)  # Create Map
     
     return False
     

@@ -54,13 +54,13 @@ def main():
                 'SENSINGRANGE   ': SENSINGRANGE,
                 'COMMRANGE      ': COMMRANGE,
                 'TIMEINTERVAL   ': TIMEINTERVAL,
-                'SENSORPERIOD   ': SENSORPERIOD
+                'DELTAT         ': DELTAT
                 }
     logFile = LogFile(LOGFILE,FOLDER +'/')
     logFile.writeParameters(**parameters)
 
     """Create Measurement Data"""
-    measurementGroundTruthList, maxTime = loadMeshFiles(SENSORPERIOD,CORRECTTIMESTEP)
+    measurementGroundTruthList, maxTime = loadMeshFiles(DELTAT,CORRECTTIMESTEP)
     
     plotDye(measurementGroundTruthList[50],measurementGroundTruthList[500],measurementGroundTruthList[1000], FOLDER+'/')
     
@@ -75,7 +75,7 @@ def main():
         exit()
 
     if STATIONARY:
-        measurementGroundTruth = measurementGroundTruthList[np.int(STATIONARYTIME/SENSORPERIOD)]
+        measurementGroundTruth = measurementGroundTruthList[np.int(STATIONARYTIME/DELTAT)]
     else:
         measurementGroundTruth = measurementGroundTruthList[0]
 
@@ -157,7 +157,7 @@ def main():
     modelEstimates = []
     modelEstimates.append([np.zeros([DISCRETIZATION[0],DISCRETIZATION[1]]),0])
 
-    for t in range(0,np.int(TOTALTIME/SENSORPERIOD)):
+    for t in range(0,np.int(TOTALTIME/DELTAT)):
         if not STATIONARY:
             for r in range(0,numRobots):
                 robots[r].mappingGroundTruth = measurementGroundTruthList[t]
@@ -195,10 +195,10 @@ def main():
             if PREDICTIVETIME != None:
                 
                 if PREDICTIVETIME >= maxTime:
-                    predictiveTime = maxTime-SENSORPERIOD
+                    predictiveTime = maxTime-DELTAT
                 else:
-                    predictiveTime = np.int(PREDICTIVETIME/SENSORPERIOD)
-                robots[r].currentTime = predictiveTime*SENSORPERIOD
+                    predictiveTime = np.int(PREDICTIVETIME/DELTAT)
+                robots[r].currentTime = predictiveTime*DELTAT
                 robots[r].mappingGroundTruth = measurementGroundTruthList[predictiveTime]
                 robots[r].model.plot(robots[r], robots[r].currentTime)
         
@@ -221,9 +221,9 @@ def update(currentTime, robots, teams, commPeriod, modelEstimates):
     atEndPoint = np.zeros(len(robots))
     
     for i, rob in enumerate(robots):
-        atEndPoint[i] = moveAlongPath(rob, SENSORPERIOD)
+        atEndPoint[i] = moveAlongPath(rob, DELTAT)
 
-    currentTime += SENSORPERIOD
+    currentTime += DELTAT
     
     for idx, team in enumerate(teams):
 
@@ -537,7 +537,7 @@ if __name__ == "__main__":
     DISCRETIZATION = np.array([600, 600]) #grid space
     DIMENSION = 2 #dimension of robot space
     
-    SENSORPERIOD = 0.1 #time between sensor measurement or between updates of data
+    DELTAT = 0.1 #time step of simulation
        
     UMAX = 80 # Max velocity, pixel/second
     EPSILON = DISCRETIZATION[0]/10 # Maximum step size of robots

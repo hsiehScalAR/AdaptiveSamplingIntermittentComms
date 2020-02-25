@@ -97,7 +97,7 @@ class GaussianProcess:
             x = np.dstack((r,c))
             x = x.reshape(-1,2)
     
-        # self.model = GPy.models.GPRegression(x,y, self.kernel)     # Works good
+        self.model = GPy.models.GPRegression(x,y, self.kernel)     # Works good
         # self.model = GPy.models.GPLVM(y,input_dim=2,init='PCA',X=x,kernel=self.kernel)
         # self.model = GPy.models.SparseGPRegression(x,y,self.kernel, num_inducing=1000)
         
@@ -107,7 +107,6 @@ class GaussianProcess:
         if self.spatiotemporal and not self.specialKernel:             
             self.model.mul.rbf_1.lengthscale.constrain_bounded(20,300) 
 
-        # self.model.Z.constrain(0,600)
         self.model.optimize(optimizer='lbfgsb',messages=False,max_f_eval = ITERATIONS,ipython_notebook=False)    # Works good
 
         
@@ -143,6 +142,7 @@ class GaussianProcess:
 
         self.model.set_XY(x,y)
 
+        # for sparse gp
         # i = np.random.permutation(x.shape[0])[:min(1000, x.shape[0])]
         # Z = x.view(np.ndarray)[i].copy()
         # self.model.set_Z(Z, trigger_update=True)
