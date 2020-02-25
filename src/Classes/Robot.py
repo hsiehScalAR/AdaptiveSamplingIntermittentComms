@@ -18,7 +18,7 @@ class Robot:
     
     objs = []  # Registrar keeps all attributes of class
 
-    def __init__(self, ID, teams, schedule, discretization, sensorPeriod, optPath, optPoint, spatiotemporal, specialKernel, pod, logFile, folder):
+    def __init__(self, ID, teams, schedule, discretization, optPath, optPoint, spatiotemporal, specialKernel, pod, logFile, folder):
         """Initializer of robot class
 
         Input arguments:
@@ -42,7 +42,8 @@ class Robot:
         self.measurementRangeX = np.array([self.sensingRange, self.sensingRange])
         self.measurementRangeY = np.array([self.sensingRange, self.sensingRange])
         self.uMax = 0
-        self.sensorPeriod = sensorPeriod
+        self.sensorPeriod = 0.1
+        self.deltaT = 0.1
         
         self.optPath = optPath
         self.optPoint = optPoint

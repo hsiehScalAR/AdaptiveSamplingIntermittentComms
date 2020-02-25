@@ -15,10 +15,9 @@ from skimage.measure import compare_ssim as ssim
 from scipy.spatial import procrustes
 
 # Personal imports
-from Utilities.VisualizationUtilities import plotMeasurement, plotProcrustes
+# from Utilities.VisualizationUtilities import plotMeasurement, plotProcrustes
                                               
 ITERATIONS = 1000
-# PATH = 'Results/Tmp/'
 
 class GaussianProcess:
     def __init__(self, spatiotemporal, specialKernel,logFile, path):
@@ -70,14 +69,12 @@ class GaussianProcess:
 
         self.path = path
 
-        if spatiotemporal:
-            
+        if spatiotemporal:   
             if self.specialKernel:
                 self.kernel = GPy.kern.SpatioTemporal()
             else:
                 self.kernel = (GPy.kern.RBF(input_dim=2, variance=spatialVariance, lengthscale=spatialLengthScale, active_dims=[0,1],ARD=spatialARD) 
                             * GPy.kern.RBF(input_dim=1, variance=tempVariance, lengthscale=tempLengthScale, active_dims=[2], ARD=tempARD))
-
         else:
             self.kernel = GPy.kern.RBF(input_dim=2, variance=spatialVariance, lengthscale=spatialLengthScale,ARD=spatialARD)
     
@@ -100,17 +97,17 @@ class GaussianProcess:
             x = np.dstack((r,c))
             x = x.reshape(-1,2)
     
-        self.model = GPy.models.GPRegression(x,y, self.kernel)     # Works good
+        # self.model = GPy.models.GPRegression(x,y, self.kernel)     # Works good
+        # self.model = GPy.models.GPLVM(y,input_dim=2,init='PCA',X=x,kernel=self.kernel)
+        # self.model = GPy.models.SparseGPRegression(x,y,self.kernel, num_inducing=1000)
         
         self.model.constrain_bounded(0.005,300) # was 0.5 to 300 
         self.model.Gaussian_noise.variance.unconstrain()
 
         if self.spatiotemporal and not self.specialKernel:             
             self.model.mul.rbf_1.lengthscale.constrain_bounded(20,300) 
-            # print(self.model[''])
-        # elif self.specialKernel:
-        #     self.model.SpatioTemporal.lengthscale.unconstrain()
 
+        # self.model.Z.constrain(0,600)
         self.model.optimize(optimizer='lbfgsb',messages=False,max_f_eval = ITERATIONS,ipython_notebook=False)    # Works good
 
         
@@ -145,6 +142,10 @@ class GaussianProcess:
             return
 
         self.model.set_XY(x,y)
+
+        # i = np.random.permutation(x.shape[0])[:min(1000, x.shape[0])]
+        # Z = x.view(np.ndarray)[i].copy()
+        # self.model.set_Z(Z, trigger_update=True)
         
         self.model.optimize(optimizer='lbfgsb',messages=False,max_f_eval = ITERATIONS,ipython_notebook=False)    # Works good
         print('GP Updated\n')
@@ -303,7 +304,7 @@ class GaussianProcess:
         _,_,procru = procrustes(robot.mappingGroundTruth,robot.expectedMeasurement)
         self.logFile.writeError(robot.ID,procru,robot.currentTime, 'Dissim')
 
-        # plotProcrustes(robot, mat1,mat2)
+        # plotProcrustes(robot, mat1,mat2, self.path)
         return procru
        
         

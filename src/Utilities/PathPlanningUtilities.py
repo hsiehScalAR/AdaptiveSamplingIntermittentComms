@@ -427,7 +427,7 @@ def getInformationGainAlongPath(robot, pos, nearestNodeIdx, epsilon):
     # epsilon = maximum step size
     
     positionNotReached = True    
-    deltaT = robot.sensorPeriod
+    deltaT = robot.deltaT
     discretization = robot.discretization
     
     graphDict = robot.graph.nodes[nearestNodeIdx]

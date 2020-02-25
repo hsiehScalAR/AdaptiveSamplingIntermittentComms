@@ -16,7 +16,6 @@ from scipy.spatial import procrustes
 # Personal imports
 # from Utilities.VisualizationUtilities import plotMeasurement, plotProcrustes
 
-# PATH = 'Results/Tmp/'
 ENERGY = 0.99
 
 class ReducedOrderModel:

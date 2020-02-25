@@ -151,8 +151,8 @@ def totalStatistics(totalData, saveLoc):
     saveLoc = where to save the image
     """
 
-    mean = np.zeros([10,24])
-    std = np.zeros([10,24])
+    mean = np.zeros([10,36])
+    std = np.zeros([10,36])
 
     index = 0
 
@@ -168,16 +168,18 @@ def totalStatistics(totalData, saveLoc):
 
     _, ax = plt.subplots(figsize=(8, 4))
         
-    bp1 = ax.boxplot([mean[:,0],mean[:,6],mean[:,12],mean[:,18]],positions=[1,3,5,7], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C0"))
-    bp2 = ax.boxplot([mean[:,3],mean[:,9],mean[:,15],mean[:,21]], positions=[2,4,6,8], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C2"))
+    bp1 = ax.boxplot([mean[:,0],mean[:,9],mean[:,18],mean[:,27]],positions=[1,4,7,10], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C0"))
+    bp2 = ax.boxplot([mean[:,3],mean[:,12],mean[:,21],mean[:,30]], positions=[2,5,8,11], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C2"))
+    bp3 = ax.boxplot([mean[:,6],mean[:,15],mean[:,24],mean[:,33]], positions=[3,6,9,12], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C1"))
+    
     ax.set_ylim(0,2.5)
-    ax.legend([bp1["boxes"][0], bp2["boxes"][0]], ['Intermittent', 'Full'], loc='lower right')
+    ax.legend([bp1["boxes"][0], bp2["boxes"][0], bp3["boxes"][0]], ['Intermittent', 'AllTime','Full'], loc='lower right')
     ax.set_ylabel('RMSE')
     
-    plt.xticks([1.5,2.5,3.5,5.5,6.5,7.5],['GP','\nSpatial','POD','GP','\nSpatiotemporal','POD'])
+    plt.xticks([2,3.5,5,8,9.5,11],['GP','\nSpatial','POD','GP','\nSpatiotemporal','POD'])
 
     ax.xaxis.set_tick_params(length=0)
-    ax.axvline(4.5,ymin=0, ymax=1, color='grey',linestyle='--', lw=1)
+    ax.axvline(6.5,ymin=0, ymax=1, color='grey',linestyle='--', lw=1)
 
     plt.savefig(saveLoc + 'Boxplot_Comparison_RMSE.png')
     plt.close()
@@ -185,16 +187,18 @@ def totalStatistics(totalData, saveLoc):
 
     _, ax = plt.subplots(figsize=(8, 4))
 
-    bp3 = ax.boxplot([mean[:,2],mean[:,8],mean[:,14],mean[:,20]],positions=[1,3,5,7], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C0"))
-    bp4 = ax.boxplot([mean[:,5],mean[:,11],mean[:,17],mean[:,23]], positions=[2,4,6,8], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C2"))
+    bp3 = ax.boxplot([mean[:,2],mean[:,11],mean[:,20],mean[:,29]],positions=[1,4,7,10], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C0"))
+    bp4 = ax.boxplot([mean[:,5],mean[:,14],mean[:,23],mean[:,32]], positions=[2,5,8,11], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C2"))
+    bp5 = ax.boxplot([mean[:,8],mean[:,17],mean[:,26],mean[:,35]], positions=[3,6,9,12], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C1"))
+    
     ax.set_ylim(0,1)
-    ax.legend([bp3["boxes"][0], bp4["boxes"][0]], ['Intermittent', 'Full'], loc='lower right')
+    ax.legend([bp3["boxes"][0], bp4["boxes"][0], bp5["boxes"][0]], ['Intermittent', 'AllTime','Full'], loc='lower right')
     ax.set_ylabel('DISSIM')
     
-    plt.xticks([1.5,2.5,3.5,5.5,6.5,7.5],['GP','\nSpatial','POD','GP','\nSpatiotemporal','POD'])
+    plt.xticks([2,3.5,5,8,9.5,11],['GP','\nSpatial','POD','GP','\nSpatiotemporal','POD'])
 
     ax.xaxis.set_tick_params(length=0)
-    ax.axvline(4.5,ymin=0, ymax=1, color='grey',linestyle='--', lw=1)
+    ax.axvline(6.5,ymin=0, ymax=1, color='grey',linestyle='--', lw=1)
 
     plt.savefig(saveLoc + 'Boxplot_Comparison_DISSIM.png')
     plt.close()
@@ -229,7 +233,7 @@ if __name__ == "__main__":
         totalData.append(individualData)
         individualStatistics(individualData, saveLoc, stp)
 
-    # mean, std = totalStatistics(totalData, saveLoc)
+    mean, std = totalStatistics(totalData, saveLoc)
 
     # print(np.mean(mean[0:-1:3],axis=0))
     # print(np.std(mean[0:-1:3],axis=0))

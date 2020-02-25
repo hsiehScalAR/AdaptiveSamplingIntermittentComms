@@ -43,7 +43,7 @@ def main():
                 'FULLYCONNECTED ': FULLYCONNECTED,
                 'CORRECTTIMESTEP': CORRECTTIMESTEP,
                 'POD            ': POD,
-                'GAUSSIAN       ': GAUSSIAN,
+                'MODEL          ': MODEL,
                 'OPTPATH        ': OPTPATH,
                 'OPTPOINT       ': OPTPOINT,
                 'SPATIOTEMPORAL ': SPATIOTEMPORAL,
@@ -81,7 +81,7 @@ def main():
 
            
     """create robot to team correspondence"""
-    numTeams, numRobots, robTeams, positions, uMax, sensingRange = getSetup(CASE, POD)
+    numTeams, numRobots, robTeams, positions, uMax, sensingRange, sensorPeriod = getSetup(CASE, POD)
     
     """Variables"""
     if isinstance(positions, np.ndarray):
@@ -103,12 +103,13 @@ def main():
         robots[r].totalTime = initialTime
         robots[r].sensingRange = sensingRange[r]
         robots[r].uMax = uMax[r]
+        robots[r].sensorPeriod = sensorPeriod[r]
         robots[r].mappingGroundTruth = measurementGroundTruth
         
         """Initialize models"""
         meas, measTime = measurement(robots[r])
         robots[r].createMap(meas, measTime, robots[r].currentLocation)
-        if GAUSSIAN:
+        if MODEL:
             robots[r].model.initialize(robots[r])
     print('Environment Initialized\n')
 
@@ -181,11 +182,8 @@ def main():
         plotTrajectory(robots, FOLDER+'/')
         totalMap = robots[0].mapping[:,:,0]
         plotMeasurement(totalMap, 'Measurements of robots after communication events', FOLDER+'/')
-
-    
-    
-    if GAUSSIAN:
-
+   
+    if MODEL:
         plotTrajectoryOverlayGroundTruth(robots,0, FOLDER+'/')
 
         for r in range(0,numRobots):
@@ -250,7 +248,7 @@ def update(currentTime, robots, teams, commPeriod, modelEstimates):
                 robots[r-1].endTotalTime  = currentTime
                 robs.append(robots[r-1])
             
-            modelEstimates.append([communicateToTeam(robs, GAUSSIAN, POD), currentTime])
+            modelEstimates.append([communicateToTeam(robs, MODEL, POD), currentTime])
             
             print('Updating Paths')
             updatePaths(robs)
@@ -336,7 +334,8 @@ def updatePaths(robots):
                     nearestNodeIdx = findNearestNode(robots[r].graph,vrand)
                     robots[r].nearestNodeIdx = nearestNodeIdx
             
-            #find new node towards max distance to random sample and incorporate time delay, that is why it is outside of previous loop since we need all the nearest nodes from the other robots
+            #find new node towards max distance to random sample and incorporate time delay, 
+            #that is why it is outside of previous loop since we need all the nearest nodes from the other robots
             steer(robots, EPSILON)
             
             for r in range(0, len(robots)): 
@@ -387,7 +386,8 @@ def initializeRobots(numRobots, teams, schedule, logFile):
         for t in range(0,len(teams)):    
             if r+1 in teams[t]:
                 belongsToTeam.append(t)
-        rob = Robot(r, np.asarray(belongsToTeam), schedule[r], DISCRETIZATION, SENSORPERIOD, OPTPATH, OPTPOINT, SPATIOTEMPORAL, SPECIALKERNEL, POD, logFile, FOLDER + '/')
+        rob = Robot(r, np.asarray(belongsToTeam), schedule[r], DISCRETIZATION, OPTPATH, OPTPOINT, 
+                    SPATIOTEMPORAL, SPECIALKERNEL, POD, logFile, FOLDER + '/')
         robots.append(rob)
     
     #Print test information
@@ -498,19 +498,21 @@ if __name__ == "__main__":
     """Setup Variables"""
     
     TOTALTIME = 50 #total execution time of program
-    CASE = 3 #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 5 teams, 3 = 4 robots 4 teams)
-    CORRECTTIMESTEP = False #If dye time steps should be matched to correct time steps or if each time step in dye corresponds to time step here
+    CASE = 3    #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 
+                #5 teams, 3 = 4 robots 4 teams)
+    CORRECTTIMESTEP = False #If dye time steps should be matched to correct time steps or if each 
+                            #time step in dye corresponds to time step here
     
     DEBUG = False #debug to true shows prints
     ANIMATION = False #if animation should be done
-    POD = True # if we are using POD or GP
-    GAUSSIAN = True #if model should be calculated
-    OPTPATH = GAUSSIAN == True #if path optimization should be used, can not be true if optpoint is used
-    OPTPOINT = GAUSSIAN != OPTPATH == True #if point optimization should be used, can not be true if optpath is used
+    POD = False # if we are using POD or GP
+    MODEL = True #if model should be calculated
+    OPTPATH = MODEL == True #if path optimization should be used, can not be true if optpoint is used
+    OPTPOINT = MODEL != OPTPATH == True #if point optimization should be used, can not be true if optpath is used
     
     SPATIOTEMPORAL = False # if spatiotemporal data or not
     STATIONARY = not SPATIOTEMPORAL #if we are using time varying measurement data or not
-    SPECIALKERNEL = False == SPATIOTEMPORAL # if own kernel should be used, only works if spatiotemporal 
+    SPECIALKERNEL = (False == SPATIOTEMPORAL) != STATIONARY  # if own kernel should be used, only works if spatiotemporal 
     STATIONARYTIME = 5 #which starting time to use for the measurement data, if not STATIONARY, 0 is used for default
     PREDICTIVETIME = None #Time for which to make a prediction at the end, has to be bigger than total time
 
@@ -522,7 +524,7 @@ if __name__ == "__main__":
         SENSINGRANGE = 0
     
     if FULLYCONNECTED:
-        COMMRANGE = 600 # communication range for robots
+        COMMRANGE = 1200 # communication range for robots
         RANDOMSAMPLESMAX = 49 #how many random samples before trying to converge for communication
         TOTALSAMPLES = 50 #how many samples in total
     else:

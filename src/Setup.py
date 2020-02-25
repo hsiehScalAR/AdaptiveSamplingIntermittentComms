@@ -187,9 +187,8 @@ def getSetup(case, pod):
             sensingRange = np.array([20,20,20,20])
         else:
             sensingRange = np.array([0,0,0,0])
-            sensingRange = np.array([0,0,0,0])
     
     else:
         exit()
         
-    return numTeams, numRobots, robTeams, positions, uMax,sensingRange
+    return numTeams, numRobots, robTeams, positions, uMax, sensingRange, sensorPeriod

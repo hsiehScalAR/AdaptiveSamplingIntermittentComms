@@ -24,12 +24,12 @@ def checkMeetingLocation(positions, commRadius):
     else:
         return False
 
-def communicateToTeam(robots, GP=True, POD=False):
+def communicateToTeam(robots, MODEL=True, POD=False):
     """communicate sensor measurements between robots of same team at meeting location
     
     Input arguments:
     robots = robots of same team
-    GP = bool if we are using GP's
+    MODEL = bool if we are using models
     POD = bool if we are using POD
     """
 
@@ -42,9 +42,8 @@ def communicateToTeam(robots, GP=True, POD=False):
     for r in range(0, len(robots)):
         robots[r].mapping = mapping
         
-    if GP:
+    if MODEL:
         robots[0].model.update(robots[0])
-        # TODO: maybe always infer so that we have more datapoints for error analysis
         if robots[0].optPath:
             robots[0].model.infer(robots[0])
         for r in range(1,len(robots)):
