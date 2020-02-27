@@ -34,24 +34,10 @@ class ReducedOrderModel:
         self.filterThreshold = 0.0 # was 0.05
         self.timeFilter = 120 # was 50
 
-        spatialLengthScale = 20.
-        tempLengthScale = 2.  
-        spatialVariance = 4. 
-        tempVariance = 2.
-        spatialARD = True
-        tempARD = False
-
-
         """Write parameters to logfile"""
         parameters = {
                     'timeFilter     ': self.timeFilter,
-                    'filterThreshold': self.filterThreshold,
-                    'spatialLenScale': spatialLengthScale,
-                    'tempLenScale   ': tempLengthScale,
-                    'spatialVariance': spatialVariance,
-                    'tempVariance   ': tempVariance,
-                    'spatialARD     ': spatialARD,
-                    'tempARD        ': tempARD,
+                    'filterThreshold': self.filterThreshold
                     }
         self.logFile.writeParameters(**parameters)
 
@@ -63,23 +49,7 @@ class ReducedOrderModel:
         Input arguments:
         robot = robot whose POD is to be initialized
         """
-
-        # y = np.where(robot.mapping[:,:,0] != 0, robot.mapping[:,:,:],0)
         y = robot.mapping
-        # y = robot.mapping[r,c,0]
-        # y = y.reshape(-1,1)
-        # if self.spatiotemporal:
-        #     t = robot.mapping[r,c,1]
-        #     x = np.dstack((r,c,t))
-        #     x = x.reshape(-1,3)
-        # else:
-        #     x = np.dstack((r,c))
-        #     x = x.reshape(-1,2)
-
-        
-        # TODO: Make first basis calculation and maybe give set of regions
-        
-        # y = y.reshape((-1,1))
         print(y.shape)
         self.calculateBasis(y, robot.numbMeasurements, robot.sensorPeriod)
 
@@ -96,32 +66,14 @@ class ReducedOrderModel:
         if self.spatiotemporal:
             if self.timeFilter != None:
                 y = robot.mapping
-                # y = np.where((robot.mapping[:,:,0] > self.filterThreshold) & (robot.mapping[:,:,1] > (robot.currentTime-self.timeFilter)),robot.mapping[:,:,:],0) # was 0.05
         else:
             y = robot.mapping
-            # y = np.where(robot.mapping[:,:,0] > self.filterThreshold, robot.mapping[:,:,:],0)
-        
-        # y = robot.mapping[r,c,0]
-        # y = y.reshape(-1,1)
-
-        # if self.spatiotemporal:
-        #     t = robot.mapping[r,c,1]
-        #     x = np.dstack((r,c,t))
-        #     x = x.reshape(-1,3)
-        # else:
-        #     x = np.dstack((r,c))
-        #     x = x.reshape(-1,2)
-
+            
         print(y.shape)
         if y.shape[0] == 0:
             return
 
-
-        # TODO: Make new basis calculation and maybe give set of regions     
         self.calculateBasis(y, robot.numbMeasurements, robot.sensorPeriod)
-
-        # self.model.set_XY(x,y)
-        # self.model.optimize(optimizer='lbfgsb',messages=False,max_f_eval = ITERATIONS,ipython_notebook=False)    # Works good
         print('POD Updated\n')
 
         
@@ -129,14 +81,12 @@ class ReducedOrderModel:
         """Calculates estimated measurement at location
         
         Input arguments:
-        robot = robot whose GP should calculate estimate
+        robot = robot whose POD should calculate estimate
         pos = if single position, else whole grid is calculated
         time = if we do it for specific future inference time
         """
         
         if isinstance(pos,np.ndarray):
-            
-            # TODO: Calculate mean and if possible expected variance
             ym = self.phiReduced @ self.timeDepCoeff
             ys = np.zeros_like(ym)
 
@@ -147,12 +97,9 @@ class ReducedOrderModel:
             ys = np.zeros_like(ym)
                 
         print('Inferring POD')
-        # TODO: Calculate mean and if possible expected variance
-
-        robot.expectedMeasurement = ym.reshape([600,600,2])[:,:,0]
+        robot.expectedMeasurement = ym.reshape([robot.discretization[0],robot.discretization[1],2])[:,:,0]
 
         scaling = 1
-        # robot.expectedVariance = ys.reshape([600,600,2])[:,:,1]
 
         index = np.where(robot.mapping[:,:,1] != 0, 14 - 14*robot.mapping[:,:,1]/robot.currentTime,14)
         robot.expectedVariance = index
@@ -236,7 +183,6 @@ class ReducedOrderModel:
         _,_,procru = procrustes(robot.mappingGroundTruth,robot.expectedMeasurement)
         self.logFile.writeError(robot.ID,procru,robot.currentTime, 'Dissim')
 
-        # plotProcrustes(robot, mat1,mat2)
         return procru
 
     def calculateCovariance(self, measurements, numbMeasurements, sensingPeriod):

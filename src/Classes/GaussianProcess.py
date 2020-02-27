@@ -9,6 +9,10 @@ Created on Wed Dec  4 11:22:42 2019
 #General imports
 import numpy as np
 import GPy
+
+import matplotlib
+matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal
 from skimage.measure import compare_ssim as ssim
@@ -30,11 +34,15 @@ class GaussianProcess:
         path = savePath
         """
 
+
+        # Configure GPy -> matplotlib -> Agg
+        GPy.plotting.change_plotting_library("matplotlib")
+
         self.spatiotemporal = spatiotemporal
         self.specialKernel = specialKernel
         self.logFile = logFile
         if self.specialKernel:
-            self.filterThreshold = 0.2 # was 0.05
+            self.filterThreshold = 0.2 # was 0.2
             self.timeFilter = 40 # was 50
 
             spatialLengthScale = 20.
@@ -99,7 +107,7 @@ class GaussianProcess:
     
         self.model = GPy.models.GPRegression(x,y, self.kernel)     # Works good
         # self.model = GPy.models.GPLVM(y,input_dim=2,init='PCA',X=x,kernel=self.kernel)
-        # self.model = GPy.models.SparseGPRegression(x,y,self.kernel, num_inducing=1000)
+        # self.model = GPy.models.SparseGPRegression(x,y,self.kernel, num_inducing=500)
         
         self.model.constrain_bounded(0.005,300) # was 0.5 to 300 
         self.model.Gaussian_noise.variance.unconstrain()
@@ -143,11 +151,17 @@ class GaussianProcess:
         self.model.set_XY(x,y)
 
         # for sparse gp
-        # i = np.random.permutation(x.shape[0])[:min(1000, x.shape[0])]
+        # i = np.random.permutation(x.shape[0])[:min(500, x.shape[0])]
         # Z = x.view(np.ndarray)[i].copy()
         # self.model.set_Z(Z, trigger_update=True)
-        
+        # self.model.Z.unconstrain()
+
         self.model.optimize(optimizer='lbfgsb',messages=False,max_f_eval = ITERATIONS,ipython_notebook=False)    # Works good
+        
+        # fig, ax = plt.subplots()
+        # self.model.plot(ax=ax)
+        # ax.figure.savefig(self.path + 'Model' + '.png')
+        # fig['dataplot'].savefig(self.path + 'Model' + '.png')
         print('GP Updated\n')
 
         

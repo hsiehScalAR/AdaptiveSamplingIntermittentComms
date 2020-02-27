@@ -35,32 +35,8 @@ def main():
     No inputs 
     """
 
-    """Write parameters to new logfile"""
-    parameters = {
-                'RANDINT        ': RANDINT,
-                'TOTALTIME      ': TOTALTIME,
-                'CASE           ': CASE,
-                'FULLYCONNECTED ': FULLYCONNECTED,
-                'CORRECTTIMESTEP': CORRECTTIMESTEP,
-                'POD            ': POD,
-                'MODEL          ': MODEL,
-                'OPTPATH        ': OPTPATH,
-                'OPTPOINT       ': OPTPOINT,
-                'SPATIOTEMPORAL ': SPATIOTEMPORAL,
-                'SPECIALKERNEL  ': SPECIALKERNEL,
-                'STATIONARY     ': STATIONARY,
-                'STATIONARYTIME ': STATIONARYTIME,
-                'PREDICTIVETIME ': PREDICTIVETIME,
-                'SENSINGRANGE   ': SENSINGRANGE,
-                'COMMRANGE      ': COMMRANGE,
-                'TIMEINTERVAL   ': TIMEINTERVAL,
-                'DELTAT         ': DELTAT
-                }
-    logFile = LogFile(LOGFILE,FOLDER +'/')
-    logFile.writeParameters(**parameters)
-
     """Create Measurement Data"""
-    measurementGroundTruthList, maxTime = loadMeshFiles(DELTAT,CORRECTTIMESTEP)
+    measurementGroundTruthList, maxTime = loadMeshFiles(DELTAT, DISCRETIZATION, CORRECTTIMESTEP)
     
     plotDye(measurementGroundTruthList[50],measurementGroundTruthList[500],measurementGroundTruthList[1000], FOLDER+'/')
     
@@ -81,13 +57,39 @@ def main():
 
            
     """create robot to team correspondence"""
-    numTeams, numRobots, robTeams, positions, uMax, sensingRange, sensorPeriod = getSetup(CASE, POD)
+    numTeams, numRobots, robTeams, positions, uMax, sensingRange, sensorPeriod = getSetup(CASE, POD, HETEROGENEOUS)
     
+    """Write parameters to new logfile"""
+    parameters = {
+                'RANDINT        ': RANDINT,
+                'TOTALTIME      ': TOTALTIME,
+                'CASE           ': CASE,
+                'HETEROGENEOUS  ': HETEROGENEOUS,
+                'FULLYCONNECTED ': FULLYCONNECTED,
+                'CORRECTTIMESTEP': CORRECTTIMESTEP,
+                'POD            ': POD,
+                'MODEL          ': MODEL,
+                'OPTPATH        ': OPTPATH,
+                'OPTPOINT       ': OPTPOINT,
+                'SPATIOTEMPORAL ': SPATIOTEMPORAL,
+                'SPECIALKERNEL  ': SPECIALKERNEL,
+                'STATIONARY     ': STATIONARY,
+                'STATIONARYTIME ': STATIONARYTIME,
+                'PREDICTIVETIME ': PREDICTIVETIME,
+                'SENSINGRANGE   ': sensingRange,
+                'COMMRANGE      ': COMMRANGE,
+                'TIMEINTERVAL   ': TIMEINTERVAL,
+                'SENSORPERIOD   ': sensorPeriod,
+                'UMAX           ': uMax
+                }
+    logFile = LogFile(LOGFILE,FOLDER +'/')
+    logFile.writeParameters(**parameters)
+
     """Variables"""
     if isinstance(positions, np.ndarray):
         locations = positions
     else:
-        locations = randomStartingPositions(numRobots) #locations or robots
+        locations = randomStartingPositions(numRobots) #locations of robots
 
     """Initialize schedules and robots"""
     schedule, teams, commPeriod = initializeScheduler(numRobots, numTeams, robTeams)
@@ -497,31 +499,27 @@ if __name__ == "__main__":
     
     """Setup Variables"""
     
-    TOTALTIME = 50 #total execution time of program
+    TOTALTIME = 100 #total execution time of program
     CASE = 3    #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 
                 #5 teams, 3 = 4 robots 4 teams)
     CORRECTTIMESTEP = False #If dye time steps should be matched to correct time steps or if each 
                             #time step in dye corresponds to time step here
     
     DEBUG = False #debug to true shows prints
+    HETEROGENEOUS = True # if we are using heterogeneous robots
     ANIMATION = False #if animation should be done
-    POD = False # if we are using POD or GP
+    POD = True # if we are using POD or GP
     MODEL = True #if model should be calculated
     OPTPATH = MODEL == True #if path optimization should be used, can not be true if optpoint is used
     OPTPOINT = MODEL != OPTPATH == True #if point optimization should be used, can not be true if optpath is used
     
-    SPATIOTEMPORAL = False # if spatiotemporal data or not
+    SPATIOTEMPORAL = True # if spatiotemporal data or not
     STATIONARY = not SPATIOTEMPORAL #if we are using time varying measurement data or not
     SPECIALKERNEL = (False == SPATIOTEMPORAL) != STATIONARY  # if own kernel should be used, only works if spatiotemporal 
     STATIONARYTIME = 5 #which starting time to use for the measurement data, if not STATIONARY, 0 is used for default
     PREDICTIVETIME = None #Time for which to make a prediction at the end, has to be bigger than total time
 
     FULLYCONNECTED = False #if fully connected without commrange constraint
-
-    if POD:
-        SENSINGRANGE = 20 # Sensing range of robots, 0 for GP and 20 for POD
-    else:
-        SENSINGRANGE = 0
     
     if FULLYCONNECTED:
         COMMRANGE = 1200 # communication range for robots
@@ -539,7 +537,6 @@ if __name__ == "__main__":
     
     DELTAT = 0.1 #time step of simulation
        
-    UMAX = 80 # Max velocity, pixel/second
     EPSILON = DISCRETIZATION[0]/10 # Maximum step size of robots
     GAMMARRT = 100 # constant for rrt* algorithm, can it be calculated?
     
@@ -558,11 +555,11 @@ if __name__ == "__main__":
             print('Failed to delete %s. Reason: %s' % (filePath, e))
     
     """Main function execution for a given number of iterations"""
-    ITERATIONS = 1 # How many main iterations
+    ITERATIONS = 10 # How many main iterations
     for i in range(1,ITERATIONS+1):
 
         RANDINT = np.random.randint(0,2000)
-        # RANDINT = 671
+        # RANDINT = 683
         np.random.seed(RANDINT)
         
         FOLDER = BASEPATH + '/Test'+str(i)

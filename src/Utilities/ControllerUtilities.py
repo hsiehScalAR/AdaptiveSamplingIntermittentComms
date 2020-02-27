@@ -98,7 +98,6 @@ def moveAlongPath(robot, deltaT):
     
     robot.trajectory.append(robot.currentLocation)
     
-    print(robot.currentTime % robot.sensorPeriod)
     if robot.currentTime % robot.sensorPeriod < 0.1:
         meas, measTime = measurement(robot)
         robot.createMap(meas, measTime, robot.currentLocation)  # Create Map
@@ -122,7 +121,7 @@ def measurement(robot):
     robot.numbMeasurements += 1
     
     if robot.sensingRange < 1:
-        newData = robot.mappingGroundTruth[x, y]
+        newData = robot.mappingGroundTruth[x, y].copy()
         newData = newData + sigma*np.random.randn() + mean
         
         return newData, robot.currentTime
@@ -139,8 +138,11 @@ def measurement(robot):
         robot.measurementRangeY[1] = robot.discretization[1] - y
         
     newData = robot.mappingGroundTruth[x-robot.measurementRangeX[0]:x+robot.measurementRangeX[1], 
-                                       y-robot.measurementRangeY[0]:y+robot.measurementRangeY[1]]
+                                       y-robot.measurementRangeY[0]:y+robot.measurementRangeY[1]].copy()
     
-    newData = newData + sigma*np.random.randn() + mean
+    for idx, rowData in enumerate(newData):
+        for idy, _ in enumerate(rowData):
+            newData[idx][idy] = newData[idx][idy] + sigma*np.random.randn() + mean
+
         
     return newData, robot.currentTime

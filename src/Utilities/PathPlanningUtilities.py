@@ -152,8 +152,6 @@ def rewireGraph(robots, timeInterval, debug):
     # robots = which robot graph that we are analyzing
     # timeInterval = interval for meeting time arrival
     # debug = show values
-    
-    # TODO: Find out what this min t = max t means
 
     rewired = False
     
@@ -432,8 +430,9 @@ def getInformationGainAlongPath(robot, pos, nearestNodeIdx, epsilon):
     
     graphDict = robot.graph.nodes[nearestNodeIdx]
     vnearest = list(graphDict.values())
-    nearestNode = np.asarray(vnearest[0])
     
+    nearestNode = np.asarray(vnearest[0])
+    currentTime = vnearest[1]
     measPos = nearestNode
     var = 0
     
@@ -459,6 +458,7 @@ def getInformationGainAlongPath(robot, pos, nearestNodeIdx, epsilon):
         else:
             step = np.around(robot.uMax*deltaT*distance/normDist)
             measPos = measPos + step
+            currentTime += deltaT
         
         if not (0 <= measPos[0] < discretization[0] and 0 <= measPos[1] < discretization[1]):
             if measPos[0] >= discretization[0]:
@@ -469,12 +469,34 @@ def getInformationGainAlongPath(robot, pos, nearestNodeIdx, epsilon):
                 measPos[0] = 0
             if measPos[1] < 0:
                 measPos[1] = 0
-                
+        
+        xRange = np.array([robot.sensingRange, robot.sensingRange +1])
+        yRange = np.array([robot.sensingRange, robot.sensingRange +1])
+        
+        if measPos[0] - robot.sensingRange < 0:
+            xRange[0] = measPos[0]
+        if measPos[0] + robot.sensingRange > discretization[0]:
+            xRange[1] = discretization[0] - measPos[0]
+        if measPos[1] - robot.sensingRange < 0:
+            yRange[1] = measPos[1]
+        if measPos[1] + robot.sensingRange > discretization[1]:
+            yRange[1] = discretization[1] - measPos[1]
+        
+            
+        ys = 0
+        ym = 0        
+        
         if robot.optPath:
-            ys = robot.expectedVariance[np.int(measPos[0]),np.int(measPos[1])]
-            ym = robot.expectedMeasurement[np.int(measPos[0]),np.int(measPos[1])]
+            if currentTime % robot.sensorPeriod < 0.1:
+                ys = robot.expectedVariance[np.int(measPos[0])-xRange[0]:np.int(measPos[0])-xRange[1],
+                                            np.int(measPos[1])-yRange[0]:np.int(measPos[1])-yRange[1]]
+                ym = robot.expectedMeasurement[np.int(measPos[0])-xRange[0]:np.int(measPos[0])-xRange[1],
+                                            np.int(measPos[1])-yRange[0]:np.int(measPos[1])-yRange[1]]
+                ys = np.sum(ys)
+                ym = np.sum(ym)
         else:
-            ym, ys = robot.GP.inferGP(robot,measPos)
+            if currentTime % robot.sensorPeriod < 0.1:
+                ym, ys = robot.GP.inferGP(robot,measPos)
         # TODO: was just ys, tried ys+ym as well and also ym * ys, plus doesn't work to well
         var += ys + 0.5*ym   
     

@@ -25,7 +25,7 @@ def setupMatlabFileMeasurementData(discretization, invert=True):
     else:
         return data + 1
     
-def loadMeshFiles(sensorPeriod, correctTimeSteps = False):
+def loadMeshFiles(sensorPeriod, discretization, correctTimeSteps = False):
     """Gets data from the mesh files
 
     Input arguments:
@@ -74,7 +74,7 @@ def loadMeshFiles(sensorPeriod, correctTimeSteps = False):
                 data[posx-radius:posx+radius,posy-radius:posy+radius] = nodeSol[idx]
             data = data/scaling    
             # data = (data - np.min(data)) / (np.max(data) - np.min(data))
-            measurementGroundTruthList.append(data)
+            measurementGroundTruthList.append(data[0:discretization[0],0:discretization[1]])
     else:
         lag = 3
         skip = 2
@@ -93,13 +93,13 @@ def loadMeshFiles(sensorPeriod, correctTimeSteps = False):
             data = data/scaling    
             # data = (data - np.min(data)) / (np.max(data) - np.min(data))
             for _ in range(0,lag):
-                measurementGroundTruthList.append(data)
+                measurementGroundTruthList.append(data[0:discretization[0],0:discretization[1]])
 
             
         maxTime = np.int(timeValues.shape[1]/skip)*sensorPeriod*lag
     return measurementGroundTruthList, maxTime
     
-def getSetup(case, pod):
+def getSetup(case, pod, heterogeneous):
     """Returns the setup for the robot teams based on the case
 
     Input arguments:
@@ -179,14 +179,20 @@ def getSetup(case, pod):
                              [599, 599],])
 
 
-        # uMax = np.array([80,40,80,40])
-        uMax = np.array([80,80,80,80])
-        sensorPeriod = np.array([0.1,0.1,0.1,0.1])
-        if pod:
-            # sensingRange = np.array([20,40,20,40])
-            sensingRange = np.array([20,20,20,20])
+        if heterogeneous:
+            uMax = np.array([100,40,100,40])
+            sensorPeriod = np.array([3,0.1,3,0.1])
+            if pod:
+                sensingRange = np.array([80,20,80,20])
+            else:
+                sensingRange = np.array([10,0,10,0])
         else:
-            sensingRange = np.array([0,0,0,0])
+            uMax = np.array([80,80,80,80])
+            sensorPeriod = np.array([0.1,0.1,0.1,0.1])
+            if pod:
+                sensingRange = np.array([20,20,20,20])
+            else:
+                sensingRange = np.array([0,0,0,0])
     
     else:
         exit()
