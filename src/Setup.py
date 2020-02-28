@@ -181,14 +181,17 @@ def getSetup(case, pod, heterogeneous):
 
         if heterogeneous:
             uMax = np.array([100,40,100,40])
-            sensorPeriod = np.array([3,0.1,3,0.1])
+            commRange = np.array([40,3,40,3])
             if pod:
-                sensingRange = np.array([80,20,80,20])
+                sensingRange = np.array([40,20,40,20])
+                sensorPeriod = np.array([2,0.1,2,0.1])
             else:
-                sensingRange = np.array([10,0,10,0])
+                sensingRange = np.array([0,0,0,0])
+                sensorPeriod = np.array([0.1,0.1,0.1,0.1])
         else:
             uMax = np.array([80,80,80,80])
             sensorPeriod = np.array([0.1,0.1,0.1,0.1])
+            commRange = np.array([3,3,3,3])
             if pod:
                 sensingRange = np.array([20,20,20,20])
             else:
@@ -197,4 +200,4 @@ def getSetup(case, pod, heterogeneous):
     else:
         exit()
         
-    return numTeams, numRobots, robTeams, positions, uMax, sensingRange, sensorPeriod
+    return numTeams, numRobots, robTeams, positions, uMax, sensingRange, sensorPeriod, commRange

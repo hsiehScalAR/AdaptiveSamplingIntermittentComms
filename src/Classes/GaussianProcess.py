@@ -10,16 +10,13 @@ Created on Wed Dec  4 11:22:42 2019
 import numpy as np
 import GPy
 
-import matplotlib
-matplotlib.use('Agg')
+# import matplotlib
+# matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal
 from skimage.measure import compare_ssim as ssim
 from scipy.spatial import procrustes
-
-# Personal imports
-# from Utilities.VisualizationUtilities import plotMeasurement, plotProcrustes
                                               
 ITERATIONS = 1000
 
@@ -36,7 +33,7 @@ class GaussianProcess:
 
 
         # Configure GPy -> matplotlib -> Agg
-        GPy.plotting.change_plotting_library("matplotlib")
+        # GPy.plotting.change_plotting_library("matplotlib")
 
         self.spatiotemporal = spatiotemporal
         self.specialKernel = specialKernel
@@ -51,7 +48,7 @@ class GaussianProcess:
             tempVariance = 2.
         else:
             self.filterThreshold = 0.05 # was 0.05
-            self.timeFilter = 40 # was 50
+            self.timeFilter = 40 
 
             spatialLengthScale = 20.
             tempLengthScale = 2.  

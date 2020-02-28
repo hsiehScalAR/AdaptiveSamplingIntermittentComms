@@ -57,8 +57,10 @@ def main():
 
            
     """create robot to team correspondence"""
-    numTeams, numRobots, robTeams, positions, uMax, sensingRange, sensorPeriod = getSetup(CASE, POD, HETEROGENEOUS)
+    numTeams, numRobots, robTeams, positions, uMax, sensingRange, sensorPeriod, commRange = getSetup(CASE, POD, HETEROGENEOUS)
     
+    if FULLYCONNECTED:
+        commRange = np.ones_like(commRange)*COMMRANGE
     """Write parameters to new logfile"""
     parameters = {
                 'RANDINT        ': RANDINT,
@@ -77,7 +79,7 @@ def main():
                 'STATIONARYTIME ': STATIONARYTIME,
                 'PREDICTIVETIME ': PREDICTIVETIME,
                 'SENSINGRANGE   ': sensingRange,
-                'COMMRANGE      ': COMMRANGE,
+                'COMMRANGE      ': commRange,
                 'TIMEINTERVAL   ': TIMEINTERVAL,
                 'SENSORPERIOD   ': sensorPeriod,
                 'UMAX           ': uMax
@@ -107,6 +109,7 @@ def main():
         robots[r].uMax = uMax[r]
         robots[r].sensorPeriod = sensorPeriod[r]
         robots[r].mappingGroundTruth = measurementGroundTruth
+        robots[r].commRange = commRange[r]
         
         """Initialize models"""
         meas, measTime = measurement(robots[r])
@@ -132,10 +135,12 @@ def main():
                 continue
 
             robs = []
+            commRangeList = []
             for r in teams[team][0]:
                 robs.append(robots[r-1])
+                commRangeList.append(robots[r-1].commRange)
 
-            updatePaths(robs)
+            updatePaths(robs, max(commRangeList))
             teamsDone[team] = True
             
             idx += 1
@@ -232,11 +237,13 @@ def update(currentTime, robots, teams, commPeriod, modelEstimates):
         if np.all(atEndPoint[team-1]):         
             
             currentLocations = []
+            commRangeList = []
             for r in team[0]: 
                 currentLocations.append(robots[r-1].currentLocation)
+                commRangeList.append(robots[r-1].commRange)
             currentLocations = np.asarray(currentLocations)
             
-            if not checkMeetingLocation(currentLocations, COMMRANGE):
+            if not checkMeetingLocation(currentLocations, max(commRangeList)):
                 continue
             
             robs = []
@@ -253,7 +260,7 @@ def update(currentTime, robots, teams, commPeriod, modelEstimates):
             modelEstimates.append([communicateToTeam(robs, MODEL, POD), currentTime])
             
             print('Updating Paths')
-            updatePaths(robs)
+            updatePaths(robs,max(commRangeList))
             print('Paths Updated\n')
             
             for r in team[0]:
@@ -261,12 +268,13 @@ def update(currentTime, robots, teams, commPeriod, modelEstimates):
 
     return round(currentTime,1)
 
-def updatePaths(robots):
+def updatePaths(robots, commRange):
     """
     Update procedure of intermittent communication
 
     Input arguments:
     robots = instances of the robots that are to be moved
+    commRange = maximum communication range of robots in team
     """
 
     #add node v0 to list of nodes for each robot       
@@ -293,7 +301,7 @@ def updatePaths(robots):
         for sample in range(0,TOTALSAMPLES):
             if sample == RANDOMSAMPLESMAX-1:
                 mean = sampleVrand(DISCRETIZATION, rangeSamples, distribution)
-                stdDev = 4*COMMRANGE*COMMRANGE*np.identity(DIMENSION)
+                stdDev = 4*commRange*commRange*np.identity(DIMENSION)
                 distribution = 'gaussian'
                 rangeSamples = [mean,stdDev]
             
@@ -350,7 +358,7 @@ def updatePaths(robots):
                 
             # finding out if vnew should be in goal set
             if sample >= RANDOMSAMPLESMAX: 
-                calculateGoalSet(robots, COMMRANGE, TIMEINTERVAL)
+                calculateGoalSet(robots, commRange, TIMEINTERVAL)
             
             rewireGraph(robots, TIMEINTERVAL, DEBUG)
             
@@ -508,7 +516,7 @@ if __name__ == "__main__":
     DEBUG = False #debug to true shows prints
     HETEROGENEOUS = True # if we are using heterogeneous robots
     ANIMATION = False #if animation should be done
-    POD = True # if we are using POD or GP
+    POD = False # if we are using POD or GP
     MODEL = True #if model should be calculated
     OPTPATH = MODEL == True #if path optimization should be used, can not be true if optpoint is used
     OPTPOINT = MODEL != OPTPATH == True #if point optimization should be used, can not be true if optpath is used
@@ -554,8 +562,11 @@ if __name__ == "__main__":
         except Exception as e:
             print('Failed to delete %s. Reason: %s' % (filePath, e))
     
+    
     """Main function execution for a given number of iterations"""
-    ITERATIONS = 10 # How many main iterations
+    
+    ITERATIONS = 1 # How many main iterations
+
     for i in range(1,ITERATIONS+1):
 
         RANDINT = np.random.randint(0,2000)

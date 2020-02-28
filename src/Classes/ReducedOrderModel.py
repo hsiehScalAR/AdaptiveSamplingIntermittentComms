@@ -13,9 +13,6 @@ import matplotlib.pyplot as plt
 from skimage.measure import compare_ssim as ssim
 from scipy.spatial import procrustes
 
-# Personal imports
-# from Utilities.VisualizationUtilities import plotMeasurement, plotProcrustes
-
 ENERGY = 0.99
 
 class ReducedOrderModel:
@@ -63,11 +60,8 @@ class ReducedOrderModel:
         
         print('Updating POD for robot %d' %robot.ID)
         print('Time: %.1f' %robot.currentTime)
-        if self.spatiotemporal:
-            if self.timeFilter != None:
-                y = robot.mapping
-        else:
-            y = robot.mapping
+        
+        y = robot.mapping
             
         print(y.shape)
         if y.shape[0] == 0:
@@ -196,6 +190,7 @@ class ReducedOrderModel:
 
         sumXXT = np.zeros_like(measurements[:,:,0])
         tol = 1e-4
+
         for t in range(0, numbMeasurements):
             
             X = np.where((measurements[:,:,1] > t*sensingPeriod-tol) & (measurements[:,:,1] < t*sensingPeriod+tol), measurements[:,:,0],0)

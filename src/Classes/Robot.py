@@ -44,6 +44,7 @@ class Robot:
         self.uMax = 0
         self.sensorPeriod = 0.1
         self.deltaT = 0.1
+        self.commRange = 3
         
         self.optPath = optPath
         self.optPoint = optPoint
