@@ -146,7 +146,7 @@ def main():
             idx += 1
 
         if len(robNoMeeting) != 0:
-            updatePaths(robNoMeeting)
+            updatePaths(robNoMeeting, max(commRangeList))
             newTeam = []
             for _, mRob in enumerate(robNoMeeting):
                 newTeam.append(mRob.ID+1)
