@@ -514,9 +514,9 @@ if __name__ == "__main__":
                             #time step in dye corresponds to time step here
     
     DEBUG = False #debug to true shows prints
-    HETEROGENEOUS = True # if we are using heterogeneous robots
+    HETEROGENEOUS = False # if we are using heterogeneous robots
     ANIMATION = False #if animation should be done
-    POD = False # if we are using POD or GP
+    POD = True # if we are using POD or GP
     MODEL = True #if model should be calculated
     OPTPATH = MODEL == True #if path optimization should be used, can not be true if optpoint is used
     OPTPOINT = MODEL != OPTPATH == True #if point optimization should be used, can not be true if optpath is used

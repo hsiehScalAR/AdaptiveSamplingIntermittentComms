@@ -143,6 +143,5 @@ def measurement(robot):
     for idx, rowData in enumerate(newData):
         for idy, _ in enumerate(rowData):
             newData[idx][idy] = newData[idx][idy] + sigma*np.random.randn() + mean
-
-        
+   
     return newData, robot.currentTime

@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from skimage.measure import compare_ssim as ssim
 from scipy.spatial import procrustes
 
-ENERGY = 0.99
+ENERGY = 0.999
 
 class ReducedOrderModel:
     def __init__(self, spatiotemporal, specialKernel,logFile, path):
@@ -208,22 +208,19 @@ class ReducedOrderModel:
         """
 
         cumSum = 0
-        totalSum = sum(eigValues).real
+        totalSum = sum(eigValues)
         numBase = 0 
 
         for i in range(0, len(eigValues)):
-            cumSum += eigValues[i].real
+            cumSum += eigValues[i]
             percentageEnergy = cumSum/totalSum
-
-            if percentageEnergy < ENERGY:
-                numBase = i
-            else:
-                numBase = i
+            numBase = i
+            if percentageEnergy >= ENERGY:
                 break
 
         phi = eigVectors[:, 0:numBase+1]
-
-        return phi.real
+        print(np.shape(phi))
+        return phi
     
     
     def calculateTimeDepCoeff(self, y):
@@ -234,10 +231,10 @@ class ReducedOrderModel:
         """
 
         a = self.phiReduced.T @ self.phiReduced
+        # a = np.diag(np.diag(np.ones_like(self.phiReduced)))
         b = self.phiReduced.T @ y
 
         self.timeDepCoeff = np.linalg.inv(a) @ b
-
 
     def calculateBasis(self, measurements, numbMeasurements, sensingPeriod):
         """Calculation of the reduced basis and time dependent coefficients
@@ -260,6 +257,7 @@ class ReducedOrderModel:
         eigVectors = eigVectors[:,I]
 
         self.phiReduced = self.createReducedBasis(eigVectors, eigValues)
+
         self.calculateTimeDepCoeff(measurements)
 
     def copy(self):
