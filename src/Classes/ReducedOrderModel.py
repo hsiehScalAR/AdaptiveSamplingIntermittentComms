@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from skimage.measure import compare_ssim as ssim
 from scipy.spatial import procrustes
 
-ENERGY = 0.99
+ENERGY = 0.8
 
 class ReducedOrderModel:
     def __init__(self, spatiotemporal, specialKernel,logFile, path):
@@ -231,7 +231,6 @@ class ReducedOrderModel:
         """
 
         a = self.phiReduced.T @ self.phiReduced
-        # a = np.diag(np.diag(np.ones_like(self.phiReduced)))
         b = self.phiReduced.T @ y
 
         self.timeDepCoeff = np.linalg.inv(a) @ b

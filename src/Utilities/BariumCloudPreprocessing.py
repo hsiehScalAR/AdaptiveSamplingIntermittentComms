@@ -62,7 +62,12 @@ def readAllFiles(path):
     return dataSmall, dataBig
 
 if __name__ == "__main__":
-    """Entry in barium cloud preprocessing Program"""
+    """Entry in barium cloud preprocessing Program
+    
+    No Input
+    """
+    
+    print('Starting barium cloud data generation\n')
 
     basePath = '/home/hannes/MasterThesisCode/AdaptiveSamplingIntermittentComms/src/Data/BariumCloudImages/Raw/'
     savePath = '/home/hannes/MasterThesisCode/AdaptiveSamplingIntermittentComms/src/Data/BariumCloudImages/Processed/'
@@ -71,12 +76,5 @@ if __name__ == "__main__":
     np.savez(savePath + 'BariumCloudDataSmall', data=dataSmall)
     np.savez(savePath + 'BariumCloudDataBig', data=dataBig)
 
-    # npzFile = np.load(savePath + 'BariumCloudDataSmall.npz')
-    # newData = npzFile['data']
-
-    # plt.imshow(newData[-1], origin='lower',vmin=-1, vmax=15)
-    # plt.colorbar()
-    # plt.savefig(savePath + 'Frame-1' + '.png')
-    # plt.close()
-    # print(len(podData))
+    print('Succesfull executed barium cloud data generation\n')
 
