@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from skimage.measure import compare_ssim as ssim
 from scipy.spatial import procrustes
 
-ENERGY = 0.999
+ENERGY = 0.99
 
 class ReducedOrderModel:
     def __init__(self, spatiotemporal, specialKernel,logFile, path):

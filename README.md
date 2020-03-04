@@ -57,6 +57,7 @@ The project uses numpy, matplotlib, skimage, scipy, networkx and GPy.
      * `VisualizationUtilities.py`: Plotting functions for various data formats
      * `LogUtilities.py`: Writes results to logfile
      * `ErrorAnalysis.py`: Script to be executed to analyses the errors 
+     * `BariumCloudPreprocessing.py` Script to generate barium cloud data from image sequence
 
    * Data/:
      * `FTLEDoubleGyre.jpg`: FTLE image used for the measurements
@@ -65,6 +66,8 @@ The project uses numpy, matplotlib, skimage, scipy, networkx and GPy.
        * `600x600_mesh.mat`: Defines the mesh locations
        * `600x600_node_soln_fine.mat`: Gives the measurements of solvant for each mesh node defined in `600x600_mesh.mat`
        * `600x600_node_soln_fine_times.mat`: Gives the measurement times of solvant for each mesh node defined in `600x600_mesh.mat`
+     * BariumCloudImages/:
+       * `barium_cloud_1_movie.mp4`: Barium cloud video to generate data
  
  * matlab/:
    * `double_gyre_func.m`: Velocity function of the double gyre
@@ -80,12 +83,14 @@ Path variables in files:
 
 `TestIntermittent.py`  
 `Setup.py`  
-`GaussianProcess.py`  
+`BariumCloudPreprocessing.py`  
 `ErrorAnalysis.py`  
 
-Also important, the file `SpatioTemporal.py` needs to be copied in the location of the kernels of the GPy package, in my case it was: 
+Also important, the file `SpatioTemporal.py` needs to be copied in the location of the kernels of the GPy package, in my case it was:  
 
-`/home/hannes/anaconda3/lib/python3.7/site-packages/GPy/kern/src`
+`/home/hannes/anaconda3/lib/python3.7/site-packages/GPy/kern/src`  
+
+Furthermore, in `BariumCloudPreprocessing.py` the terminal command described in the note has to be executed with the correct paths for video image sequencing.  
 
 ## Support
 

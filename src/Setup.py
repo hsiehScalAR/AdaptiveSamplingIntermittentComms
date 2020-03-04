@@ -10,11 +10,35 @@ Created on Wed Nov 20 10:21:38 2019
 import numpy as np
 import scipy.io as sio
 
-def setupMatlabFileMeasurementData(discretization, invert=True):
+def loadBariumCloud(sensorPeriod):
+    """Gets data from the barium cloud
+
+    Input arguments:
+    sensorPeriod = sampling time
+    """
+
+    loadPath = '/home/hannes/MasterThesisCode/AdaptiveSamplingIntermittentComms/src/Data/BariumCloudImages/Processed/'
+
+    npzFile = np.load(loadPath + 'BariumCloudDataBig.npz')
+
+    data = npzFile['data']
+
+    newData = []
+    maxIteration = np.int(np.round(len(data)/sensorPeriod))
+    sample = 0
+    for t in range(0,maxIteration):
+        if (t % ((maxIteration)/len(data))) == 0:
+            sample += 1
+            if sample == 100:
+                sample = 99
+        newData.append(data[sample])
+
+    return newData, len(data)
+
+def setupMatlabFileMeasurementData(invert=True):
     """Gets data from an FTLE file
 
     Input arguments:
-    discretization = space dimensions
     invert = invert the data values
     """
 
@@ -25,7 +49,7 @@ def setupMatlabFileMeasurementData(discretization, invert=True):
     else:
         return data + 1
     
-def loadMeshFiles(sensorPeriod, discretization, correctTimeSteps = False):
+def loadMeshFiles(sensorPeriod, correctTimeSteps = False):
     """Gets data from the mesh files
 
     Input arguments:
@@ -73,8 +97,7 @@ def loadMeshFiles(sensorPeriod, discretization, correctTimeSteps = False):
                 posy = np.int(meshNodes[:,idx][1])
                 data[posx-radius:posx+radius,posy-radius:posy+radius] = nodeSol[idx]
             data = data/scaling    
-            # data = (data - np.min(data)) / (np.max(data) - np.min(data))
-            measurementGroundTruthList.append(data[0:discretization[0],0:discretization[1]])
+            measurementGroundTruthList.append(data)
     else:
         lag = 3
         skip = 2
@@ -91,20 +114,21 @@ def loadMeshFiles(sensorPeriod, discretization, correctTimeSteps = False):
                 posy = np.int(meshNodes[:,idx][1])
                 data[posx-radius:posx+radius,posy-radius:posy+radius] = nodeSol[idx]
             data = data/scaling    
-            # data = (data - np.min(data)) / (np.max(data) - np.min(data))
             for _ in range(0,lag):
-                measurementGroundTruthList.append(data[0:discretization[0],0:discretization[1]])
+                measurementGroundTruthList.append(data)
 
             
         maxTime = np.int(timeValues.shape[1]/skip)*sensorPeriod*lag
     return measurementGroundTruthList, maxTime
     
-def getSetup(case, pod, heterogeneous):
+def getSetup(case, pod, heterogeneous, discretization):
     """Returns the setup for the robot teams based on the case
 
     Input arguments:
     case = which case we are treating
     pod = if we are using pod or not
+    heterogeneous = if heterogeneous setup
+    discretization = workspace
     """
     
     #robot i belongs to team j
@@ -174,9 +198,9 @@ def getSetup(case, pod, heterogeneous):
                              [0, 0, 1, 1],])
     
         positions = np.array([[0, 0],
-                             [0, 599],
-                             [599, 0],
-                             [599, 599],])
+                             [0, discretization[1]-1],
+                             [discretization[0]-1, 0],
+                             [discretization[0]-1, discretization[1]-1],])
 
 
         if heterogeneous:

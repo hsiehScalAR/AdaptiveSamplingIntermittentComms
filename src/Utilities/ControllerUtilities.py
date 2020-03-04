@@ -33,7 +33,7 @@ def communicateToTeam(robots, MODEL=True, POD=False):
     POD = bool if we are using POD
     """
 
-    mapping = np.zeros([robots[0].discretization[0],robots[0].discretization[0],2])
+    mapping = np.zeros([robots[0].discretization[0],robots[0].discretization[1],2])
     
     for r in range(0, len(robots)):
         pixels = np.where(robots[r].mapping[:,:,1] > mapping[:,:,1], True,False)

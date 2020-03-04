@@ -16,7 +16,7 @@ from scipy.spatial import procrustes
 #Personal imports
 from Classes.Scheduler import Schedule
 from Classes.Robot import Robot
-from Setup import getSetup, loadMeshFiles
+from Setup import getSetup, loadMeshFiles, loadBariumCloud
 
 from Utilities.ControllerUtilities import moveAlongPath, communicateToTeam, checkMeetingLocation, measurement
 from Utilities.VisualizationUtilities import (plotMeasurement, plotMeetingGraphs, plotMeetingPaths, 
@@ -36,9 +36,13 @@ def main():
     """
 
     """Create Measurement Data"""
-    measurementGroundTruthList, maxTime = loadMeshFiles(DELTAT, DISCRETIZATION, CORRECTTIMESTEP)
-    
-    plotDye(measurementGroundTruthList[50],measurementGroundTruthList[500],measurementGroundTruthList[1000], FOLDER+'/')
+
+    if BARIUM:
+        measurementGroundTruthList, maxTime = loadBariumCloud(DELTAT)
+    else:
+        measurementGroundTruthList, maxTime = loadMeshFiles(DELTAT, DISCRETIZATION, CORRECTTIMESTEP)
+
+    plotDye(measurementGroundTruthList[50],measurementGroundTruthList[500],measurementGroundTruthList[999], FOLDER+'/')
     
     print('**********************************************************************\n')
     print('Max allowed time is: %.1f length of data: %.1f\n' %(maxTime,len(measurementGroundTruthList)))
@@ -57,7 +61,7 @@ def main():
 
            
     """create robot to team correspondence"""
-    numTeams, numRobots, robTeams, positions, uMax, sensingRange, sensorPeriod, commRange = getSetup(CASE, POD, HETEROGENEOUS)
+    numTeams, numRobots, robTeams, positions, uMax, sensingRange, sensorPeriod, commRange = getSetup(CASE, POD, HETEROGENEOUS, DISCRETIZATION)
     
     if FULLYCONNECTED:
         commRange = np.ones_like(commRange)*COMMRANGE
@@ -514,6 +518,7 @@ if __name__ == "__main__":
                             #time step in dye corresponds to time step here
     
     DEBUG = False #debug to true shows prints
+    BARIUM = True # if barium cloud data
     HETEROGENEOUS = False # if we are using heterogeneous robots
     ANIMATION = False #if animation should be done
     POD = True # if we are using POD or GP
@@ -541,6 +546,7 @@ if __name__ == "__main__":
     TIMEINTERVAL = 1 # time interval for communication events
     
     DISCRETIZATION = np.array([600, 600]) #grid space
+
     DIMENSION = 2 #dimension of robot space
     
     DELTAT = 0.1 #time step of simulation
