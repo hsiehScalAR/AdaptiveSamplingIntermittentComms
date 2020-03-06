@@ -40,7 +40,7 @@ def main():
     if BARIUM:
         measurementGroundTruthList, maxTime = loadBariumCloud(DELTAT)
     else:
-        measurementGroundTruthList, maxTime = loadMeshFiles(DELTAT, DISCRETIZATION, CORRECTTIMESTEP)
+        measurementGroundTruthList, maxTime = loadMeshFiles(DELTAT, CORRECTTIMESTEP)
 
     plotDye(measurementGroundTruthList[50],measurementGroundTruthList[500],measurementGroundTruthList[999], FOLDER+'/')
     
@@ -98,6 +98,7 @@ def main():
         locations = randomStartingPositions(numRobots) #locations of robots
 
     """Initialize schedules and robots"""
+    # TODO: add meeting bool to teams list in schedule class
     schedule, teams, commPeriod = initializeScheduler(numRobots, numTeams, robTeams)
     robots = initializeRobots(numRobots, teams, schedule, logFile)
 
@@ -144,16 +145,19 @@ def main():
                 robs.append(robots[r-1])
                 commRangeList.append(robots[r-1].commRange)
 
+                print('Planning paths for robot %d ' %robots[r-1].ID)
             updatePaths(robs, max(commRangeList))
             teamsDone[team] = True
             
             idx += 1
 
         if len(robNoMeeting) != 0:
-            updatePaths(robNoMeeting, max(commRangeList))
+            print('No meeting planning')
+            updatePaths(robNoMeeting, max(commRangeList), meeting=False)
             newTeam = []
             for _, mRob in enumerate(robNoMeeting):
                 newTeam.append(mRob.ID+1)
+            # TODO: append new teams with a bool that says if meeting required or not..
             teams.append(np.asarray([newTeam]))
 
         for r in range(0,numRobots):
@@ -272,7 +276,7 @@ def update(currentTime, robots, teams, commPeriod, modelEstimates):
 
     return round(currentTime,1)
 
-def updatePaths(robots, commRange):
+def updatePaths(robots, commRange, meeting=True):
     """
     Update procedure of intermittent communication
 
@@ -367,9 +371,11 @@ def updatePaths(robots, commRange):
             rewireGraph(robots, TIMEINTERVAL, DEBUG)
             
         # check if we have a path
-        for r in range(0, len(robots)):  
-            connected = checkGoalSet(robots[r].graph)
-            
+        for r in range(0, len(robots)):
+            if meeting:  
+                connected = checkGoalSet(robots[r].graph)
+            else: 
+                connected = True
             if not connected:
                 robots[r].nodeCounter = robots[r].startNodeCounter
                 robots[r].vnew = robots[r].startLocation
@@ -377,11 +383,16 @@ def updatePaths(robots, commRange):
                 robots[r].initializeGraph()
                 robots[r].addNode(firstTime = True)
             else:
+                # TODO: add meeting variable in leastcostgoalset and just take last node as endnode
                 leastCostGoalSet(robots[r], DEBUG)
                 robots[r].vnew = robots[r].endLocation
                 robots[r].totalTime = robots[r].endTotalTime
                 getPath(robots[r])
         counter += 1
+
+        if (counter % 10) == 0:
+            print('Still planning: %d tries\r' %counter, end='')
+
     print('Needed %d retry(-ies) for path planning' %(counter-1))
     
 def initializeRobots(numRobots, teams, schedule, logFile):
@@ -442,12 +453,12 @@ def initializeScheduler(numRobots, numTeams, robTeams):
         print('Teams')
         print(*T)
         
-        print('Schedule')
-        print(S)
-        
         print('Period')
         print(communicationPeriod)
     
+    print('Schedule')
+    print(S)
+
     return S, T, communicationPeriod
 
 def randomStartingPositions(numRobots):
@@ -511,17 +522,17 @@ if __name__ == "__main__":
     
     """Setup Variables"""
     
-    TOTALTIME = 100 #total execution time of program
-    CASE = 3    #case corresponds to which robot structure to use (1 = 8 robots, 8 teams, 2 = 8 robots, 
-                #5 teams, 3 = 4 robots 4 teams)
+    TOTALTIME = 10 #total execution time of program
+    CASE = 4    #case corresponds to which robot structure to use (1 = 8 robots, 8 teams; 2 = 8 robots, 
+                #5 teams; 3 = 4 robots 4 teams; 4 = 10 robots, 9 teams)
     CORRECTTIMESTEP = False #If dye time steps should be matched to correct time steps or if each 
                             #time step in dye corresponds to time step here
     
     DEBUG = False #debug to true shows prints
-    BARIUM = True # if barium cloud data
-    HETEROGENEOUS = False # if we are using heterogeneous robots
-    ANIMATION = False #if animation should be done
-    POD = True # if we are using POD or GP
+    BARIUM = False # if barium cloud data
+    HETEROGENEOUS = True # if we are using heterogeneous robots
+    ANIMATION = True #if animation should be done
+    POD = False # if we are using POD or GP
     MODEL = True #if model should be calculated
     OPTPATH = MODEL == True #if path optimization should be used, can not be true if optpoint is used
     OPTPOINT = MODEL != OPTPATH == True #if point optimization should be used, can not be true if optpath is used

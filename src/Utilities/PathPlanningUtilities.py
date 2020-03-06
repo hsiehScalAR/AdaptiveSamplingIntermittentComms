@@ -39,8 +39,8 @@ def leastCostGoalSet(robot, debug):
     
     goalNodes = np.asarray(goalNodes)
         
+    times = []
     for node in goalNodes:
-        times = []
         times.append(graph.nodes[node]['t'])
         
     times = np.asarray(times)
@@ -288,7 +288,6 @@ def steer(robots, epsilon):
         
         minTimes.append(nearestTime)
     
-    # TODO: Add different motion model
     #steer towards vrand
     for r in range(0, len(robots)):   
         nearestNodeIdx = robots[r].nearestNodeIdx

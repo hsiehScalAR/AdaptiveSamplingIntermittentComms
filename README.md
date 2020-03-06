@@ -68,9 +68,6 @@ The project uses numpy, matplotlib, skimage, scipy, networkx and GPy.
        * `600x600_node_soln_fine_times.mat`: Gives the measurement times of solvant for each mesh node defined in `600x600_mesh.mat`
      * BariumCloudImages/:
        * `barium_cloud_1_movie.mp4`: Barium cloud video to generate data
-       * Processed/:
-         * `BariumCloudDataSmall.npz`: Barium cloud data in original size
-         * `BariumCloudDataBig.npz`: Barium cloud data in upsampled size
  
  * matlab/:
    * `double_gyre_func.m`: Velocity function of the double gyre

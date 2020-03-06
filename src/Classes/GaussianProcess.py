@@ -288,6 +288,7 @@ class GaussianProcess:
 
         self.infer(robot, time=time)
         print(self.model[''])
+        # self.model.save_model(self.path + 'RobotModel_'+ str(robot.ID), compress=False, save_data=False)
 
     def errorCalculation(self, robot):
         """Error calculation of modelling, computes different errors and writes to file

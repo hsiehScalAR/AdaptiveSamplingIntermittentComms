@@ -220,8 +220,52 @@ def getSetup(case, pod, heterogeneous, discretization):
                 sensingRange = np.array([20,20,20,20])
             else:
                 sensingRange = np.array([0,0,0,0])
-    
+
+    elif case == 4:
+        if heterogeneous:
+            numTeams = 9
+            numRobots = 10
+            robTeams = np.array([   [1, 0, 0, 0, 0, 0, 0, 0, 0],
+                                    [1, 0, 0, 0, 1, 0, 0, 0, 0],
+                                    [0, 1, 0, 0, 0, 0, 0, 1, 0],
+                                    [0, 1, 0, 0, 0, 0, 0, 0, 0],
+                                    [0, 0, 1, 0, 0, 0, 0, 0, 0],
+                                    [0, 0, 1, 0, 0, 1, 0, 0, 0],
+                                    [0, 0, 0, 1, 0, 0, 0, 0, 0],
+                                    [0, 0, 0, 1, 0, 0, 1, 0, 0],
+                                    [0, 0, 0, 0, 1, 0, 1, 0, 1],
+                                    [0, 0, 0, 0, 0, 1, 0, 1, 1],])
+        
+            positions = np.array([  [0, 549],
+                                    [50, 599],
+                                    [549, 599],
+                                    [599, 549],
+                                    [599, 50],
+                                    [549, 0],
+                                    [50, 0],
+                                    [0, 50],
+                                    [250, 300],
+                                    [350, 300],])
+
+            uMax = np.array([40, 40, 40, 40, 40, 40, 40, 40, 40, 40])
+            commRange = np.array([3, 3, 3, 3, 3, 3, 3, 3, 100, 100])
+            if pod:
+                sensingRange = np.array([20, 20, 20, 20, 20, 20, 20, 20, 5, 5])
+                sensorPeriod = np.array([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
+            else:
+                sensingRange = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+                sensorPeriod = np.array([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
+
+        else: 
+            print('**********************************************************************\n')
+            print('WARNING: Setup for heterogeneous robots chosen but not heterogeneous as keyword, exiting application')
+            print('**********************************************************************\n')
+            exit()
+
     else:
+        print('**********************************************************************\n')
+        print('WARNING: Nonvalid setup chosen, exiting application')
+        print('**********************************************************************\n')
         exit()
         
     return numTeams, numRobots, robTeams, positions, uMax, sensingRange, sensorPeriod, commRange
