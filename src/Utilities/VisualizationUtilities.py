@@ -15,8 +15,6 @@ import matplotlib.animation as animation
 
 from scipy.stats import multivariate_normal
 
-# PATH = 'Results/Tmp/'
-
 def plotTrajectoryAnimation(robots, measurementGroundTruthList, modelEstimates, path):
     """Make an animation of the robots journee
 
@@ -49,6 +47,9 @@ def plotTrajectoryAnimation(robots, measurementGroundTruthList, modelEstimates, 
     for r in range(len(robots)):
         graphobj = ax[0].plot([], [], '-', color=colors[r], label='Robot %d'%r)[0]
         arrow, = ax[0].plot([], [],'o', color=colors[r])
+        # graphobj = ax[0].plot([], [], '-', label='Robot %d'%r)[0]
+        # arrow, = ax[0].plot([], [],'o')
+        
         graphs.append(graphobj)
         arrows.append(arrow)
     
@@ -225,12 +226,12 @@ def plotTrajectoryOverlayGroundTruth(robots, index, path):
         x,y = zip(*robots[r].trajectory)
         ax.plot(y,x, '-', label='Robot %d'%r)
         
-        posMeeting, _  = zip(*robots[r].meetings)
-        posMeeting = np.array(posMeeting)
-        meetingList.append(posMeeting)
+    #     posMeeting, _  = zip(*robots[r].meetings)
+    #     posMeeting = np.array(posMeeting)
+    #     meetingList.append(posMeeting)
 
-    meetingList = np.vstack(meetingList)
-    ax.plot(meetingList[:, 1],meetingList[:, 0], 'o', color='r',label='Meetings',markersize=6)
+    # meetingList = np.vstack(meetingList)
+    # ax.plot(meetingList[:, 1],meetingList[:, 0], 'o', color='r',label='Meetings',markersize=6)
     
     data = robots[index].mappingGroundTruth
         

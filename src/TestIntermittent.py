@@ -98,8 +98,11 @@ def main():
         locations = randomStartingPositions(numRobots) #locations of robots
 
     """Initialize schedules and robots"""
-    # TODO: add meeting bool to teams list in schedule class
     schedule, teams, commPeriod = initializeScheduler(numRobots, numTeams, robTeams)
+    
+    for idx, t in enumerate(teams):
+        teams[idx] = [t,True]
+
     robots = initializeRobots(numRobots, teams, schedule, logFile)
 
     """create the initial plans for all periods"""
@@ -128,6 +131,7 @@ def main():
         teamsDone = np.zeros(len(teams))
         print('Period: %d'%period)
         idx = 0
+        
         #find out which team has a meeting event at period k=0
         robNoMeeting = []
         for team in schedule[:, period]:
@@ -141,12 +145,11 @@ def main():
 
             robs = []
             commRangeList = []
-            for r in teams[team][0]:
+            for r in teams[team][0][0]:
                 robs.append(robots[r-1])
                 commRangeList.append(robots[r-1].commRange)
 
-                print('Planning paths for robot %d ' %robots[r-1].ID)
-            updatePaths(robs, max(commRangeList))
+            updatePaths(robs, max(commRangeList), teams[team][1])
             teamsDone[team] = True
             
             idx += 1
@@ -157,8 +160,8 @@ def main():
             newTeam = []
             for _, mRob in enumerate(robNoMeeting):
                 newTeam.append(mRob.ID+1)
-            # TODO: append new teams with a bool that says if meeting required or not..
-            teams.append(np.asarray([newTeam]))
+
+            teams.append([np.asarray([newTeam]),False])
 
         for r in range(0,numRobots):
             robots[r].composeGraphs() 
@@ -185,14 +188,14 @@ def main():
     print('Starting Plotting')
     if DEBUG:
         plotMeasurement(measurementGroundTruth, 'Ground truth measurement map', FOLDER+'/')
-        subplot = 1
-        team = 0
-        for r in teams:
-            r = np.asarray(r[0]) -1
-            plotMeetingGraphs(robots, r, team,  FOLDER+'/',subplot, len(teams))
-            plotMeetingPaths(robots, r, team,  FOLDER+'/', subplot, len(teams))
-            subplot += 1
-            team += 1
+        # subplot = 1
+        # team = 0
+        # for r in teams:
+        #     r = np.asarray(r[0]) -1
+        #     plotMeetingGraphs(robots, r, team,  FOLDER+'/',subplot, len(teams))
+        #     plotMeetingPaths(robots, r, team,  FOLDER+'/', subplot, len(teams))
+        #     subplot += 1
+        #     team += 1
         
         plotTrajectory(robots, FOLDER+'/')
         totalMap = robots[0].mapping[:,:,0]
@@ -241,6 +244,8 @@ def update(currentTime, robots, teams, commPeriod, modelEstimates):
     currentTime += DELTAT
     
     for idx, team in enumerate(teams):
+        meeting = team[1]
+        team = team[0]
 
         if np.all(atEndPoint[team-1]):         
             
@@ -264,11 +269,12 @@ def update(currentTime, robots, teams, commPeriod, modelEstimates):
                 
                 robots[r-1].endTotalTime  = currentTime
                 robs.append(robots[r-1])
-            
+
             modelEstimates.append([communicateToTeam(robs, MODEL, POD), currentTime])
+            # modelEstimates.append([communicateToTeam(robots, MODEL, POD), currentTime])
             
             print('Updating Paths')
-            updatePaths(robs,max(commRangeList))
+            updatePaths(robs,max(commRangeList),meeting)
             print('Paths Updated\n')
             
             for r in team[0]:
@@ -368,23 +374,25 @@ def updatePaths(robots, commRange, meeting=True):
             if sample >= RANDOMSAMPLESMAX: 
                 calculateGoalSet(robots, commRange, TIMEINTERVAL)
             
-            rewireGraph(robots, TIMEINTERVAL, DEBUG)
+            rewireGraph(robots, TIMEINTERVAL, commRange, DEBUG)
             
         # check if we have a path
-        for r in range(0, len(robots)):
-            if meeting:  
-                connected = checkGoalSet(robots[r].graph)
-            else: 
-                connected = True
-            if not connected:
+        
+        if meeting:  
+            connected = checkGoalSet(robots[0].graph)
+        else: 
+            connected = True
+        if not connected:
+            for r in range(0, len(robots)):
                 robots[r].nodeCounter = robots[r].startNodeCounter
                 robots[r].vnew = robots[r].startLocation
                 robots[r].totalTime = robots[r].startTotalTime
                 robots[r].initializeGraph()
                 robots[r].addNode(firstTime = True)
-            else:
-                # TODO: add meeting variable in leastcostgoalset and just take last node as endnode
-                leastCostGoalSet(robots[r], DEBUG)
+        else:
+            leastCostGoalSet(robots, DEBUG, meeting)
+            
+            for r in range(0, len(robots)):
                 robots[r].vnew = robots[r].endLocation
                 robots[r].totalTime = robots[r].endTotalTime
                 getPath(robots[r])
@@ -409,7 +417,7 @@ def initializeRobots(numRobots, teams, schedule, logFile):
     for r in range(0, numRobots):
         belongsToTeam = []
         for t in range(0,len(teams)):    
-            if r+1 in teams[t]:
+            if r+1 in teams[t][0]:
                 belongsToTeam.append(t)
         rob = Robot(r, np.asarray(belongsToTeam), schedule[r], DISCRETIZATION, OPTPATH, OPTPOINT, 
                     SPATIOTEMPORAL, SPECIALKERNEL, POD, logFile, FOLDER + '/')
@@ -445,7 +453,7 @@ def initializeScheduler(numRobots, numTeams, robTeams):
     T = scheduleClass.createTeams()
     #creates schedule
     S = scheduleClass.createSchedule()
-    #communication period is equall to number of robots
+    #communication period is equal to number of robots
     communicationPeriod = np.shape(S)[1]  # Communication schedule repeats infinitely often
 
     #Print test information
@@ -456,8 +464,8 @@ def initializeScheduler(numRobots, numTeams, robTeams):
         print('Period')
         print(communicationPeriod)
     
-    print('Schedule')
-    print(S)
+        print('Schedule')
+        print(S)
 
     return S, T, communicationPeriod
 
@@ -522,17 +530,17 @@ if __name__ == "__main__":
     
     """Setup Variables"""
     
-    TOTALTIME = 10 #total execution time of program
-    CASE = 4    #case corresponds to which robot structure to use (1 = 8 robots, 8 teams; 2 = 8 robots, 
+    TOTALTIME = 100 #total execution time of program
+    CASE = 3    #case corresponds to which robot structure to use (1 = 8 robots, 8 teams; 2 = 8 robots, 
                 #5 teams; 3 = 4 robots 4 teams; 4 = 10 robots, 9 teams)
     CORRECTTIMESTEP = False #If dye time steps should be matched to correct time steps or if each 
                             #time step in dye corresponds to time step here
     
     DEBUG = False #debug to true shows prints
-    BARIUM = False # if barium cloud data
-    HETEROGENEOUS = True # if we are using heterogeneous robots
-    ANIMATION = True #if animation should be done
-    POD = False # if we are using POD or GP
+    BARIUM = True # if barium cloud data
+    HETEROGENEOUS = False # if we are using heterogeneous robots
+    ANIMATION = False #if animation should be done
+    POD = True # if we are using POD or GP
     MODEL = True #if model should be calculated
     OPTPATH = MODEL == True #if path optimization should be used, can not be true if optpoint is used
     OPTPOINT = MODEL != OPTPATH == True #if point optimization should be used, can not be true if optpath is used
@@ -586,8 +594,8 @@ if __name__ == "__main__":
 
     for i in range(1,ITERATIONS+1):
 
-        RANDINT = np.random.randint(0,2000)
-        # RANDINT = 683
+        # RANDINT = np.random.randint(0,2000)
+        RANDINT = 752
         np.random.seed(RANDINT)
         
         FOLDER = BASEPATH + '/Test'+str(i)

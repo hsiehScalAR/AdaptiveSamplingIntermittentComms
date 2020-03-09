@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from skimage.measure import compare_ssim as ssim
 from scipy.spatial import procrustes
 
-ENERGY = 0.8
+ENERGY = 0.99
 
 class ReducedOrderModel:
     def __init__(self, spatiotemporal, specialKernel,logFile, path):
@@ -193,7 +193,8 @@ class ReducedOrderModel:
 
         for t in range(0, numbMeasurements):
             
-            X = np.where((measurements[:,:,1] > t*sensingPeriod-tol) & (measurements[:,:,1] < t*sensingPeriod+tol), measurements[:,:,0],0)
+            X = np.where((measurements[:,:,1] > (t*sensingPeriod-tol)) & (measurements[:,:,1] < (t*sensingPeriod+tol)), 
+                        measurements[:,:,0],0)
             XXT = X @ X.T
             sumXXT = sumXXT + XXT
 
@@ -219,7 +220,7 @@ class ReducedOrderModel:
                 break
 
         phi = eigVectors[:, 0:numBase+1]
-        print(np.shape(phi))
+
         return phi
     
     

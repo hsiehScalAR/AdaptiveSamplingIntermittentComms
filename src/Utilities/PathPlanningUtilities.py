@@ -11,10 +11,12 @@ import numpy as np
 import networkx as nx
 
 def getPath(robot):
-    """Get the shortest path for the robot to the end location"""
-    # Input arguments:
-    # robot = robot instance whose graph we have to analize
+    """Get the shortest path for the robot to the end location
     
+    Input arguments:
+    robot = robot instance whose graph we have to analize
+    """
+
     graphReversed = robot.graph.reverse()
     predecessors = nx.dfs_successors(graphReversed,robot.endNodeCounter)
     
@@ -27,39 +29,62 @@ def getPath(robot):
     robot.paths.append(path)
     robot.path = robot.graph.subgraph(path)
 
-def leastCostGoalSet(robot, debug):
-    """Get the goal set node with the least cost"""
-    # Input arguments:
-    # robot = robot whose graph is to be checked
-    # debug = bool for debug information prints
+def leastCostGoalSet(robots, debug, meeting=True):
+    """Get the goal set node with the least cost
 
-    graph = robot.graph
-    dictNodes = nx.get_node_attributes(graph,'goalSet')
-    goalNodes = list(dictNodes.keys())
-    
-    goalNodes = np.asarray(goalNodes)
-        
-    times = []
-    for node in goalNodes:
-        times.append(graph.nodes[node]['t'])
-        
-    times = np.asarray(times)
+    Input arguments:
+    robots = robots whose graph is to be checked
+    debug = bool for debug information prints
+    meeting = bool if we need meeting or not
+    """
 
-    robot.endLocation = graph.nodes[goalNodes[np.argmin(times)]]['pos']
-    robot.endTotalTime = np.min(times)
-    robot.endNodeCounter = goalNodes[np.argmin(times)]
-    
+    robot = robots[0]
+    if meeting:
+        graph = robot.graph
+        dictNodes = nx.get_node_attributes(graph,'goalSet')
+        goalNodes = list(dictNodes.keys())
+        
+        goalNodes = np.asarray(goalNodes)
+            
+        times = []
+        for node in goalNodes:
+            times.append(graph.nodes[node]['t'])
+            
+        times = np.asarray(times)
+
+        robot.endLocation = graph.nodes[goalNodes[np.argmin(times)]]['pos']
+        robot.endTotalTime = np.min(times)
+        robot.endNodeCounter = goalNodes[np.argmin(times)]
+
+        for r in range(1, len(robots)):
+            graph = robots[r].graph
+            endNode = robots[0].endNodeCounter
+            robots[r].endLocation = graph.nodes[endNode]['pos']
+            robots[r].endTotalTime = graph.nodes[endNode]['t']
+            robots[r].endNodeCounter = endNode
+    else:
+        for r in range(0, len(robots)):
+            graph = robots[r].graph
+            endNode = robots[r].nodeCounter-1
+            robots[r].endLocation = graph.nodes[endNode]['pos']
+            robots[r].endTotalTime = graph.nodes[endNode]['t']
+            robots[r].endNodeCounter = endNode
+
     if debug:
         print('leastCostGoalSet')
-        print('Robot ID: %d' %robot.ID)
-        print('End Node: %d' %robot.endNodeCounter)
-        print('End Time: %.2f\n' %robot.endTotalTime)
+        for r in range(0, len(robots)):
+            print('Robot ID: %d' %robots[r].ID)
+            print('End Node: %d' %robots[r].endNodeCounter)
+            print('End Location: ',robots[r].endLocation)
+            print('End Time: %.2f\n' %robots[r].endTotalTime)
 
 def checkGoalSet(graph):
-    """Check if there are any nodes in the goal set"""
-    # Input arguments:
-    # graph = graph which is to be checked
+    """Check if there are any nodes in the goal set
     
+    Input arguments:
+    graph = graph which is to be checked
+    """
+
     dictNodes = nx.get_node_attributes(graph,'goalSet')
     goalNodes = list(dictNodes.keys())
     
@@ -68,13 +93,15 @@ def checkGoalSet(graph):
 
     return True
 
-def updateGoalSet(robots, timeInterval, debug):
-    """Check if goal set is still valid after rewiring"""
-    # Input arguments:
-    # robots = all robot instances
-    # timeInterval = arrival time interval for no delay constraint
-    # debug = bool for debug information prints
-        
+def updateGoalSet(robots, timeInterval, commRadius, debug):
+    """Check if goal set is still valid after rewiring
+    
+    Input arguments:
+    robots = all robot instances
+    timeInterval = arrival time interval for no delay constraint
+    debug = bool for debug information prints
+    """
+
     dictNodes = nx.get_node_attributes(robots[0].graph,'goalSet')
     goalNodes = list(dictNodes.keys())
     
@@ -84,14 +111,18 @@ def updateGoalSet(robots, timeInterval, debug):
         
     for node in goalNodes:
         times = []
-        
+        positions = []
         for r in range(0, len(robots)): 
             times.append(robots[r].graph.nodes[node]['t'])
-        
+            positions.append(robots[r].graph.nodes[node]['pos'])
+
         times = np.asarray(times)
-        timeDiff = np.abs(times - times[0])
+        positions = np.asarray(positions)
         
-        if not all(y <= timeInterval for y in timeDiff):
+        timeDiff = np.abs(times - times[0])
+        normDist = np.sqrt(np.sum((positions[0] - positions)**2, axis=1))
+
+        if not all(x <= commRadius for x in normDist) and all(y <= timeInterval for y in timeDiff):
             
             if debug:
                 print('Update goal set')
@@ -104,12 +135,13 @@ def updateGoalSet(robots, timeInterval, debug):
     
     
 def calculateGoalSet(robots, commRadius, timeInterval):
-    """check if the new nodes are close to each other and if the time is right so that they belong to the goal set"""
-    # Input arguments:
-    # robots = all robot instances
-    # commRadius = communication range of the robots
-    # timeInterval = timeinterval for meetings to happen
+    """check if the new nodes are close to each other and if the time is right so that they belong to the goal set
     
+    Input arguments:
+    robots = all robot instances
+    commRadius = communication range of the robots
+    timeInterval = timeinterval for meetings to happen
+    """
     positions = []
     times = []
     for r in range(0, len(robots)): 
@@ -127,11 +159,12 @@ def calculateGoalSet(robots, commRadius, timeInterval):
             robots[r].graph.nodes[robots[r].vnewIdx]['goalSet'] = True
 
 def updateSuccessorNodes(robot, startNode):
-    """Update successor node weight and times as the rewiring changed the graph structure"""
-    # Input arguments:
-    # robot = which robot graph that we are analyzing
-    # startNode = which node got changed
+    """Update successor node weight and times as the rewiring changed the graph structure
     
+    Input arguments:
+    robot = which robot graph that we are analyzing
+    startNode = which node got changed
+    """
     allSuccessors = nx.dfs_successors(robot.graph,startNode)
 
     for key, value in allSuccessors.items():
@@ -146,12 +179,14 @@ def updateSuccessorNodes(robot, startNode):
             robot.graph.nodes[v]['t'] = succTotalCost
             robot.graph.nodes[v]['informationGain'] = information             
 
-def rewireGraph(robots, timeInterval, debug):
-    """Check if there is a node in setVnear which has a smaller cost as child from vnew than previous"""
-    # Input arguments:
-    # robots = which robot graph that we are analyzing
-    # timeInterval = interval for meeting time arrival
-    # debug = show values
+def rewireGraph(robots, timeInterval, commRadius, debug):
+    """Check if there is a node in setVnear which has a smaller cost as child from vnew than previous
+    
+    Input arguments:
+    robots = which robot graph that we are analyzing
+    timeInterval = interval for meeting time arrival
+    debug = show values
+    """
 
     rewired = False
     
@@ -188,16 +223,18 @@ def rewireGraph(robots, timeInterval, debug):
                 rewired = True
                     
     if rewired:
-        updateGoalSet(robots, timeInterval, debug)
+        updateGoalSet(robots, timeInterval, commRadius, debug)
             
 def cost(nearTime, nearPos, newPos, robot):
-    """Calculate cost between two nodes"""
-    # Input arguments:
-    # nearTime = time at current near node
-    # nearPos = position at current near node
-    # newPos = position of vnew for which we search a less costly parent node
-    # robot = robot which is updating cost
+    """Calculate cost between two nodes
     
+    Input arguments:
+    nearTime = time at current near node
+    nearPos = position at current near node
+    newPos = position of vnew for which we search a less costly parent node
+    robot = robot which is updating cost
+    """
+
     normDist = np.sqrt(np.sum((nearPos - newPos)**2))
     nearEdgeCost = normDist/robot.uMax
 
@@ -209,10 +246,11 @@ def cost(nearTime, nearPos, newPos, robot):
     return round(nearTotalCost,1), round(nearEdgeCost,1), information 
 
 def extendGraph(robot):
-    """Check if there is a node in setVnear which has a smaller cost as parent to vnew than the nearest node"""
-    # Input arguments:
-    # robot = which robot graph that we are analyzing
+    """Check if there is a node in setVnear which has a smaller cost as parent to vnew than the nearest node
     
+    Input arguments:
+    robot = which robot graph that we are analyzing
+    """
     setVnear = robot.setVnear
     
     vnew = robot.vnew
@@ -244,12 +282,13 @@ def extendGraph(robot):
     robot.vnewInformation = vminInformation
 
 def buildSetVnear(robot, epsilon, gammaRRT):
-    """Examine all nodes and build set with nodes close to vnew with a radius of communication range"""
-    # Input arguments:
-    # robot = current robot with its graph
-    # epsilon = maximum allowed distance traveled
-    # gammaRRT = parameter for radius of near nodes in RRT star
+    """Examine all nodes and build set with nodes close to vnew with a radius of communication range
     
+    Input arguments:
+    robot = current robot with its graph
+    epsilon = maximum allowed distance traveled
+    gammaRRT = parameter for radius of near nodes in RRT star
+    """
     setVnear = []
     
     vnew = robot.vnew
@@ -272,11 +311,13 @@ def buildSetVnear(robot, epsilon, gammaRRT):
     robot.setVnear = setVnear
     
 def steer(robots, epsilon):
-    """Steer towards vrand but only as much as allowed by the dynamics"""
-    # Input arguments:
-    # robots = robot classes
-    # epsilon = maximum allowed distance traveled
+    """Steer towards vrand but only as much as allowed by the dynamics
     
+    Input arguments:
+    robots = robot classes
+    epsilon = maximum allowed distance traveled
+    """
+
     #find minTimes for nearest nodes of all robots
     minTimes = []
     for r in range(0, len(robots)): 
@@ -337,11 +378,12 @@ def steer(robots, epsilon):
         robots[r].vnewInformation = information
         
 def findNearestNode(graph, vrand):
-    """Return nearest node index"""
-    # Input arguments:
-    # graph = current graph
-    # vrand = new random node
+    """Return nearest node index
     
+    Input arguments:
+    graph = current graph
+    vrand = new random node
+    """
     dictNodes = nx.get_node_attributes(graph,'pos')
 
     nodes = list(dictNodes.values())
@@ -352,12 +394,13 @@ def findNearestNode(graph, vrand):
     return list(dictNodes.keys())[np.argmin(normDist)]
 
 def sampleVrand(discretization, rangeSamples, distribution = 'uniform'):
-    """Sample a new random position"""
-    # Input arguments:
-    # discretization = grid space needed to check for boundary issues
-    # rangeSamples = defines uniform range boundaries or mean and std dev for gaussian
-    # distribution = which distribution to use
+    """Sample a new random position
     
+    Input arguments:
+    discretization = grid space needed to check for boundary issues
+    rangeSamples = defines uniform range boundaries or mean and std dev for gaussian
+    distribution = which distribution to use
+    """
     inBoundary = False
     while inBoundary == False:
         if distribution == 'uniform':
@@ -371,10 +414,12 @@ def sampleVrand(discretization, rangeSamples, distribution = 'uniform'):
     return np.around(vrand)
 
 def getInformationGain(robot, pos):
-    """Get expected variance from GP model, either by inferring or lookup"""
-    # Input arguments:
-    # robot = robot instance whose GP is to be looked at
-    # pos = position to check the expected variance for
+    """Get expected variance from GP model, either by inferring or lookup
+    
+    Input arguments:
+    robot = robot instance whose GP is to be looked at
+    pos = position to check the expected variance for
+    """
     
     if robot.optPath:
         ys = robot.expectedVariance[np.int(pos[0]),np.int(pos[1])]
@@ -386,10 +431,12 @@ def getInformationGain(robot, pos):
 
 # TODO: This doesn't seem to do anything, maybe remove it..
 def getUtility(time, informationGain):
-    """Utility function which calgulates utility by dividing cost by variance with weight"""
-    # Input arguments:
-    # time = cost of node
-    # informationGain = gain of node
+    """Utility function which calgulates utility by dividing cost by variance with weight
+    
+    Input arguments:
+    time = cost of node
+    informationGain = gain of node
+    """
 
     beta = 4
     if informationGain < 1/beta:
@@ -398,13 +445,15 @@ def getUtility(time, informationGain):
     return 0
     
 def sampleNPoints(robot, discretization, rangeSamples, distribution = 'uniform'):
-    """Sample N new random positions and check for highest variance"""
-    # Input arguments:
-    # robot = robot instance to access GP
-    # discretization = grid space needed to check for boundary issues
-    # rangeSamples = defines uniform range boundaries or mean and std dev for gaussian
-    # distribution = which distribution to use
-        
+    """Sample N new random positions and check for highest variance
+    
+    Input arguments:
+    robot = robot instance to access GP
+    discretization = grid space needed to check for boundary issues
+    rangeSamples = defines uniform range boundaries or mean and std dev for gaussian
+    distribution = which distribution to use
+    """
+
     maxVariance = 0
     vrand = np.array([0, 0])
     for _ in range(0,10):
@@ -416,13 +465,15 @@ def sampleNPoints(robot, discretization, rangeSamples, distribution = 'uniform')
     return vrand
 
 def getInformationGainAlongPath(robot, pos, nearestNodeIdx, epsilon):
-    """Calculate information gain along path for each sensor period"""
-    # Input arguments:
-    # robot = robot instance to access graph
-    # pos = vrand from sampling
-    # nearestNodeIdx = nearest node to vrand for steering
-    # epsilon = maximum step size
+    """Calculate information gain along path for each sensor period
     
+    Input arguments:
+    robot = robot instance to access graph
+    pos = vrand from sampling
+    nearestNodeIdx = nearest node to vrand for steering
+    epsilon = maximum step size
+    """
+
     positionNotReached = True    
     deltaT = robot.deltaT
     discretization = robot.discretization
