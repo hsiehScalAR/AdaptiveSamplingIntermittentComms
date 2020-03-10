@@ -52,6 +52,7 @@ def leastCostGoalSet(robots, debug, meeting=True):
             
         times = np.asarray(times)
 
+        # TODO: maybe change to argmax
         robot.endLocation = graph.nodes[goalNodes[np.argmin(times)]]['pos']
         robot.endTotalTime = np.min(times)
         robot.endNodeCounter = goalNodes[np.argmin(times)]

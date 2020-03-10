@@ -66,8 +66,6 @@ def moveAlongPath(robot, deltaT):
     deltaT = simulation time step
     """
 
-    # TODO: Add different motion model
-
     robot.currentTime += deltaT
     
     if robot.pathCounter >= len(robot.paths[robot.scheduleCounter]) or robot.atEndLocation:

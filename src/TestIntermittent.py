@@ -63,6 +63,11 @@ def main():
     """create robot to team correspondence"""
     numTeams, numRobots, robTeams, positions, uMax, sensingRange, sensorPeriod, commRange = getSetup(CASE, POD, HETEROGENEOUS, DISCRETIZATION)
     
+    if COMMNOISE != 0:
+        commRange = commRange + COMMNOISE*np.random.randn(commRange.shape[0])
+        commRange = np.where(commRange < 3, 3, commRange)
+        print(commRange)
+
     if FULLYCONNECTED:
         commRange = np.ones_like(commRange)*COMMRANGE
     """Write parameters to new logfile"""
@@ -180,7 +185,7 @@ def main():
             for r in range(0,numRobots):
                 robots[r].mappingGroundTruth = measurementGroundTruthList[t]
             
-        currentTime = update(currentTime, robots, teams, commPeriod, modelEstimates)
+        currentTime = update(currentTime, robots, teams, commPeriod, modelEstimates, schedule)
         
 
     print('ControlLoop Finished\n')
@@ -224,7 +229,7 @@ def main():
     
     print('Plotting Finished\n')
 
-def update(currentTime, robots, teams, commPeriod, modelEstimates):
+def update(currentTime, robots, teams, commPeriod, modelEstimates, schedule):
     """
     Update procedure of intermittent communication
 
@@ -234,6 +239,7 @@ def update(currentTime, robots, teams, commPeriod, modelEstimates):
     teams = teams of the robots
     commPeriod = how many schedules there are
     modelEstimates = list of model updates and time
+    schedule = schedule of meeting events
     """
 
     atEndPoint = np.zeros(len(robots))
@@ -247,7 +253,21 @@ def update(currentTime, robots, teams, commPeriod, modelEstimates):
         meeting = team[1]
         team = team[0]
 
-        if np.all(atEndPoint[team-1]):         
+        scheduleCounter = []
+
+        for r in team[0]:
+            scheduleCounter.append(robots[r-1].scheduleCounter)
+        scheduleCounter = np.asarray(scheduleCounter)
+        sameSchedule = scheduleCounter - scheduleCounter[0]
+
+        if not np.any(sameSchedule):
+            currentEpoch = scheduleCounter[0] % commPeriod
+            correctTeam = False
+            for t in schedule[:,currentEpoch]:
+                if t == idx:
+                    correctTeam = True
+
+        if np.all(atEndPoint[team-1]) and not np.any(sameSchedule) and correctTeam:         
             
             currentLocations = []
             commRangeList = []
@@ -537,10 +557,10 @@ if __name__ == "__main__":
                             #time step in dye corresponds to time step here
     
     DEBUG = False #debug to true shows prints
-    BARIUM = True # if barium cloud data
+    BARIUM = False # if barium cloud data
     HETEROGENEOUS = False # if we are using heterogeneous robots
     ANIMATION = False #if animation should be done
-    POD = True # if we are using POD or GP
+    POD = False # if we are using POD or GP
     MODEL = True #if model should be calculated
     OPTPATH = MODEL == True #if path optimization should be used, can not be true if optpoint is used
     OPTPOINT = MODEL != OPTPATH == True #if point optimization should be used, can not be true if optpath is used
@@ -591,6 +611,8 @@ if __name__ == "__main__":
     """Main function execution for a given number of iterations"""
     
     ITERATIONS = 1 # How many main iterations
+
+    COMMNOISE = 0 # communication range noise parameter
 
     for i in range(1,ITERATIONS+1):
 

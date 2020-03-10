@@ -44,7 +44,7 @@ class SpatioTemporal(Kern):
         
     def parameters_changed(self):
         """Callback function is a parameter gets changed, generates error in deepcopy if there is something"""
-        # nothing todo here
+        # nothing here
         pass
     
     def K(self,X,X2):
