@@ -24,7 +24,7 @@ def plotTrajectoryAnimation(robots, measurementGroundTruthList, modelEstimates, 
     modelEstimates = list of model updates and time
     path = savePath
     """
-    colors = ['b','m','g','r']
+    # colors = ['b','m','g','r']
 
     fig, ax = plt.subplots(1,2,figsize=(12, 6))
     fig.subplots_adjust(bottom=0.06, right=0.8, top=0.94, wspace=0.2,hspace=0.1)
@@ -45,10 +45,10 @@ def plotTrajectoryAnimation(robots, measurementGroundTruthList, modelEstimates, 
     graphs = []
     arrows = []
     for r in range(len(robots)):
-        graphobj = ax[0].plot([], [], '-', color=colors[r], label='Robot %d'%r)[0]
-        arrow, = ax[0].plot([], [],'o', color=colors[r])
-        # graphobj = ax[0].plot([], [], '-', label='Robot %d'%r)[0]
-        # arrow, = ax[0].plot([], [],'o')
+        # graphobj = ax[0].plot([], [], '-', color=colors[r], label='Robot %d'%r)[0]
+        # arrow, = ax[0].plot([], [],'o', color=colors[r])
+        graphobj = ax[0].plot([], [], '-', label='Robot %d'%r)[0]
+        arrow, = ax[0].plot([], [],'o')
         
         graphs.append(graphobj)
         arrows.append(arrow)
@@ -226,12 +226,12 @@ def plotTrajectoryOverlayGroundTruth(robots, index, path):
         x,y = zip(*robots[r].trajectory)
         ax.plot(y,x, '-', label='Robot %d'%r)
         
-    #     posMeeting, _  = zip(*robots[r].meetings)
-    #     posMeeting = np.array(posMeeting)
-    #     meetingList.append(posMeeting)
+        posMeeting, _  = zip(*robots[r].meetings)
+        posMeeting = np.array(posMeeting)
+        meetingList.append(posMeeting)
 
-    # meetingList = np.vstack(meetingList)
-    # ax.plot(meetingList[:, 1],meetingList[:, 0], 'o', color='r',label='Meetings',markersize=6)
+    meetingList = np.vstack(meetingList)
+    ax.plot(meetingList[:, 1],meetingList[:, 0], 'o', color='r',label='Meetings',markersize=6)
     
     data = robots[index].mappingGroundTruth
         

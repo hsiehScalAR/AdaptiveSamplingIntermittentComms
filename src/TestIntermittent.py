@@ -185,7 +185,7 @@ def main():
             for r in range(0,numRobots):
                 robots[r].mappingGroundTruth = measurementGroundTruthList[t]
             
-        currentTime = update(currentTime, robots, teams, commPeriod, modelEstimates, schedule)
+        currentTime = update(currentTime, robots, teams, commPeriod, modelEstimates, schedule, numTeams)
         
 
     print('ControlLoop Finished\n')
@@ -229,7 +229,7 @@ def main():
     
     print('Plotting Finished\n')
 
-def update(currentTime, robots, teams, commPeriod, modelEstimates, schedule):
+def update(currentTime, robots, teams, commPeriod, modelEstimates, schedule, numTeams):
     """
     Update procedure of intermittent communication
 
@@ -240,6 +240,7 @@ def update(currentTime, robots, teams, commPeriod, modelEstimates, schedule):
     commPeriod = how many schedules there are
     modelEstimates = list of model updates and time
     schedule = schedule of meeting events
+    numTeams = number of teams
     """
 
     atEndPoint = np.zeros(len(robots))
@@ -260,14 +261,17 @@ def update(currentTime, robots, teams, commPeriod, modelEstimates, schedule):
         scheduleCounter = np.asarray(scheduleCounter)
         sameSchedule = scheduleCounter - scheduleCounter[0]
 
+        correctTeam = False
         if not np.any(sameSchedule):
             currentEpoch = scheduleCounter[0] % commPeriod
-            correctTeam = False
             for t in schedule[:,currentEpoch]:
                 if t == idx:
                     correctTeam = True
-
-        if np.all(atEndPoint[team-1]) and not np.any(sameSchedule) and correctTeam:         
+        if meeting:
+            condition = np.all(atEndPoint[team-1]) and not np.any(sameSchedule) and correctTeam
+        else:
+            condition = np.all(atEndPoint[team-1]) and idx >= numTeams and not np.any(sameSchedule)
+        if condition:         
             
             currentLocations = []
             commRangeList = []
@@ -275,23 +279,31 @@ def update(currentTime, robots, teams, commPeriod, modelEstimates, schedule):
                 currentLocations.append(robots[r-1].currentLocation)
                 commRangeList.append(robots[r-1].commRange)
             currentLocations = np.asarray(currentLocations)
+            if meeting:
+                if not checkMeetingLocation(currentLocations, max(commRangeList)):
+                    continue
             
-            if not checkMeetingLocation(currentLocations, max(commRangeList)):
-                continue
-            
-            robs = []
-            i = 0         
-            for r in team[0]:   
-                robots[r-1].meetings.append([currentLocations[i], idx])
-                i += 1             
-                robots[r-1].scheduleCounter += 1
-                robots[r-1].atEndLocation = False
-                
-                robots[r-1].endTotalTime  = currentTime
-                robs.append(robots[r-1])
+                robs = []
+                i = 0         
+                for r in team[0]:   
+                    robots[r-1].meetings.append([currentLocations[i], idx])
+                    i += 1             
+                    robots[r-1].scheduleCounter += 1
+                    robots[r-1].atEndLocation = False
+                    
+                    robots[r-1].endTotalTime  = currentTime
+                    robs.append(robots[r-1])
 
-            modelEstimates.append([communicateToTeam(robs, MODEL, POD), currentTime])
-            # modelEstimates.append([communicateToTeam(robots, MODEL, POD), currentTime])
+                modelEstimates.append([communicateToTeam(robs, MODEL, POD), currentTime])
+                # modelEstimates.append([communicateToTeam(robots, MODEL, POD), currentTime])
+            else:
+                robs = []
+                for r in team[0]:              
+                    robots[r-1].scheduleCounter += 1
+                    robots[r-1].atEndLocation = False
+                    
+                    robots[r-1].endTotalTime  = currentTime
+                    robs.append(robots[r-1])
             
             print('Updating Paths')
             updatePaths(robs,max(commRangeList),meeting)
@@ -620,8 +632,13 @@ if __name__ == "__main__":
         RANDINT = 752
         np.random.seed(RANDINT)
         
-        FOLDER = BASEPATH + '/Test'+str(i)
+        if COMMNOISE != 0:
+            FOLDER = BASEPATH + '/Noise '+str(COMMNOISE)
+        else:
+            FOLDER = BASEPATH + '/Test'+str(i)
         
         os.mkdir(FOLDER)
         
         main()
+        if COMMNOISE != 0:
+            COMMNOISE = COMMNOISE*2

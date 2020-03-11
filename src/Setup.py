@@ -225,7 +225,9 @@ def getSetup(case, pod, heterogeneous, discretization):
         if heterogeneous:
             numTeams = 9
             numRobots = 10
-            robTeams = np.array([   [1, 0, 0, 0, 0, 0, 0, 0, 0],
+            robTeams = np.array([   [0, 0, 0, 0, 1, 0, 1, 0, 1],
+                                    [0, 0, 0, 0, 0, 1, 0, 1, 1],
+                                    [1, 0, 0, 0, 0, 0, 0, 0, 0],
                                     [1, 0, 0, 0, 1, 0, 0, 0, 0],
                                     [0, 1, 0, 0, 0, 0, 0, 1, 0],
                                     [0, 1, 0, 0, 0, 0, 0, 0, 0],
@@ -233,10 +235,11 @@ def getSetup(case, pod, heterogeneous, discretization):
                                     [0, 0, 1, 0, 0, 1, 0, 0, 0],
                                     [0, 0, 0, 1, 0, 0, 0, 0, 0],
                                     [0, 0, 0, 1, 0, 0, 1, 0, 0],
-                                    [0, 0, 0, 0, 1, 0, 1, 0, 1],
-                                    [0, 0, 0, 0, 0, 1, 0, 1, 1],])
+                                    ])
         
-            positions = np.array([  [0, 549],
+            positions = np.array([  [250, 300],
+                                    [350, 300],
+                                    [0, 549],
                                     [50, 599],
                                     [549, 599],
                                     [599, 549],
@@ -244,13 +247,12 @@ def getSetup(case, pod, heterogeneous, discretization):
                                     [549, 0],
                                     [50, 0],
                                     [0, 50],
-                                    [250, 300],
-                                    [350, 300],])
+                                    ])
 
             uMax = np.array([40, 40, 40, 40, 40, 40, 40, 40, 40, 40])
-            commRange = np.array([3, 3, 3, 3, 3, 3, 3, 3, 100, 100])
+            commRange = np.array([100, 100, 3, 3, 3, 3, 3, 3, 3, 3])
             if pod:
-                sensingRange = np.array([20, 20, 20, 20, 20, 20, 20, 20, 5, 5])
+                sensingRange = np.array([ 5, 5, 20, 20, 20, 20, 20, 20, 20, 20])
                 sensorPeriod = np.array([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
             else:
                 sensingRange = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
