@@ -105,6 +105,9 @@ def main():
     """Initialize schedules and robots"""
     schedule, teams, commPeriod = initializeScheduler(numRobots, numTeams, robTeams)
     
+    print('Schedule: ')
+    print(schedule)
+
     for idx, t in enumerate(teams):
         teams[idx] = [t,True]
 
@@ -113,7 +116,9 @@ def main():
     """create the initial plans for all periods"""
     initialTime = 0
     
-    print('Initializing Environment')
+    print('*************************************************************')
+    print('Initializing Environment\n')
+
     for r in range(0,numRobots):
         robots[r].vnew = locations[r]
         robots[r].currentLocation = locations[r]
@@ -129,10 +134,17 @@ def main():
         robots[r].createMap(meas, measTime, robots[r].currentLocation)
         if MODEL:
             robots[r].model.initialize(robots[r])
-    print('Environment Initialized\n')
 
-    print('Initializing Paths')
+    print('Environment Initialized')
+    print('*************************************************************\n')
+
+    print('*************************************************************')
+    print('Initializing Paths\n')
+    
+    teamsInAllEpochs = []
+
     for period in range(0,schedule.shape[1]):
+        teamsInEpoch = []
         teamsDone = np.zeros(len(teams))
         print('Period: %d'%period)
         idx = 0
@@ -158,39 +170,61 @@ def main():
             teamsDone[team] = True
             
             idx += 1
+            teamsInEpoch.append(teams[team])
 
         if len(robNoMeeting) != 0:
-            print('No meeting planning')
+            print('No meeting planned')
             updatePaths(robNoMeeting, max(commRangeList), meeting=False)
-            newTeam = []
+            
             for _, mRob in enumerate(robNoMeeting):
+                newTeam = []
                 newTeam.append(mRob.ID+1)
-
-            teams.append([np.asarray([newTeam]),False])
+                teams.append([np.asarray([newTeam]),False])
+            
+                teamsInEpoch.append(teams[-1])
 
         for r in range(0,numRobots):
             robots[r].composeGraphs() 
-    print('Paths Initialized\n')    
+        teamsInAllEpochs.append(teamsInEpoch)
+    
+    print('Paths Initialized')    
+    print('*************************************************************\n')
 
     """Control loop"""
-    
-    print('Starting ControlLoop')
+    print('*************************************************************')
+    print('Starting ControlLoop\n')
+
     currentTime = initialTime
 
     modelEstimates = []
     modelEstimates.append([np.zeros([DISCRETIZATION[0],DISCRETIZATION[1]]),0])
+    scheduleCheck = np.zeros(numRobots)
+    currentEpoch = 0
+    epochCounter = 0
 
     for t in range(0,np.int(TOTALTIME/DELTAT)):
         if not STATIONARY:
             for r in range(0,numRobots):
                 robots[r].mappingGroundTruth = measurementGroundTruthList[t]
             
-        currentTime = update(currentTime, robots, teams, commPeriod, modelEstimates, schedule, numTeams)
+        currentTime = update(currentTime, robots, teamsInAllEpochs[currentEpoch], commPeriod, modelEstimates, schedule, numTeams, scheduleCheck, currentEpoch)
         
+        if np.all(scheduleCheck):
+            epochCounter += 1
+            currentEpoch = epochCounter % commPeriod
+            print('-------------------------------------------------------------')
+            print('Current Epoch: %d' %currentEpoch)
+            print('-------------------------------------------------------------')
+            scheduleCheck[:] = 0
 
-    print('ControlLoop Finished\n')
+            
+
+    print('ControlLoop Finished')
+    print('*************************************************************\n')
     
-    print('Starting Plotting')
+    print('*************************************************************')
+    print('Starting Plotting\n')
+
     if DEBUG:
         plotMeasurement(measurementGroundTruth, 'Ground truth measurement map', FOLDER+'/')
         # subplot = 1
@@ -207,7 +241,7 @@ def main():
         plotMeasurement(totalMap, 'Measurements of robots after communication events', FOLDER+'/')
    
     if MODEL:
-        plotTrajectoryOverlayGroundTruth(robots,0, FOLDER+'/')
+        # plotTrajectoryOverlayGroundTruth(robots,0, FOLDER+'/')
 
         for r in range(0,numRobots):
             robots[r].model.update(robots[r])
@@ -227,9 +261,10 @@ def main():
         
         errorCalculation(robots, logFile)
     
-    print('Plotting Finished\n')
+    print('Plotting Finished')
+    print('*************************************************************')
 
-def update(currentTime, robots, teams, commPeriod, modelEstimates, schedule, numTeams):
+def update(currentTime, robots, teams, commPeriod, modelEstimates, schedule, numTeams, scheduleCheck, currentEpoch):
     """
     Update procedure of intermittent communication
 
@@ -252,26 +287,38 @@ def update(currentTime, robots, teams, commPeriod, modelEstimates, schedule, num
     
     for idx, team in enumerate(teams):
         meeting = team[1]
-        team = team[0]
+        team = team[0].copy()
 
-        scheduleCounter = []
+        # scheduleCounter = []
 
+        # for r in team[0]:
+        #     scheduleCounter.append(robots[r-1].scheduleCounter)
+        # scheduleCounter = np.asarray(scheduleCounter)
+        # sameSchedule = scheduleCounter - scheduleCounter[0]
+
+        # correctTeam = False
+        # if not np.any(sameSchedule):
+        #     # currentEpoch = scheduleCounter[0] % commPeriod
+        #     for t in schedule[:,currentEpoch]:
+        #         if t == idx:
+        #             correctTeam = True
+
+        # correctEpoch = False
+        # if currentEpoch == scheduleCounter[0] % commPeriod:
+        #     correctEpoch = True
+
+        # if meeting:
+        #     condition = np.all(atEndPoint[team-1]) and not np.any(sameSchedule) and correctTeam and correctEpoch
+        # else:
+        #     condition = np.all(atEndPoint[team-1]) and idx >= numTeams and not np.any(sameSchedule) and correctEpoch
+
+        meetingHappend = False
         for r in team[0]:
-            scheduleCounter.append(robots[r-1].scheduleCounter)
-        scheduleCounter = np.asarray(scheduleCounter)
-        sameSchedule = scheduleCounter - scheduleCounter[0]
+            if scheduleCheck[robots[r-1].ID] == 1:
+                meetingHappend = True
 
-        correctTeam = False
-        if not np.any(sameSchedule):
-            currentEpoch = scheduleCounter[0] % commPeriod
-            for t in schedule[:,currentEpoch]:
-                if t == idx:
-                    correctTeam = True
-        if meeting:
-            condition = np.all(atEndPoint[team-1]) and not np.any(sameSchedule) and correctTeam
-        else:
-            condition = np.all(atEndPoint[team-1]) and idx >= numTeams and not np.any(sameSchedule)
-        if condition:         
+
+        if np.all(atEndPoint[team-1]) and not meetingHappend:         
             
             currentLocations = []
             commRangeList = []
@@ -285,7 +332,9 @@ def update(currentTime, robots, teams, commPeriod, modelEstimates, schedule, num
             
                 robs = []
                 i = 0         
-                for r in team[0]:   
+                print('Com Meeting:')
+                for r in team[0]:
+                    print(robots[r-1].ID)   
                     robots[r-1].meetings.append([currentLocations[i], idx])
                     i += 1             
                     robots[r-1].scheduleCounter += 1
@@ -293,17 +342,21 @@ def update(currentTime, robots, teams, commPeriod, modelEstimates, schedule, num
                     
                     robots[r-1].endTotalTime  = currentTime
                     robs.append(robots[r-1])
+                    scheduleCheck[robots[r-1].ID] = 1
 
                 modelEstimates.append([communicateToTeam(robs, MODEL, POD), currentTime])
                 # modelEstimates.append([communicateToTeam(robots, MODEL, POD), currentTime])
             else:
                 robs = []
-                for r in team[0]:              
+                print('Comm No meeting')
+                for r in team[0]:             
+                    print(robots[r-1].ID) 
                     robots[r-1].scheduleCounter += 1
                     robots[r-1].atEndLocation = False
                     
                     robots[r-1].endTotalTime  = currentTime
                     robs.append(robots[r-1])
+                    scheduleCheck[robots[r-1].ID] = 1
             
             print('Updating Paths')
             updatePaths(robs,max(commRangeList),meeting)
@@ -572,7 +625,7 @@ if __name__ == "__main__":
     BARIUM = False # if barium cloud data
     HETEROGENEOUS = False # if we are using heterogeneous robots
     ANIMATION = False #if animation should be done
-    POD = False # if we are using POD or GP
+    POD = True # if we are using POD or GP
     MODEL = True #if model should be calculated
     OPTPATH = MODEL == True #if path optimization should be used, can not be true if optpoint is used
     OPTPOINT = MODEL != OPTPATH == True #if point optimization should be used, can not be true if optpath is used

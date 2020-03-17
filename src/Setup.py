@@ -263,6 +263,66 @@ def getSetup(case, pod, heterogeneous, discretization):
             print('WARNING: Setup for heterogeneous robots chosen but not heterogeneous as keyword, exiting application')
             print('**********************************************************************\n')
             exit()
+    
+    elif case == 5:
+        if heterogeneous:
+            numTeams = 4
+            numRobots = 5
+            robTeams = np.array([   [1, 0, 0, 0],
+                                    [0, 1, 0, 0],
+                                    [0, 0, 1, 0],
+                                    [0, 0, 0, 1],
+                                    [1, 1, 1, 1],
+                                    ])
+        
+            positions = np.array([  [0, 0],
+                                    [0, 599],
+                                    [599, 0],
+                                    [599, 599],
+                                    [300, 300],
+                                    ])
+
+            uMax = np.array([40, 40, 40, 40, 80])
+            commRange = np.array([3, 3, 3, 3, 100])
+            if pod:
+                sensingRange = np.array([ 20, 20, 20, 20, 20])
+                sensorPeriod = np.array([0.1, 0.1, 0.1, 0.1, 0.1])
+            else:
+                sensingRange = np.array([0, 0, 0, 0, 0])
+                sensorPeriod = np.array([0.1, 0.1, 0.1, 0.1, 0.1])
+
+        else: 
+            print('**********************************************************************\n')
+            print('WARNING: Setup for heterogeneous robots chosen but not heterogeneous as keyword, exiting application')
+            print('**********************************************************************\n')
+            exit()
+
+    elif case == 6:
+    
+        numTeams = 5
+        numRobots = 5
+        robTeams = np.array([   [1, 0, 0, 0, 1],
+                                [1, 1, 0, 0, 0],
+                                [0, 1, 1, 0, 0],
+                                [0, 0, 1, 1, 0],
+                                [0, 0, 0, 1, 1],
+                                ])
+    
+        positions = np.array([  [0, 0],
+                                [0, 599],
+                                [599, 0],
+                                [599, 599],
+                                [300, 300],
+                                ])
+
+        uMax = np.array([40, 40, 40, 40, 40])
+        commRange = np.array([3, 3, 3, 3, 3])
+        if pod:
+            sensingRange = np.array([ 20, 20, 20, 20, 20])
+            sensorPeriod = np.array([0.1, 0.1, 0.1, 0.1, 0.1])
+        else:
+            sensingRange = np.array([0, 0, 0, 0, 0])
+            sensorPeriod = np.array([0.1, 0.1, 0.1, 0.1, 0.1])
 
     else:
         print('**********************************************************************\n')
