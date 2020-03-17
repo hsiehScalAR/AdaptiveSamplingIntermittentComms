@@ -146,7 +146,9 @@ def main():
     for period in range(0,schedule.shape[1]):
         teamsInEpoch = []
         teamsDone = np.zeros(len(teams))
+        print('-------------------------------------------------------------')
         print('Period: %d'%period)
+        print('-------------------------------------------------------------')
         idx = 0
         
         #find out which team has a meeting event at period k=0
@@ -173,7 +175,6 @@ def main():
             teamsInEpoch.append(teams[team])
 
         if len(robNoMeeting) != 0:
-            print('No meeting planned')
             updatePaths(robNoMeeting, max(commRangeList), meeting=False)
             
             for _, mRob in enumerate(robNoMeeting):
@@ -207,7 +208,7 @@ def main():
             for r in range(0,numRobots):
                 robots[r].mappingGroundTruth = measurementGroundTruthList[t]
             
-        currentTime = update(currentTime, robots, teamsInAllEpochs[currentEpoch], commPeriod, modelEstimates, schedule, numTeams, scheduleCheck, currentEpoch)
+        currentTime = update(currentTime, robots, teamsInAllEpochs[currentEpoch], modelEstimates, scheduleCheck, currentEpoch)
         
         if np.all(scheduleCheck):
             epochCounter += 1
@@ -264,18 +265,17 @@ def main():
     print('Plotting Finished')
     print('*************************************************************')
 
-def update(currentTime, robots, teams, commPeriod, modelEstimates, schedule, numTeams, scheduleCheck, currentEpoch):
+def update(currentTime, robots, teams, modelEstimates, scheduleCheck, currentEpoch):
     """
     Update procedure of intermittent communication
 
     Input arguments:
     currentTime = current time of the execution
     robots = instances of the robots that are to be moved
-    teams = teams of the robots
-    commPeriod = how many schedules there are
+    teams = teams of the robots at given epoch
     modelEstimates = list of model updates and time
-    schedule = schedule of meeting events
-    numTeams = number of teams
+    scheduleCheck = if meeting already happend at given epoch
+    currentEpoch = which epoch we are in
     """
 
     atEndPoint = np.zeros(len(robots))
@@ -288,29 +288,6 @@ def update(currentTime, robots, teams, commPeriod, modelEstimates, schedule, num
     for idx, team in enumerate(teams):
         meeting = team[1]
         team = team[0].copy()
-
-        # scheduleCounter = []
-
-        # for r in team[0]:
-        #     scheduleCounter.append(robots[r-1].scheduleCounter)
-        # scheduleCounter = np.asarray(scheduleCounter)
-        # sameSchedule = scheduleCounter - scheduleCounter[0]
-
-        # correctTeam = False
-        # if not np.any(sameSchedule):
-        #     # currentEpoch = scheduleCounter[0] % commPeriod
-        #     for t in schedule[:,currentEpoch]:
-        #         if t == idx:
-        #             correctTeam = True
-
-        # correctEpoch = False
-        # if currentEpoch == scheduleCounter[0] % commPeriod:
-        #     correctEpoch = True
-
-        # if meeting:
-        #     condition = np.all(atEndPoint[team-1]) and not np.any(sameSchedule) and correctTeam and correctEpoch
-        # else:
-        #     condition = np.all(atEndPoint[team-1]) and idx >= numTeams and not np.any(sameSchedule) and correctEpoch
 
         meetingHappend = False
         for r in team[0]:
@@ -616,7 +593,7 @@ if __name__ == "__main__":
     """Setup Variables"""
     
     TOTALTIME = 100 #total execution time of program
-    CASE = 3    #case corresponds to which robot structure to use (1 = 8 robots, 8 teams; 2 = 8 robots, 
+    CASE = 6    #case corresponds to which robot structure to use (1 = 8 robots, 8 teams; 2 = 8 robots, 
                 #5 teams; 3 = 4 robots 4 teams; 4 = 10 robots, 9 teams)
     CORRECTTIMESTEP = False #If dye time steps should be matched to correct time steps or if each 
                             #time step in dye corresponds to time step here
@@ -675,14 +652,14 @@ if __name__ == "__main__":
     
     """Main function execution for a given number of iterations"""
     
-    ITERATIONS = 1 # How many main iterations
+    ITERATIONS = 10 # How many main iterations
 
     COMMNOISE = 0 # communication range noise parameter
 
-    for i in range(1,ITERATIONS+1):
+    for i in range(10,ITERATIONS+1):
 
-        # RANDINT = np.random.randint(0,2000)
-        RANDINT = 752
+        RANDINT = np.random.randint(0,2000)
+        # RANDINT = 752
         np.random.seed(RANDINT)
         
         if COMMNOISE != 0:
