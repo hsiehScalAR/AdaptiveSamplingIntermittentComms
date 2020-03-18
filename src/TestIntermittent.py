@@ -593,16 +593,16 @@ if __name__ == "__main__":
     """Setup Variables"""
     
     TOTALTIME = 100 #total execution time of program
-    CASE = 6    #case corresponds to which robot structure to use (1 = 8 robots, 8 teams; 2 = 8 robots, 
+    CASE = 5    #case corresponds to which robot structure to use (1 = 8 robots, 8 teams; 2 = 8 robots, 
                 #5 teams; 3 = 4 robots 4 teams; 4 = 10 robots, 9 teams)
     CORRECTTIMESTEP = False #If dye time steps should be matched to correct time steps or if each 
                             #time step in dye corresponds to time step here
     
     DEBUG = False #debug to true shows prints
     BARIUM = False # if barium cloud data
-    HETEROGENEOUS = False # if we are using heterogeneous robots
+    HETEROGENEOUS = True # if we are using heterogeneous robots
     ANIMATION = False #if animation should be done
-    POD = True # if we are using POD or GP
+    POD = False # if we are using POD or GP
     MODEL = True #if model should be calculated
     OPTPATH = MODEL == True #if path optimization should be used, can not be true if optpoint is used
     OPTPOINT = MODEL != OPTPATH == True #if point optimization should be used, can not be true if optpath is used
@@ -656,7 +656,7 @@ if __name__ == "__main__":
 
     COMMNOISE = 0 # communication range noise parameter
 
-    for i in range(10,ITERATIONS+1):
+    for i in range(1,ITERATIONS+1):
 
         RANDINT = np.random.randint(0,2000)
         # RANDINT = 752
