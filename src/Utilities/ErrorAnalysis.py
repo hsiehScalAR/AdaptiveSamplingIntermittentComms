@@ -205,37 +205,156 @@ def totalStatistics(totalData, saveLoc):
 
     return mean, std
 
+def individualStatisticsHeterogeneous(totalData, saveLoc, stp):
+    """Plots the error in an individual box plot
+
+    Input arguments:
+    totalData = error data which is to be analysed
+    saveLoc = where to save the image
+    stp = stationary or spatiotemporal case
+    """
+
+    _, ax = plt.subplots()
+
+    if stp == 0:
+        name = 'Homogeneous Results GP (n=10)'
+    elif stp == 2:
+        name = 'Homogeneous Results POD (n=10)'
+    elif stp == 1:
+        name = 'Heterogeneous Results GP (n=10)'
+    else:
+        name = 'Heterogeneous Results POD (n=10)'
+    ax.set_title(name)
+
+    mean = np.zeros([10,3])
+    std = np.zeros([10,3])
+
+    for i in range(0,10):
+        for e in range(0,3):
+            error,_ = zip(*totalData[i][e])
+            error = np.array(error)
+            mean[i,e] = np.mean(error)
+            std[i,e] = np.std(error)
+    
+    bp = ax.boxplot([mean[:,0],mean[:,2]],positions=[1,2], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C0"))
+    
+    ax.set_ylim(0,2.5)
+    ax.legend([bp["boxes"][0]], ['Intermittent'], loc='lower right')
+    ax.set_ylabel('RMSE')
+    plt.xticks([1, 2], ['RMSE', 'DISSIM'])
+    plt.savefig(saveLoc + 'Boxplot_' + SETUP[stp] + '.png' )
+    plt.close()
+
+    print('\n' + SETUP[stp])
+
+    print('RMSE mean:    %.2f   std:  %.2f' %(np.mean(mean[:,0]), np.mean(std[:,0])))
+    print('DISSIM mean:  %.2f   std:  %.2f' %(np.mean(mean[:,2]), np.mean(std[:,2])))
+    
+def totalStatisticsHeterogeneous(totalData, saveLoc):
+    """Plots the error in a combined box plot
+
+    Input arguments:
+    totalData = error data which is to be analysed
+    saveLoc = where to save the image
+    """
+
+    mean = np.zeros([10,12])
+    std = np.zeros([10,12])
+
+    index = 0
+
+    for _, dataSet in enumerate(totalData):
+        for i in range(0,10):
+            for e in range(0,3):
+                error,_ = zip(*dataSet[i][e])
+                error = np.array(error)
+                mean[i,e + index] = np.mean(error)
+                std[i,e + index] = np.std(error)
+        index += 3
+
+    _, ax = plt.subplots(figsize=(8, 4))
+        
+    bp = ax.boxplot([mean[:,0],mean[:,3],mean[:,6],mean[:,9]],positions=[1,3,2,4], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C0"))
+    
+    ax.set_ylim(0,2.5)
+    ax.legend([bp["boxes"][0]], ['Intermittent'], loc='lower right')
+    ax.set_ylabel('RMSE')
+    
+    plt.xticks([1, 1.5, 2, 3, 3.5, 4],['GP','\nHomogeneous','POD','GP','\nHeterogeneous','POD'])
+
+    ax.xaxis.set_tick_params(length=0)
+    ax.axvline(2.5,ymin=0, ymax=1, color='grey',linestyle='--', lw=1)
+
+    plt.savefig(saveLoc + 'Boxplot_Comparison_Heterogeneous_RMSE.png')
+    plt.close()
+
+
+    _, ax = plt.subplots(figsize=(8, 4))
+
+    bp1 = ax.boxplot([mean[:,2],mean[:,5],mean[:,8],mean[:,11]],positions=[1,3,2,4], notch=True, widths=0.35, patch_artist=True, boxprops=dict(facecolor="C0"))
+    
+    ax.set_ylim(0,1)
+    ax.legend([bp1["boxes"][0]], ['Intermittent'], loc='lower right')
+    ax.set_ylabel('DISSIM')
+    
+    plt.xticks([1, 1.5, 2, 3, 3.5, 4],['GP','\nHomogeneous','POD','GP','\nHeterogeneous','POD'])
+
+    ax.xaxis.set_tick_params(length=0)
+    ax.axvline(2.5,ymin=0, ymax=1, color='grey',linestyle='--', lw=1)
+
+    plt.savefig(saveLoc + 'Boxplot_Comparison_Heterogeneous_DISSIM.png')
+    plt.close()
+
+    return mean, std
+
 if __name__ == "__main__":
     """Entry in Error Analysis Program"""
 
-    basePath = '/home/hannes/MasterThesisCode/AdaptiveSamplingIntermittentComms/src/Results/Tests/IntermediateResults/'
-    saveLoc = '/home/hannes/MasterThesisCode/AdaptiveSamplingIntermittentComms/src/Results/Tests/IntermediateResults/Figures/'
-    CASE = ['Intermittent','AllTime','Full']
+    HETEROGENEOUS = True
 
-    SETUP = ['SpatialGP','SpatialPOD','SpatioTemporalGP','SpatioTemporalPOD']    
-    
-    totalData = []
-    for stp, _ in enumerate(SETUP):
-        individualData = []
-        for idx,_ in enumerate(CASE):
-            if CASE[idx] == 'Intermittent':
-                path = basePath + SETUP[stp] + '/IntermittentCommunication'
-                ROBOTID = 0
-            elif CASE[idx] == 'AllTime':
-                path = basePath + SETUP[stp] + '/AllTimeCommunication'
-                ROBOTID = 4
-            elif CASE[idx] == 'Full':
-                path = basePath + SETUP[stp] + '/FullCommunication'
-                ROBOTID = 0
+    if HETEROGENEOUS:
+        basePath = '/home/hannes/MasterThesisCode/AdaptiveSamplingIntermittentComms/src/Results/Tests/IntermediateResults/Heterogeneous/'
+        saveLoc = '/home/hannes/MasterThesisCode/AdaptiveSamplingIntermittentComms/src/Results/Tests/IntermediateResults/Figures/'
         
+        SETUP = ['GPHomogeneous','GPHeterogeneous','PODHomogeneous','PODHeterogeneous']    
+        
+        totalData = []
+        for stp, _ in enumerate(SETUP):
+            path = basePath + SETUP[stp]
+            ROBOTID = 0
+            
             data = readAllFiles(path)
-            individualData.append(data)
-        totalData.append(individualData)
-        individualStatistics(individualData, saveLoc, stp)
+            totalData.append(data)
+            individualStatisticsHeterogeneous(data, saveLoc, stp)
 
-    mean, std = totalStatistics(totalData, saveLoc)
+        mean, std = totalStatisticsHeterogeneous(totalData, saveLoc)
 
-    # print(np.mean(mean[0:-1:3],axis=0))
-    # print(np.std(mean[0:-1:3],axis=0))
+    else:
+        basePath = '/home/hannes/MasterThesisCode/AdaptiveSamplingIntermittentComms/src/Results/Tests/IntermediateResults/'
+        saveLoc = '/home/hannes/MasterThesisCode/AdaptiveSamplingIntermittentComms/src/Results/Tests/IntermediateResults/Figures/'
+        CASE = ['Intermittent','AllTime','Full']
+
+        SETUP = ['SpatialGP','SpatialPOD','SpatioTemporalGP','SpatioTemporalPOD']    
+        
+        totalData = []
+        for stp, _ in enumerate(SETUP):
+            individualData = []
+            for idx,_ in enumerate(CASE):
+                if CASE[idx] == 'Intermittent':
+                    path = basePath + SETUP[stp] + '/IntermittentCommunication'
+                    ROBOTID = 0
+                elif CASE[idx] == 'AllTime':
+                    path = basePath + SETUP[stp] + '/AllTimeCommunication'
+                    ROBOTID = 4
+                elif CASE[idx] == 'Full':
+                    path = basePath + SETUP[stp] + '/FullCommunication'
+                    ROBOTID = 0
+            
+                data = readAllFiles(path)
+                individualData.append(data)
+            totalData.append(individualData)
+            individualStatistics(individualData, saveLoc, stp)
+
+        mean, std = totalStatistics(totalData, saveLoc)
     
 
