@@ -190,29 +190,41 @@ def getSetup(case, pod, heterogeneous, discretization):
             sensingRange = np.array([0,0,0,0,0,0,0,0])
 
     elif case == 3:
-        numTeams = 4
-        numRobots = 4
-        robTeams = np.array([[1, 0, 0, 1],
-                             [1, 1, 0, 0],
-                             [0, 1, 1, 0],
-                             [0, 0, 1, 1],])
-    
-        positions = np.array([[0, 0],
-                             [0, discretization[1]-1],
-                             [discretization[0]-1, 0],
-                             [discretization[0]-1, discretization[1]-1],])
-
-
         if heterogeneous:
-            uMax = np.array([100,40,100,40])
-            commRange = np.array([40,3,40,3])
+
+            numTeams = 3
+            numRobots = 4
+            robTeams = np.array([[1, 1, 1],
+                                 [1, 0, 0],
+                                 [0, 1, 0],
+                                 [0, 0, 1],])
+        
+            positions = np.array([[0, 0],
+                                [0, discretization[1]-1],
+                                [discretization[0]-1, 0],
+                                [discretization[0]-1, discretization[1]-1],])
+
+            uMax = np.array([80, 40, 40, 40])
+            commRange = np.array([100, 3, 3, 3])
             if pod:
-                sensingRange = np.array([40,20,40,20])
-                sensorPeriod = np.array([2,0.1,2,0.1])
+                sensingRange = np.array([ 20, 20, 20, 20, 20])
+                sensorPeriod = np.array([0.1, 0.1, 0.1, 0.1, 0.1])
             else:
-                sensingRange = np.array([0,0,0,0])
-                sensorPeriod = np.array([0.1,0.1,0.1,0.1])
+                sensingRange = np.array([0, 0, 0, 0, 0])
+                sensorPeriod = np.array([0.1, 0.1, 0.1, 0.1, 0.1])
         else:
+            numTeams = 4
+            numRobots = 4
+            robTeams = np.array([[1, 0, 0, 1],
+                                 [1, 1, 0, 0],
+                                 [0, 1, 1, 0],
+                                 [0, 0, 1, 1],])
+        
+            positions = np.array([[0, 0],
+                                [0, discretization[1]-1],
+                                [discretization[0]-1, 0],
+                                [discretization[0]-1, discretization[1]-1],])
+    
             uMax = np.array([80,80,80,80])
             sensorPeriod = np.array([0.1,0.1,0.1,0.1])
             commRange = np.array([3,3,3,3])

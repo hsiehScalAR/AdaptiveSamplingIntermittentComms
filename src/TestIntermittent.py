@@ -593,7 +593,7 @@ if __name__ == "__main__":
     """Setup Variables"""
     
     TOTALTIME = 100 #total execution time of program
-    CASE = 5    #case corresponds to which robot structure to use (1 = 8 robots, 8 teams; 2 = 8 robots, 
+    CASE = 3    #case corresponds to which robot structure to use (1 = 8 robots, 8 teams; 2 = 8 robots, 
                 #5 teams; 3 = 4 robots 4 teams; 4 = 10 robots, 9 teams)
     CORRECTTIMESTEP = False #If dye time steps should be matched to correct time steps or if each 
                             #time step in dye corresponds to time step here
