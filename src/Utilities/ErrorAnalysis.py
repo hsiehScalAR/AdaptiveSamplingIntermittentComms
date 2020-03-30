@@ -313,7 +313,9 @@ if __name__ == "__main__":
     HETEROGENEOUS = True
 
     if HETEROGENEOUS:
-        basePath = '/home/hannes/MasterThesisCode/AdaptiveSamplingIntermittentComms/src/Results/Tests/IntermediateResults/Heterogeneous/'
+        basePath = '/home/hannes/MasterThesisCode/AdaptiveSamplingIntermittentComms/src/Results/Tests/IntermediateResults/Heterogeneous/5robots/'
+        # basePath = '/home/hannes/MasterThesisCode/AdaptiveSamplingIntermittentComms/src/Results/Tests/IntermediateResults/Heterogeneous/4robots/'
+        
         saveLoc = '/home/hannes/MasterThesisCode/AdaptiveSamplingIntermittentComms/src/Results/Tests/IntermediateResults/Figures/'
         
         SETUP = ['GPHomogeneous','GPHeterogeneous','PODHomogeneous','PODHeterogeneous']    
