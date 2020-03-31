@@ -204,7 +204,7 @@ def getSetup(case, pod, heterogeneous, discretization):
                                 [discretization[0]-1, 0],
                                 [discretization[0]-1, discretization[1]-1],])
 
-            uMax = np.array([80, 40, 40, 40])
+            uMax = np.array([160, 80, 80, 80])
             commRange = np.array([100, 3, 3, 3])
             if pod:
                 sensingRange = np.array([ 20, 20, 20, 20, 20])
