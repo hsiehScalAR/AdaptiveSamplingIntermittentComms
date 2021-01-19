@@ -15,7 +15,7 @@ import GPy
 
 import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal
-from skimage.measure import compare_ssim as ssim
+from skimage.metrics import structural_similarity as ssim
 from scipy.spatial import procrustes
                                               
 ITERATIONS = 1000

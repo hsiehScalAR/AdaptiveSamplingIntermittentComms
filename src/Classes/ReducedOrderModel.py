@@ -10,7 +10,7 @@ Created on Thu Feb 6 09:53:55 2020
 import numpy as np
 import matplotlib.pyplot as plt
 
-from skimage.measure import compare_ssim as ssim
+from skimage.metrics import structural_similarity as ssim
 from scipy.spatial import procrustes
 
 ENERGY = 0.99

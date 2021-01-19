@@ -10,7 +10,7 @@ Created on Mon Nov  4 10:48:29 2019
 import numpy as np
 import matplotlib.pyplot as plt
 import os, shutil
-from skimage.measure import compare_ssim as ssim
+from skimage.metrics import structural_similarity as ssim
 from scipy.spatial import procrustes
 
 #Personal imports
