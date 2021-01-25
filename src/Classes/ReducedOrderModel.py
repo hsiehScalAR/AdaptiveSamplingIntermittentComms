@@ -47,7 +47,7 @@ class ReducedOrderModel:
         robot = robot whose POD is to be initialized
         """
         y = robot.mapping
-        print(y.shape)
+        #print(y.shape)
         self.calculateBasis(y, robot.numbMeasurements, robot.sensorPeriod)
 
         

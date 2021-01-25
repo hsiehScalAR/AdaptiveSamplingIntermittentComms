@@ -120,7 +120,53 @@ def loadMeshFiles(sensorPeriod, correctTimeSteps = False):
             
         maxTime = np.int(timeValues.shape[1]/skip)*sensorPeriod*lag
     return measurementGroundTruthList, maxTime
+
+def new_map_practice(maxTime):
+    """
+    Practice to get a sense for what the ground truth map looked like and how it impacted the program
     
+    This is a fixed map size which has a variable number of time steps but is a fixed data stream
+
+    XXX: Right now this code is dependent on a fixed 600x600 grid size 
+         Need to work to figure out how much might need to change for this
+    """
+    measurementGroundTruthList = []
+    data = np.zeros([600, 600]) #np.random.rand(600, 600)
+    for i in range(100):
+        for j in range(100):
+            data[200 + i, 200 + j] = 1.0
+
+    skip = 2
+    
+    for tIdx in range(0, np.int(maxTime), skip):
+        
+        measurementGroundTruthList.append(data)
+    
+    return(measurementGroundTruthList, maxTime)
+
+def new_dynamic_process(num_particles, max_time):
+    # Setup the environment (This would be where I would put obstacles of a map) 
+    measurementGroundTruthList = []
+    
+    # This is an nxn discritized grid (we will need a scaling factor to properly convert the agent pos to the grid)
+    data = np.zeros([600, 600])
+    skip = 1
+    dt = 0.1
+
+    # Setup the agents (simpl) 
+    pos = np.random.rand(num_particles, 1)
+    vel = np.random.rand(num_particles, 1)
+    
+    
+    for i in range(0, np.int(max_time), skip):
+        # Step the agents through an update (single point integrator / something easy)
+        # Put the robots new pose in the environment
+        # update the ground truth list 
+        measurementGroundTruthList.append(data)
+    
+    return(measurementGroundTruthList, max_time)
+    
+
 def getSetup(case, pod, heterogeneous, discretization):
     """Returns the setup for the robot teams based on the case
 

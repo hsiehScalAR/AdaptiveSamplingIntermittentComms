@@ -16,7 +16,7 @@ from scipy.spatial import procrustes
 #Personal imports
 from Classes.Scheduler import Schedule
 from Classes.Robot import Robot
-from Setup import getSetup, loadMeshFiles, loadBariumCloud
+from Setup import getSetup, loadMeshFiles, loadBariumCloud, new_dynamic_process, new_map_practice
 
 from Utilities.ControllerUtilities import moveAlongPath, communicateToTeam, checkMeetingLocation, measurement
 from Utilities.VisualizationUtilities import (plotMeasurement, plotMeetingGraphs, plotMeetingPaths, 
@@ -39,10 +39,12 @@ def main():
 
     if BARIUM:
         measurementGroundTruthList, maxTime = loadBariumCloud(DELTAT)
-    else:
+    elif(OLDDATA):
         measurementGroundTruthList, maxTime = loadMeshFiles(DELTAT, CORRECTTIMESTEP)
-
-    plotDye(measurementGroundTruthList[50],measurementGroundTruthList[500],measurementGroundTruthList[999], FOLDER+'/')
+    else:
+        measurementGroundTruthList, maxTime = new_map_practice(100)
+    step = int(len(measurementGroundTruthList)/3)
+    plotDye(measurementGroundTruthList[step],measurementGroundTruthList[step*2],measurementGroundTruthList[step*3], FOLDER+'/')
     
     print('**********************************************************************\n')
     print('Max allowed time is: %.1f length of data: %.1f\n' %(maxTime,len(measurementGroundTruthList)))
@@ -59,6 +61,8 @@ def main():
     else:
         measurementGroundTruth = measurementGroundTruthList[0]
 
+    print("HERE*******************************************************************************************")
+    print(np.shape(measurementGroundTruth))
            
     """create robot to team correspondence"""
     numTeams, numRobots, robTeams, positions, uMax, sensingRange, sensorPeriod, commRange = getSetup(CASE, POD, HETEROGENEOUS, DISCRETIZATION)
@@ -603,6 +607,7 @@ if __name__ == "__main__":
     
     DEBUG = False #debug to true shows prints
     BARIUM = False # if barium cloud data
+    OLDDATA = False # Data this repo was installed with
     HETEROGENEOUS = False # if we are using heterogeneous robots
     ANIMATION = False #if animation should be done
     POD = True # if we are using POD or GP
@@ -655,7 +660,7 @@ if __name__ == "__main__":
     
     """Main function execution for a given number of iterations"""
     
-    ITERATIONS = 10 # How many main iterations
+    ITERATIONS = 1 # How many main iterations
 
     COMMNOISE = 0 # communication range noise parameter
 
