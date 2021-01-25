@@ -145,6 +145,8 @@ def new_map_practice(maxTime):
     return(measurementGroundTruthList, maxTime)
 
 def new_dynamic_process(num_particles, max_time):
+    # XXX: Future problem how does the pod stuff deal with obstacles? (How should it be relfelcted in the map?)
+    # XXX: Plumb the simple agents into UNITY along with the solved for paths (The entire process can be post-processed
     # Setup the environment (This would be where I would put obstacles of a map) 
     measurementGroundTruthList = []
     
