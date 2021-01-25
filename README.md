@@ -1,4 +1,14 @@
 # ReadMe
+This branch is being used by: Torrie Edwards
+
+I am making modifications to allow this code to work with the DCIST simulation setup.
+--> This requires a new dynamic process to be tracked (so mods happening in Setup.py).
+--> Question: How are obstacles handled by the algorithm
+
+NOTE: This version is setup for python 3.8 on Ubuntu 20.04 and has made modifications to the skimage which reflect overall changes on later versions .
+
+
+*********************************************8
 
 This repo contains the code for my master thesis about adaptive sampling with intermittent communication for heterogeneous robot teams.
 
