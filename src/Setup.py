@@ -147,6 +147,9 @@ def new_map_practice(maxTime):
 def new_dynamic_process(num_particles, max_time):
     # XXX: Future problem how does the pod stuff deal with obstacles? (How should it be relfelcted in the map?)
     # XXX: Plumb the simple agents into UNITY along with the solved for paths (The entire process can be post-processed
+
+    # XXX: What is the "Behavior" of the particles: e.g. Boids, potential methods etc? 
+    
     # Setup the environment (This would be where I would put obstacles of a map) 
     measurementGroundTruthList = []
     
@@ -156,15 +159,50 @@ def new_dynamic_process(num_particles, max_time):
     dt = 0.1
 
     # Setup the agents (simpl) 
-    pos = np.random.rand(num_particles, 1)
-    vel = np.random.rand(num_particles, 1)
+    pos = np.random.rand(num_particles, 2)
+    vel = np.random.rand(num_particles, 2)
+
+    scale = 0.1 # in x and y so uniform grid XXX: This does not necessarily need to be true
+
+    pos_in_grid = np.zeros((num_particles, 2))
+    pos_in_grid[:,0] = pos[:,0] // scale
+    pos_in_grid[:,1] = pos[:,1] // scale
+
     
+    idx = pos_in_grid.astype(int)
+    idx = idx[idx[:,0] < 600]
+    idx = idx[idx[:,1] < 600]
+
+    # Put data in grid world coordinates
+    data[idx[:,0], idx[:,1]] = 1.0
+ 
     
     for i in range(0, np.int(max_time), skip):
+        
+        if i == 0:
+            # update the ground truth list 
+            measurementGroundTruthList.append(data)
+            continue
+        
         # Step the agents through an update (single point integrator / something easy)
+        new_pos = pos + vel * dt
+        
         # Put the robots new pose in the environment
+        pos_in_grid[:,0] = new_pos[:,0] // scale
+        pos_in_grid[:,1] = new_pos[:,1] // scale
+
+        idx = pos_in_grid.astype(int)
+        idx = idx[idx[:,0] < 600]
+        idx = idx[idx[:,1] < 600]
+        #print(idx)
+        data = np.zeros((600, 600))
+        data[idx[:,0], idx[:,1]] = 1.0
+
         # update the ground truth list 
         measurementGroundTruthList.append(data)
+
+        pos = new_pos
+        
     
     return(measurementGroundTruthList, max_time)
     

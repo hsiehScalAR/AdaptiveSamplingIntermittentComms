@@ -42,9 +42,12 @@ def main():
     elif(OLDDATA):
         measurementGroundTruthList, maxTime = loadMeshFiles(DELTAT, CORRECTTIMESTEP)
     else:
-        measurementGroundTruthList, maxTime = new_map_practice(100)
-    step = int(len(measurementGroundTruthList)/3)
-    plotDye(measurementGroundTruthList[step],measurementGroundTruthList[step*2],measurementGroundTruthList[step*3], FOLDER+'/')
+        measurementGroundTruthList, maxTime = new_dynamic_process(100, TOTALTIME/DELTAT) #new_map_practice(100)
+
+        
+    step = int(len(measurementGroundTruthList)/2)
+    print(step, step * 2)
+    plotDye(measurementGroundTruthList[0],measurementGroundTruthList[step],measurementGroundTruthList[step*2 - 1], FOLDER+'/')
     
     print('**********************************************************************\n')
     print('Max allowed time is: %.1f length of data: %.1f\n' %(maxTime,len(measurementGroundTruthList)))
